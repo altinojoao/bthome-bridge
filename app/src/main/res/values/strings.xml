@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Gateway BLU Dev</string>
+
+    <string name="ouvir">A ouvir</string>
+    <string name="ecra_apagado">Em espera</string>
+    <string name="a_pesquisar">A pesquisar…</string>
+
+    <string name="cmd_assoc_1">1 comando associado</string>
+    <string name="cmd_assoc_n">%1$d comandos associados</string>
+
+    <string name="sec_comandos">Comandos</string>
+    <string name="sec_conta">Conta Shelly</string>
+    <string name="sec_perfis">Perfis de ações</string>
+    <string name="sec_registo">Registo</string>
+    <string name="sec_diag">Diagnóstico</string>
+    <string name="sec_config">Configuração</string>
+
+    <string name="definida">definida</string>
+    <string name="servidor">Servidor</string>
+    <string name="num">Nº</string>
+    <string name="auth_key">AUTH KEY DA CLOUD</string>
+    <string name="mostrar">mostrar</string>
+    <string name="ocultar">ocultar</string>
+    <string name="aviso_conta">Dá controlo total da conta. Não a mostre em capturas de ecrã.</string>
+
+    <string name="dica_perfis">Cada perfil pode ser usado por vários comandos.</string>
+    <string name="novo_perfil">+ Novo perfil</string>
+    <string name="nome_novo_perfil">Novo perfil</string>
+    <string name="sem_nome">Perfil sem nome</string>
+    <string name="abrir">abrir</string>
+    <string name="aberto">aberto</string>
+    <string name="apagar_q">apagar?</string>
+    <string name="esquecer_q">esquecer?</string>
+    <string name="fechar_perfil">Fechar perfil</string>
+
+    <string name="nenhum_comando">Nenhum comando associado. Toque em 🔍 para procurar.</string>
+
+    <string name="ev0">Clique simples</string>
+    <string name="ev1">Clique duplo</string>
+    <string name="ev2">Clique triplo</string>
+    <string name="ev3">Clique longo</string>
+    <string name="ev4">Longo duplo</string>
+    <string name="ev5">Longo triplo</string>
+    <string name="ev6">Manter premido</string>
+
+    <string name="cenario">Cenário</string>
+    <string name="url">URL</string>
+    <string name="ntfy">Ntfy</string>
+
+    <string name="id_cenario">ID DO CENÁRIO</string>
+    <string name="endereco">ENDEREÇO</string>
+    <string name="topico_ntfy">TÓPICO NTFY</string>
+    <string name="msg_ntfy">MENSAGEM (OPCIONAL)</string>
+    <string name="msg_exemplo">{evento} · {bateria}%</string>
+    <string name="add_acao">+ Adicionar ação</string>
+
+    <string name="acao_1">1 ação</string>
+    <string name="acao_n">%1$d ações</string>
+    <string name="perfil_1">1 perfil</string>
+    <string name="perfil_n">%1$d perfis</string>
+    <string name="cmd_1">1 comando</string>
+    <string name="cmd_n">%1$d comandos</string>
+
+    <string name="legenda">Cada clique aceita várias ações: cenário, URL ou ntfy.</string>
+
+    <string name="tt_detetar">Detetar novo comando</string>
+    <string name="tt_parar">Parar procura</string>
+    <string name="tt_notacao">Trocar notação</string>
+    <string name="tt_tema">Alternar tema</string>
+    <string name="tt_idioma">Idioma</string>
+    <string name="tt_apagar_perfil">Apagar perfil</string>
+    <string name="tt_abrir_perfil">Abrir perfil</string>
+    <string name="tt_esquecer">Esquecer comando</string>
+    <string name="tt_ultimo_perfil">Tem de existir pelo menos um perfil</string>
+    <string name="tt_remover">Remover</string>
+    <string name="tt_confirmar">Confirmar</string>
+    <string name="tt_config">Configurações</string>
+
+    <string name="log_detetado">Comando BLU detetado</string>
+    <string name="bt_sem_suporte">Este telemóvel não tem Bluetooth Low Energy.</string>
+    <string name="bt_erro">Falha na procura: %1$s</string>
+    <string name="bt_nenhum">Nenhum comando BLU encontrado</string>
+    <string name="bt_ja_associado">Comando já associado</string>
+    <string name="bt_permissao">Permissão de Bluetooth recusada</string>
+    <string name="bt_desligado">O Bluetooth está desligado</string>
+    <string name="carregue_botao">Carregue no comando agora para o identificar.</string>
+    <string name="adicionar_cmd">adicionar</string>
+    <string name="candidatos">Encontrados</string>
+
+    <string name="acao_enviada">enviado</string>
+    <string name="acao_falhou">falhou: %1$s</string>
+    <string name="falta_conta">Falta o servidor ou a auth key da conta Shelly</string>
+
+    <string name="diag_espera">Aguarda um clique do comando</string>
+    <string name="diag_sem_dados">sem tramas ainda</string>
+    <string name="lab_trama">Trama recebida (hex)</string>
+
+    <string name="perm_titulo">Permissões necessárias</string>
+    <string name="perm_bluetooth">Bluetooth (para detetar o comando)</string>
+    <string name="perm_notificacoes">Notificações (para avisos de erro em fundo)</string>
+    <string name="perm_pedir">Conceder permissões</string>
+
+    <string name="canal_servico_nome">Gateway BLU em fundo</string>
+    <string name="canal_servico_desc">Mantém a escuta do comando Bluetooth ativa</string>
+    <string name="notif_servico_titulo">Gateway BLU ativo</string>
+    <string name="notif_servico_texto">A escutar %1$d comando(s)</string>
+    <string name="avancados">Mostrar tipos avançados</string>
+    <string name="menos_avancados">Ocultar tipos avançados</string>
+
+    <string name="combinacoes">Combinações</string>
+    <string name="modo_combinacao">Modo combinação</string>
+    <string name="modo_combinacao_dica">Ignora os cliques de baixo e só reage a sequências definidas aqui.</string>
+    <string name="janela">Janela de espera</string>
+    <string name="segundos">s</string>
+    <string name="nova_combinacao">+ Nova combinação</string>
+    <string name="nome_combinacao">Nome da combinação</string>
+    <string name="sequencia">Sequência</string>
+    <string name="tocar_para_adicionar">Toque nos símbolos por ordem</string>
+    <string name="limpar_sequencia">limpar</string>
+    <string name="apagar_ultimo">apagar último</string>
+    <string name="combinacao">Combinação</string>
+    <string name="sem_combinacoes">Nenhuma combinação definida ainda.</string>
+    <string name="guardar_combinacao">Guardar</string>
+    <string name="sequencia_vazia">Adicione pelo menos 2 cliques à sequência.</string>
+    <string name="cancelar">Cancelar</string>
+    <string name="sem_comandos_especiais">Não existem comandos especiais configurados</string>
+    <string name="comandos_especiais">Comandos especiais</string>
+    <string name="aguardando_sequencia">A aguardar sequência…</string>
+    <string name="scan_reiniciado">Escuta reiniciada automaticamente</string>
+    <string name="tt_som">Som</string>
+    <string name="alertar_fora_alcance">Alertar se sair de alcance (requer modo beacon no comando)</string>
+    <string name="fora_de_alcance">Fora de alcance</string>
+    <string name="associar_manual">Associar manualmente</string>
+    <string name="associar_manual_dica">Para comandos que já têm a Segurança/conexão Bluetooth segura ativada no botão — não aparecem como candidatos durante a procura normal.</string>
+    <string name="mac_dispositivo">MAC do dispositivo</string>
+    <string name="nome_comando">Nome</string>
+    <string name="chave_encriptacao_opcional">Chave de encriptação (opcional)</string>
+    <string name="mac_invalido_ou_existente">MAC inválido, ou já existe um comando com este MAC.</string>
+    <string name="chave_definida">Chave de encriptação definida</string>
+    <string name="definir_chave">Definir chave de encriptação</string>
+    <string name="chave_encriptacao_32hex">CHAVE (32 CARATERES HEX)</string>
+
+    <string name="fechar">Fechar</string>
+    <string name="ajuda_escuta">A app ouve o Bluetooth sempre em fundo. Toque na lupa só para associar um botão novo — os já associados não precisam disto.</string>
+    <string name="ajuda_diag">Mostra o botão e o tipo de clique mais recente, e os dados técnicos em hexadecimal.</string>
+    <string name="ajuda_comandos">Botões físicos já associados. Para associar um novo: toque na lupa acima e depois carregue no botão.</string>
+    <string name="ajuda_config">Conta Shelly Cloud e perfis — cada perfil decide a ação por tipo de clique.</string>
+    <string name="ajuda_registo">Histórico de cliques e ações — útil para confirmar que tudo correu bem.</string>
+    <string name="sem_escuta">Sem escuta</string>
+    <string name="ativo_24h">Ativo 24h</string>
+    <string name="dia_dom">Dom</string>
+    <string name="dia_seg">Seg</string>
+    <string name="dia_ter">Ter</string>
+    <string name="dia_qua">Qua</string>
+    <string name="dia_qui">Qui</string>
+    <string name="dia_sex">Sex</string>
+    <string name="dia_sab">Sáb</string>
+    <string name="periodo_sobreposto">Esse período sobrepõe-se a um já existente nesse dia.</string>
+    <string name="sem_periodos_neste_dia">Sem períodos definidos neste dia.</string>
+    <string name="novo_periodo">Novo período</string>
+    <string name="tempo_limite">Tempo limite</string>
+    <string name="rssi_limite">Sinal mínimo</string>
+    <string name="sec_escuta">Escuta</string>
+    <string name="blocos_visiveis">Blocos visíveis</string>
+</resources>

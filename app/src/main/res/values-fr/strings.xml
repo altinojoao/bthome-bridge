@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Gateway BLU Dev</string>
+
+    <string name="ouvir">À l\'écoute</string>
+    <string name="ecra_apagado">En attente</string>
+    <string name="a_pesquisar">Recherche…</string>
+
+    <string name="cmd_assoc_1">1 télécommande associée</string>
+    <string name="cmd_assoc_n">%1$d télécommandes associées</string>
+
+    <string name="sec_comandos">Télécommandes</string>
+    <string name="sec_conta">Compte Shelly</string>
+    <string name="sec_perfis">Profils d\'actions</string>
+    <string name="sec_registo">Journal</string>
+    <string name="sec_diag">Diagnostic</string>
+    <string name="sec_config">Configuration</string>
+
+    <string name="definida">définie</string>
+    <string name="servidor">Serveur</string>
+    <string name="num">N°</string>
+    <string name="auth_key">CLÉ AUTH DU CLOUD</string>
+    <string name="mostrar">afficher</string>
+    <string name="ocultar">masquer</string>
+    <string name="aviso_conta">Donne le contrôle total du compte. À ne pas montrer en capture.</string>
+
+    <string name="dica_perfis">Un profil peut servir à plusieurs télécommandes.</string>
+    <string name="novo_perfil">+ Nouveau profil</string>
+    <string name="nome_novo_perfil">Nouveau profil</string>
+    <string name="sem_nome">Profil sans nom</string>
+    <string name="abrir">ouvrir</string>
+    <string name="aberto">ouvert</string>
+    <string name="apagar_q">supprimer\u00a0?</string>
+    <string name="esquecer_q">oublier\u00a0?</string>
+    <string name="fechar_perfil">Fermer le profil</string>
+
+    <string name="nenhum_comando">Aucune télécommande. Touchez 🔍 pour chercher.</string>
+
+    <string name="ev0">Clic simple</string>
+    <string name="ev1">Double clic</string>
+    <string name="ev2">Triple clic</string>
+    <string name="ev3">Appui long</string>
+    <string name="ev4">Double long</string>
+    <string name="ev5">Triple long</string>
+    <string name="ev6">Appui maintenu</string>
+
+    <string name="cenario">Scène</string>
+    <string name="url">URL</string>
+    <string name="ntfy">Ntfy</string>
+
+    <string name="id_cenario">ID DE SCÈNE</string>
+    <string name="endereco">ADRESSE</string>
+    <string name="topico_ntfy">SUJET NTFY</string>
+    <string name="msg_ntfy">MESSAGE (OPTIONNEL)</string>
+    <string name="msg_exemplo">{evento} · {bateria}%</string>
+    <string name="add_acao">+ Ajouter une action</string>
+
+    <string name="acao_1">1 action</string>
+    <string name="acao_n">%1$d actions</string>
+    <string name="perfil_1">1 profil</string>
+    <string name="perfil_n">%1$d profils</string>
+    <string name="cmd_1">1 télécommande</string>
+    <string name="cmd_n">%1$d télécommandes</string>
+
+    <string name="legenda">Chaque clic accepte plusieurs actions\u00a0: scène, URL ou ntfy.</string>
+
+    <string name="tt_detetar">Chercher une télécommande</string>
+    <string name="tt_parar">Arrêter la recherche</string>
+    <string name="tt_notacao">Changer la notation</string>
+    <string name="tt_tema">Changer de thème</string>
+    <string name="tt_idioma">Langue</string>
+    <string name="tt_apagar_perfil">Supprimer le profil</string>
+    <string name="tt_abrir_perfil">Ouvrir le profil</string>
+    <string name="tt_esquecer">Oublier la télécommande</string>
+    <string name="tt_ultimo_perfil">Il doit rester au moins un profil</string>
+    <string name="tt_remover">Retirer</string>
+    <string name="tt_confirmar">Confirmer</string>
+    <string name="tt_config">Paramètres</string>
+
+    <string name="log_detetado">Télécommande BLU détectée</string>
+    <string name="bt_sem_suporte">Ce téléphone n\'a pas de Bluetooth Low Energy.</string>
+    <string name="bt_erro">Échec de la recherche\u00a0: %1$s</string>
+    <string name="bt_nenhum">Aucune télécommande BLU trouvée</string>
+    <string name="bt_ja_associado">Télécommande déjà associée</string>
+    <string name="bt_permissao">Autorisation Bluetooth refusée</string>
+    <string name="bt_desligado">Le Bluetooth est désactivé</string>
+    <string name="carregue_botao">Appuyez sur la télécommande pour l\'identifier.</string>
+    <string name="adicionar_cmd">ajouter</string>
+    <string name="candidatos">Trouvées</string>
+
+    <string name="acao_enviada">envoyé</string>
+    <string name="acao_falhou">échec\u00a0: %1$s</string>
+    <string name="falta_conta">Serveur ou clé auth du compte Shelly manquant</string>
+
+    <string name="diag_espera">En attente d\'un clic de la télécommande</string>
+    <string name="diag_sem_dados">aucune trame pour l\'instant</string>
+    <string name="lab_trama">Trame reçue (hex)</string>
+
+    <string name="perm_titulo">Autorisations requises</string>
+    <string name="perm_bluetooth">Bluetooth (pour détecter la télécommande)</string>
+    <string name="perm_notificacoes">Notifications (pour les alertes d\'erreur en arrière-plan)</string>
+    <string name="perm_pedir">Accorder les autorisations</string>
+
+    <string name="canal_servico_nome">Gateway BLU en arrière-plan</string>
+    <string name="canal_servico_desc">Maintient l\'écoute de la télécommande active</string>
+    <string name="notif_servico_titulo">Gateway BLU actif</string>
+    <string name="notif_servico_texto">Écoute de %1$d télécommande(s)</string>
+    <string name="avancados">Afficher les types avancés</string>
+    <string name="menos_avancados">Masquer les types avancés</string>
+    <string name="combinacoes">Combinaisons</string>
+    <string name="modo_combinacao">Mode combinaison</string>
+    <string name="modo_combinacao_dica">Ignore les clics ci-dessous et ne réagit qu’aux séquences définies ici.</string>
+    <string name="janela">Fenêtre d’attente</string>
+    <string name="segundos">s</string>
+    <string name="nova_combinacao">+ Nouvelle combinaison</string>
+    <string name="nome_combinacao">Nom de la combinaison</string>
+    <string name="sequencia">Séquence</string>
+    <string name="tocar_para_adicionar">Touchez les symboles dans l’ordre</string>
+    <string name="limpar_sequencia">effacer</string>
+    <string name="apagar_ultimo">supprimer le dernier</string>
+    <string name="combinacao">Combinaison</string>
+    <string name="sem_combinacoes">Aucune combinaison définie pour l’instant.</string>
+    <string name="guardar_combinacao">Enregistrer</string>
+    <string name="sequencia_vazia">Ajoutez au moins 2 clics à la séquence.</string>
+    <string name="cancelar">Annuler</string>
+    <string name="sem_comandos_especiais">Aucune commande spéciale configurée</string>
+    <string name="comandos_especiais">Commandes spéciales</string>
+    <string name="aguardando_sequencia">En attente de la séquence…</string>
+    <string name="scan_reiniciado">Écoute redémarrée automatiquement</string>
+    <string name="tt_som">Son</string>
+    <string name="alertar_fora_alcance">Alerter en cas de perte de portée (nécessite le mode beacon)</string>
+    <string name="fora_de_alcance">Hors de portée</string>
+    <string name="associar_manual">Ajouter manuellement</string>
+    <string name="associar_manual_dica">Pour les télécommandes ayant déjà la Sécurité/connexion Bluetooth sécurisée activée — elles n\'apparaissent pas comme candidates lors de la recherche normale.</string>
+    <string name="mac_dispositivo">MAC de l\'appareil</string>
+    <string name="nome_comando">Nom</string>
+    <string name="chave_encriptacao_opcional">Clé de chiffrement (optionnelle)</string>
+    <string name="mac_invalido_ou_existente">MAC invalide, ou une télécommande avec cette MAC existe déjà.</string>
+    <string name="chave_definida">Clé de chiffrement définie</string>
+    <string name="definir_chave">Définir la clé de chiffrement</string>
+    <string name="chave_encriptacao_32hex">CLÉ (32 CARACTÈRES HEX)</string>
+
+    <string name="fechar">Fermer</string>
+    <string name="ajuda_escuta">L\'app écoute le Bluetooth en permanence en arrière-plan. Touchez la loupe uniquement pour associer un nouveau bouton — ceux déjà associés n\'en ont pas besoin.</string>
+    <string name="ajuda_diag">Affiche le bouton et le type de clic le plus récent, ainsi que les données techniques en hexadécimal.</string>
+    <string name="ajuda_comandos">Boutons physiques déjà associés. Pour en associer un nouveau : touchez la loupe ci-dessus puis appuyez sur le bouton.</string>
+    <string name="ajuda_config">Compte Shelly Cloud et profils — chaque profil détermine l\'action selon le type de clic.</string>
+    <string name="ajuda_registo">Historique des clics et actions — utile pour confirmer que tout s\'est bien passé.</string>
+    <string name="sem_escuta">Aucune écoute</string>
+    <string name="ativo_24h">Actif 24h</string>
+    <string name="dia_dom">Dim</string>
+    <string name="dia_seg">Lun</string>
+    <string name="dia_ter">Mar</string>
+    <string name="dia_qua">Mer</string>
+    <string name="dia_qui">Jeu</string>
+    <string name="dia_sex">Ven</string>
+    <string name="dia_sab">Sam</string>
+    <string name="periodo_sobreposto">Cette période chevauche une période déjà existante ce jour-là.</string>
+    <string name="sem_periodos_neste_dia">Aucune période définie ce jour.</string>
+    <string name="novo_periodo">Nouvelle période</string>
+    <string name="tempo_limite">Délai limite</string>
+    <string name="rssi_limite">Signal minimum</string>
+    <string name="sec_escuta">Écoute</string>
+    <string name="blocos_visiveis">Blocs visibles</string>
+</resources>

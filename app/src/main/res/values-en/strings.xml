@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">BLU Gateway Dev</string>
+
+    <string name="ouvir">Listening</string>
+    <string name="ecra_apagado">Standing by</string>
+    <string name="a_pesquisar">Scanning…</string>
+
+    <string name="cmd_assoc_1">1 remote paired</string>
+    <string name="cmd_assoc_n">%1$d remotes paired</string>
+
+    <string name="sec_comandos">Remotes</string>
+    <string name="sec_conta">Shelly account</string>
+    <string name="sec_perfis">Action profiles</string>
+    <string name="sec_registo">Log</string>
+    <string name="sec_diag">Diagnostics</string>
+    <string name="sec_config">Settings</string>
+
+    <string name="definida">set</string>
+    <string name="servidor">Server</string>
+    <string name="num">No.</string>
+    <string name="auth_key">CLOUD AUTH KEY</string>
+    <string name="mostrar">show</string>
+    <string name="ocultar">hide</string>
+    <string name="aviso_conta">Grants full account control. Don\'t show it in screenshots.</string>
+
+    <string name="dica_perfis">A profile can be shared by several remotes.</string>
+    <string name="novo_perfil">+ New profile</string>
+    <string name="nome_novo_perfil">New profile</string>
+    <string name="sem_nome">Unnamed profile</string>
+    <string name="abrir">open</string>
+    <string name="aberto">open</string>
+    <string name="apagar_q">delete?</string>
+    <string name="esquecer_q">forget?</string>
+    <string name="fechar_perfil">Close profile</string>
+
+    <string name="nenhum_comando">No remotes paired. Tap 🔍 to scan.</string>
+
+    <string name="ev0">Single click</string>
+    <string name="ev1">Double click</string>
+    <string name="ev2">Triple click</string>
+    <string name="ev3">Long press</string>
+    <string name="ev4">Long double click</string>
+    <string name="ev5">Long triple click</string>
+    <string name="ev6">Hold press</string>
+
+    <string name="cenario">Scene</string>
+    <string name="url">URL</string>
+    <string name="ntfy">Ntfy</string>
+
+    <string name="id_cenario">SCENE ID</string>
+    <string name="endereco">ADDRESS</string>
+    <string name="topico_ntfy">NTFY TOPIC</string>
+    <string name="msg_ntfy">MESSAGE (OPTIONAL)</string>
+    <string name="msg_exemplo">{evento} · {bateria}%</string>
+    <string name="add_acao">+ Add action</string>
+
+    <string name="acao_1">1 action</string>
+    <string name="acao_n">%1$d actions</string>
+    <string name="perfil_1">1 profile</string>
+    <string name="perfil_n">%1$d profiles</string>
+    <string name="cmd_1">1 remote</string>
+    <string name="cmd_n">%1$d remotes</string>
+
+    <string name="legenda">Each click can trigger several actions: scene, URL or ntfy.</string>
+
+    <string name="tt_detetar">Scan for a new remote</string>
+    <string name="tt_parar">Stop scanning</string>
+    <string name="tt_notacao">Switch notation</string>
+    <string name="tt_tema">Toggle theme</string>
+    <string name="tt_idioma">Language</string>
+    <string name="tt_apagar_perfil">Delete profile</string>
+    <string name="tt_abrir_perfil">Open profile</string>
+    <string name="tt_esquecer">Forget remote</string>
+    <string name="tt_ultimo_perfil">At least one profile must exist</string>
+    <string name="tt_remover">Remove</string>
+    <string name="tt_confirmar">Confirm</string>
+    <string name="tt_config">Settings</string>
+
+    <string name="log_detetado">BLU remote detected</string>
+    <string name="bt_sem_suporte">This phone has no Bluetooth Low Energy.</string>
+    <string name="bt_erro">Scan failed: %1$s</string>
+    <string name="bt_nenhum">No BLU remote found</string>
+    <string name="bt_ja_associado">Remote already paired</string>
+    <string name="bt_permissao">Bluetooth permission denied</string>
+    <string name="bt_desligado">Bluetooth is off</string>
+    <string name="carregue_botao">Press the remote now so it can be identified.</string>
+    <string name="adicionar_cmd">add</string>
+    <string name="candidatos">Found</string>
+
+    <string name="acao_enviada">sent</string>
+    <string name="acao_falhou">failed: %1$s</string>
+    <string name="falta_conta">Shelly server or cloud auth key is missing</string>
+
+    <string name="diag_espera">Waiting for a click from the remote</string>
+    <string name="diag_sem_dados">no frames yet</string>
+    <string name="lab_trama">Received frame (hex)</string>
+
+    <string name="perm_titulo">Permissions required</string>
+    <string name="perm_bluetooth">Bluetooth (to detect the remote)</string>
+    <string name="perm_notificacoes">Notifications (for background error alerts)</string>
+    <string name="perm_pedir">Grant permissions</string>
+
+    <string name="canal_servico_nome">BLU Gateway background</string>
+    <string name="canal_servico_desc">Keeps the remote listening active</string>
+    <string name="notif_servico_titulo">BLU Gateway active</string>
+    <string name="notif_servico_texto">Listening to %1$d remote(s)</string>
+    <string name="avancados">Show advanced types</string>
+    <string name="menos_avancados">Hide advanced types</string>
+    <string name="combinacoes">Combinations</string>
+    <string name="modo_combinacao">Combination mode</string>
+    <string name="modo_combinacao_dica">Ignores the clicks below and only reacts to sequences defined here.</string>
+    <string name="janela">Wait window</string>
+    <string name="segundos">s</string>
+    <string name="nova_combinacao">+ New combination</string>
+    <string name="nome_combinacao">Combination name</string>
+    <string name="sequencia">Sequence</string>
+    <string name="tocar_para_adicionar">Tap the symbols in order</string>
+    <string name="limpar_sequencia">clear</string>
+    <string name="apagar_ultimo">remove last</string>
+    <string name="combinacao">Combination</string>
+    <string name="sem_combinacoes">No combinations defined yet.</string>
+    <string name="guardar_combinacao">Save</string>
+    <string name="sequencia_vazia">Add at least 2 clicks to the sequence.</string>
+    <string name="cancelar">Cancel</string>
+    <string name="sem_comandos_especiais">No special commands configured</string>
+    <string name="comandos_especiais">Special commands</string>
+    <string name="aguardando_sequencia">Waiting for sequence…</string>
+    <string name="scan_reiniciado">Listening restarted automatically</string>
+    <string name="tt_som">Sound</string>
+    <string name="alertar_fora_alcance">Alert if out of range (requires beacon mode on the remote)</string>
+    <string name="fora_de_alcance">Out of range</string>
+    <string name="associar_manual">Add manually</string>
+    <string name="associar_manual_dica">For remotes that already have Security/secure Bluetooth connection enabled on the button — they won\'t show up as candidates during normal scanning.</string>
+    <string name="mac_dispositivo">Device MAC</string>
+    <string name="nome_comando">Name</string>
+    <string name="chave_encriptacao_opcional">Encryption key (optional)</string>
+    <string name="mac_invalido_ou_existente">Invalid MAC, or a remote with this MAC already exists.</string>
+    <string name="chave_definida">Encryption key set</string>
+    <string name="definir_chave">Set encryption key</string>
+    <string name="chave_encriptacao_32hex">KEY (32 HEX CHARACTERS)</string>
+
+    <string name="fechar">Close</string>
+    <string name="ajuda_escuta">The app listens for Bluetooth in the background at all times. Tap the magnifier only to pair a new button — the ones already paired don\'t need this.</string>
+    <string name="ajuda_diag">Shows the button and click type most recently received, and the technical data in hex.</string>
+    <string name="ajuda_comandos">Physical buttons already paired. To pair a new one: tap the magnifier above, then press the button.</string>
+    <string name="ajuda_config">Shelly Cloud account and profiles — each profile decides the action for each click type.</string>
+    <string name="ajuda_registo">History of clicks and actions — useful for confirming everything worked as expected.</string>
+    <string name="sem_escuta">Not listening</string>
+    <string name="ativo_24h">Active 24h</string>
+    <string name="dia_dom">Sun</string>
+    <string name="dia_seg">Mon</string>
+    <string name="dia_ter">Tue</string>
+    <string name="dia_qua">Wed</string>
+    <string name="dia_qui">Thu</string>
+    <string name="dia_sex">Fri</string>
+    <string name="dia_sab">Sat</string>
+    <string name="periodo_sobreposto">That period overlaps with one already set for that day.</string>
+    <string name="sem_periodos_neste_dia">No periods set for this day.</string>
+    <string name="novo_periodo">New period</string>
+    <string name="tempo_limite">Time limit</string>
+    <string name="rssi_limite">Minimum signal</string>
+    <string name="sec_escuta">Listening</string>
+    <string name="blocos_visiveis">Visible blocks</string>
+</resources>

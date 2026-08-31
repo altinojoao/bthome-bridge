@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Gateway BLU Dev</string>
+
+    <string name="ouvir">In ascolto</string>
+    <string name="ecra_apagado">In attesa</string>
+    <string name="a_pesquisar">Ricerca…</string>
+
+    <string name="cmd_assoc_1">1 telecomando associato</string>
+    <string name="cmd_assoc_n">%1$d telecomandi associati</string>
+
+    <string name="sec_comandos">Telecomandi</string>
+    <string name="sec_conta">Account Shelly</string>
+    <string name="sec_perfis">Profili di azioni</string>
+    <string name="sec_registo">Registro</string>
+    <string name="sec_diag">Diagnostica</string>
+    <string name="sec_config">Configurazione</string>
+
+    <string name="definida">impostata</string>
+    <string name="servidor">Server</string>
+    <string name="num">N.</string>
+    <string name="auth_key">AUTH KEY DEL CLOUD</string>
+    <string name="mostrar">mostra</string>
+    <string name="ocultar">nascondi</string>
+    <string name="aviso_conta">Dà controllo totale dell\'account. Non mostrarla negli screenshot.</string>
+
+    <string name="dica_perfis">Un profilo può essere usato da più telecomandi.</string>
+    <string name="novo_perfil">+ Nuovo profilo</string>
+    <string name="nome_novo_perfil">Nuovo profilo</string>
+    <string name="sem_nome">Profilo senza nome</string>
+    <string name="abrir">apri</string>
+    <string name="aberto">aperto</string>
+    <string name="apagar_q">eliminare?</string>
+    <string name="esquecer_q">dimenticare?</string>
+    <string name="fechar_perfil">Chiudi profilo</string>
+
+    <string name="nenhum_comando">Nessun telecomando. Tocca 🔍 per cercare.</string>
+
+    <string name="ev0">Clic singolo</string>
+    <string name="ev1">Doppio clic</string>
+    <string name="ev2">Triplo clic</string>
+    <string name="ev3">Pressione prolungata</string>
+    <string name="ev4">Doppio lungo</string>
+    <string name="ev5">Triplo lungo</string>
+    <string name="ev6">Pressione prolungata continua</string>
+
+    <string name="cenario">Scena</string>
+    <string name="url">URL</string>
+    <string name="ntfy">Ntfy</string>
+
+    <string name="id_cenario">ID SCENA</string>
+    <string name="endereco">INDIRIZZO</string>
+    <string name="topico_ntfy">TOPIC NTFY</string>
+    <string name="msg_ntfy">MESSAGGIO (OPZIONALE)</string>
+    <string name="msg_exemplo">{evento} · {bateria}%</string>
+    <string name="add_acao">+ Aggiungi azione</string>
+
+    <string name="acao_1">1 azione</string>
+    <string name="acao_n">%1$d azioni</string>
+    <string name="perfil_1">1 profilo</string>
+    <string name="perfil_n">%1$d profili</string>
+    <string name="cmd_1">1 telecomando</string>
+    <string name="cmd_n">%1$d telecomandi</string>
+
+    <string name="legenda">Ogni clic accetta più azioni: scena, URL o ntfy.</string>
+
+    <string name="tt_detetar">Cerca nuovo telecomando</string>
+    <string name="tt_parar">Ferma ricerca</string>
+    <string name="tt_notacao">Cambia notazione</string>
+    <string name="tt_tema">Cambia tema</string>
+    <string name="tt_idioma">Lingua</string>
+    <string name="tt_apagar_perfil">Elimina profilo</string>
+    <string name="tt_abrir_perfil">Apri profilo</string>
+    <string name="tt_esquecer">Dimentica telecomando</string>
+    <string name="tt_ultimo_perfil">Deve restare almeno un profilo</string>
+    <string name="tt_remover">Rimuovi</string>
+    <string name="tt_confirmar">Conferma</string>
+    <string name="tt_config">Impostazioni</string>
+
+    <string name="log_detetado">Telecomando BLU rilevato</string>
+    <string name="bt_sem_suporte">Questo telefono non ha il Bluetooth Low Energy.</string>
+    <string name="bt_erro">Ricerca fallita: %1$s</string>
+    <string name="bt_nenhum">Nessun telecomando BLU trovato</string>
+    <string name="bt_ja_associado">Telecomando già associato</string>
+    <string name="bt_permissao">Permesso Bluetooth negato</string>
+    <string name="bt_desligado">Il Bluetooth è spento</string>
+    <string name="carregue_botao">Premi il telecomando ora per identificarlo.</string>
+    <string name="adicionar_cmd">aggiungi</string>
+    <string name="candidatos">Trovati</string>
+
+    <string name="acao_enviada">inviato</string>
+    <string name="acao_falhou">fallito: %1$s</string>
+    <string name="falta_conta">Manca il server o l\'auth key dell\'account Shelly</string>
+
+    <string name="diag_espera">In attesa di un clic dal telecomando</string>
+    <string name="diag_sem_dados">nessuna trama ancora</string>
+    <string name="lab_trama">Trama ricevuta (hex)</string>
+
+    <string name="perm_titulo">Permessi necessari</string>
+    <string name="perm_bluetooth">Bluetooth (per rilevare il telecomando)</string>
+    <string name="perm_notificacoes">Notifiche (per avvisi di errore in background)</string>
+    <string name="perm_pedir">Concedi permessi</string>
+
+    <string name="canal_servico_nome">Gateway BLU in background</string>
+    <string name="canal_servico_desc">Mantiene attivo l\'ascolto del telecomando</string>
+    <string name="notif_servico_titulo">Gateway BLU attivo</string>
+    <string name="notif_servico_texto">In ascolto di %1$d telecomando(i)</string>
+    <string name="avancados">Mostra tipi avanzati</string>
+    <string name="menos_avancados">Nascondi tipi avanzati</string>
+    <string name="combinacoes">Combinazioni</string>
+    <string name="modo_combinacao">Modalità combinazione</string>
+    <string name="modo_combinacao_dica">Ignora i clic qui sotto e reagisce solo alle sequenze definite qui.</string>
+    <string name="janela">Finestra di attesa</string>
+    <string name="segundos">s</string>
+    <string name="nova_combinacao">+ Nuova combinazione</string>
+    <string name="nome_combinacao">Nome della combinazione</string>
+    <string name="sequencia">Sequenza</string>
+    <string name="tocar_para_adicionar">Tocca i simboli in ordine</string>
+    <string name="limpar_sequencia">cancella</string>
+    <string name="apagar_ultimo">rimuovi ultimo</string>
+    <string name="combinacao">Combinazione</string>
+    <string name="sem_combinacoes">Nessuna combinazione definita ancora.</string>
+    <string name="guardar_combinacao">Salva</string>
+    <string name="sequencia_vazia">Aggiungi almeno 2 clic alla sequenza.</string>
+    <string name="cancelar">Annulla</string>
+    <string name="sem_comandos_especiais">Nessun comando speciale configurato</string>
+    <string name="comandos_especiais">Comandi speciali</string>
+    <string name="aguardando_sequencia">In attesa della sequenza…</string>
+    <string name="scan_reiniciado">Ascolto riavviato automaticamente</string>
+    <string name="tt_som">Suono</string>
+    <string name="alertar_fora_alcance">Avvisa se fuori portata (richiede modalità beacon)</string>
+    <string name="fora_de_alcance">Fuori portata</string>
+    <string name="associar_manual">Aggiungi manualmente</string>
+    <string name="associar_manual_dica">Per telecomandi che hanno già Sicurezza/connessione Bluetooth sicura attivata — non compaiono come candidati durante la ricerca normale.</string>
+    <string name="mac_dispositivo">MAC del dispositivo</string>
+    <string name="nome_comando">Nome</string>
+    <string name="chave_encriptacao_opcional">Chiave di crittografia (opzionale)</string>
+    <string name="mac_invalido_ou_existente">MAC non valido, o esiste già un telecomando con questo MAC.</string>
+    <string name="chave_definida">Chiave di crittografia impostata</string>
+    <string name="definir_chave">Imposta chiave di crittografia</string>
+    <string name="chave_encriptacao_32hex">CHIAVE (32 CARATTERI HEX)</string>
+
+    <string name="fechar">Chiudi</string>
+    <string name="ajuda_escuta">L\'app ascolta il Bluetooth sempre in background. Tocca la lente solo per associare un nuovo pulsante — quelli già associati non ne hanno bisogno.</string>
+    <string name="ajuda_diag">Mostra il pulsante e il tipo di clic più recente, e i dati tecnici in esadecimale.</string>
+    <string name="ajuda_comandos">Pulsanti fisici già associati. Per associarne uno nuovo: tocca la lente sopra e poi premi il pulsante.</string>
+    <string name="ajuda_config">Account Shelly Cloud e profili — ogni profilo decide l\'azione per tipo di clic.</string>
+    <string name="ajuda_registo">Cronologia di clic e azioni — utile per confermare che tutto sia andato bene.</string>
+    <string name="sem_escuta">Nessun ascolto</string>
+    <string name="ativo_24h">Attivo 24h</string>
+    <string name="dia_dom">Dom</string>
+    <string name="dia_seg">Lun</string>
+    <string name="dia_ter">Mar</string>
+    <string name="dia_qua">Mer</string>
+    <string name="dia_qui">Gio</string>
+    <string name="dia_sex">Ven</string>
+    <string name="dia_sab">Sab</string>
+    <string name="periodo_sobreposto">Questo periodo si sovrappone a uno già esistente in quel giorno.</string>
+    <string name="sem_periodos_neste_dia">Nessun periodo impostato per questo giorno.</string>
+    <string name="novo_periodo">Nuovo periodo</string>
+    <string name="tempo_limite">Tempo limite</string>
+    <string name="rssi_limite">Segnale minimo</string>
+    <string name="sec_escuta">Ascolto</string>
+    <string name="blocos_visiveis">Blocchi visibili</string>
+</resources>

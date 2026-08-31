@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Gateway BLU Dev</string>
+
+    <string name="ouvir">Hört zu</string>
+    <string name="ecra_apagado">Bereit</string>
+    <string name="a_pesquisar">Suche…</string>
+
+    <string name="cmd_assoc_1">1 Fernbedienung verbunden</string>
+    <string name="cmd_assoc_n">%1$d Fernbedienungen verbunden</string>
+
+    <string name="sec_comandos">Fernbedienungen</string>
+    <string name="sec_conta">Shelly-Konto</string>
+    <string name="sec_perfis">Aktionsprofile</string>
+    <string name="sec_registo">Protokoll</string>
+    <string name="sec_diag">Diagnose</string>
+    <string name="sec_config">Einstellungen</string>
+
+    <string name="definida">gesetzt</string>
+    <string name="servidor">Server</string>
+    <string name="num">Nr.</string>
+    <string name="auth_key">CLOUD-AUTH-KEY</string>
+    <string name="mostrar">zeigen</string>
+    <string name="ocultar">verbergen</string>
+    <string name="aviso_conta">Gibt vollen Kontozugriff. Nicht in Screenshots zeigen.</string>
+
+    <string name="dica_perfis">Ein Profil kann von mehreren Fernbedienungen genutzt werden.</string>
+    <string name="novo_perfil">+ Neues Profil</string>
+    <string name="nome_novo_perfil">Neues Profil</string>
+    <string name="sem_nome">Profil ohne Namen</string>
+    <string name="abrir">öffnen</string>
+    <string name="aberto">offen</string>
+    <string name="apagar_q">löschen?</string>
+    <string name="esquecer_q">entfernen?</string>
+    <string name="fechar_perfil">Profil schließen</string>
+
+    <string name="nenhum_comando">Keine Fernbedienung. Auf 🔍 tippen zum Suchen.</string>
+
+    <string name="ev0">Einfachklick</string>
+    <string name="ev1">Doppelklick</string>
+    <string name="ev2">Dreifachklick</string>
+    <string name="ev3">Langer Druck</string>
+    <string name="ev4">Langer Doppelklick</string>
+    <string name="ev5">Langer Dreifachklick</string>
+    <string name="ev6">Gedrückt halten</string>
+
+    <string name="cenario">Szene</string>
+    <string name="url">URL</string>
+    <string name="ntfy">Ntfy</string>
+
+    <string name="id_cenario">SZENEN-ID</string>
+    <string name="endereco">ADRESSE</string>
+    <string name="topico_ntfy">NTFY-THEMA</string>
+    <string name="msg_ntfy">NACHRICHT (OPTIONAL)</string>
+    <string name="msg_exemplo">{evento} · {bateria}%</string>
+    <string name="add_acao">+ Aktion hinzufügen</string>
+
+    <string name="acao_1">1 Aktion</string>
+    <string name="acao_n">%1$d Aktionen</string>
+    <string name="perfil_1">1 Profil</string>
+    <string name="perfil_n">%1$d Profile</string>
+    <string name="cmd_1">1 Fernbedienung</string>
+    <string name="cmd_n">%1$d Fernbedienungen</string>
+
+    <string name="legenda">Jeder Klick erlaubt mehrere Aktionen: Szene, URL oder ntfy.</string>
+
+    <string name="tt_detetar">Neue Fernbedienung suchen</string>
+    <string name="tt_parar">Suche stoppen</string>
+    <string name="tt_notacao">Notation wechseln</string>
+    <string name="tt_tema">Design wechseln</string>
+    <string name="tt_idioma">Sprache</string>
+    <string name="tt_apagar_perfil">Profil löschen</string>
+    <string name="tt_abrir_perfil">Profil öffnen</string>
+    <string name="tt_esquecer">Fernbedienung entfernen</string>
+    <string name="tt_ultimo_perfil">Mindestens ein Profil muss bleiben</string>
+    <string name="tt_remover">Entfernen</string>
+    <string name="tt_confirmar">Bestätigen</string>
+    <string name="tt_config">Einstellungen</string>
+
+    <string name="log_detetado">BLU-Fernbedienung erkannt</string>
+    <string name="bt_sem_suporte">Dieses Telefon hat kein Bluetooth Low Energy.</string>
+    <string name="bt_erro">Suche fehlgeschlagen: %1$s</string>
+    <string name="bt_nenhum">Keine BLU-Fernbedienung gefunden</string>
+    <string name="bt_ja_associado">Fernbedienung bereits verbunden</string>
+    <string name="bt_permissao">Bluetooth-Berechtigung verweigert</string>
+    <string name="bt_desligado">Bluetooth ist ausgeschaltet</string>
+    <string name="carregue_botao">Drücken Sie jetzt die Fernbedienung zur Erkennung.</string>
+    <string name="adicionar_cmd">hinzufügen</string>
+    <string name="candidatos">Gefunden</string>
+
+    <string name="acao_enviada">gesendet</string>
+    <string name="acao_falhou">fehlgeschlagen: %1$s</string>
+    <string name="falta_conta">Shelly-Server oder Cloud-Auth-Key fehlt</string>
+
+    <string name="diag_espera">Wartet auf einen Klick der Fernbedienung</string>
+    <string name="diag_sem_dados">noch keine Pakete</string>
+    <string name="lab_trama">Empfangenes Paket (hex)</string>
+
+    <string name="perm_titulo">Berechtigungen erforderlich</string>
+    <string name="perm_bluetooth">Bluetooth (um die Fernbedienung zu erkennen)</string>
+    <string name="perm_notificacoes">Benachrichtigungen (für Fehlermeldungen im Hintergrund)</string>
+    <string name="perm_pedir">Berechtigungen erteilen</string>
+
+    <string name="canal_servico_nome">Gateway BLU im Hintergrund</string>
+    <string name="canal_servico_desc">Hält die Fernbedienungs-Erkennung aktiv</string>
+    <string name="notif_servico_titulo">Gateway BLU aktiv</string>
+    <string name="notif_servico_texto">Hört auf %1$d Fernbedienung(en)</string>
+    <string name="avancados">Erweiterte Typen anzeigen</string>
+    <string name="menos_avancados">Erweiterte Typen ausblenden</string>
+    <string name="combinacoes">Kombinationen</string>
+    <string name="modo_combinacao">Kombinationsmodus</string>
+    <string name="modo_combinacao_dica">Ignoriert die Klicks unten und reagiert nur auf hier definierte Sequenzen.</string>
+    <string name="janela">Wartefenster</string>
+    <string name="segundos">s</string>
+    <string name="nova_combinacao">+ Neue Kombination</string>
+    <string name="nome_combinacao">Name der Kombination</string>
+    <string name="sequencia">Sequenz</string>
+    <string name="tocar_para_adicionar">Tippen Sie die Symbole der Reihe nach an</string>
+    <string name="limpar_sequencia">löschen</string>
+    <string name="apagar_ultimo">letzten entfernen</string>
+    <string name="combinacao">Kombination</string>
+    <string name="sem_combinacoes">Noch keine Kombination definiert.</string>
+    <string name="guardar_combinacao">Speichern</string>
+    <string name="sequencia_vazia">Fügen Sie mindestens 2 Klicks zur Sequenz hinzu.</string>
+    <string name="cancelar">Abbrechen</string>
+    <string name="sem_comandos_especiais">Keine speziellen Befehle konfiguriert</string>
+    <string name="comandos_especiais">Spezielle Befehle</string>
+    <string name="aguardando_sequencia">Wartet auf Sequenz…</string>
+    <string name="scan_reiniciado">Hören automatisch neu gestartet</string>
+    <string name="tt_som">Ton</string>
+    <string name="alertar_fora_alcance">Warnen bei Reichweitenverlust (erfordert Beacon-Modus)</string>
+    <string name="fora_de_alcance">Außer Reichweite</string>
+    <string name="associar_manual">Manuell hinzufügen</string>
+    <string name="associar_manual_dica">Für Fernbedienungen, die bereits Sicherheit/sichere Bluetooth-Verbindung aktiviert haben — erscheinen nicht als Kandidaten bei der normalen Suche.</string>
+    <string name="mac_dispositivo">Geräte-MAC</string>
+    <string name="nome_comando">Name</string>
+    <string name="chave_encriptacao_opcional">Verschlüsselungsschlüssel (optional)</string>
+    <string name="mac_invalido_ou_existente">Ungültige MAC, oder es existiert bereits eine Fernbedienung mit dieser MAC.</string>
+    <string name="chave_definida">Verschlüsselungsschlüssel festgelegt</string>
+    <string name="definir_chave">Verschlüsselungsschlüssel festlegen</string>
+    <string name="chave_encriptacao_32hex">SCHLÜSSEL (32 HEX-ZEICHEN)</string>
+
+    <string name="fechar">Schließen</string>
+    <string name="ajuda_escuta">Die App hört Bluetooth immer im Hintergrund ab. Tippen Sie nur auf die Lupe, um eine neue Taste zu koppeln — bereits gekoppelte benötigen dies nicht.</string>
+    <string name="ajuda_diag">Zeigt die Taste und den zuletzt empfangenen Klicktyp sowie die technischen Daten in Hex an.</string>
+    <string name="ajuda_comandos">Bereits gekoppelte physische Tasten. Um eine neue zu koppeln: oben auf die Lupe tippen, dann die Taste drücken.</string>
+    <string name="ajuda_config">Shelly Cloud-Konto und Profile — jedes Profil legt die Aktion pro Klicktyp fest.</string>
+    <string name="ajuda_registo">Verlauf von Klicks und Aktionen — nützlich, um zu bestätigen, dass alles funktioniert hat.</string>
+    <string name="sem_escuta">Kein Zuhören</string>
+    <string name="ativo_24h">24h aktiv</string>
+    <string name="dia_dom">So</string>
+    <string name="dia_seg">Mo</string>
+    <string name="dia_ter">Di</string>
+    <string name="dia_qua">Mi</string>
+    <string name="dia_qui">Do</string>
+    <string name="dia_sex">Fr</string>
+    <string name="dia_sab">Sa</string>
+    <string name="periodo_sobreposto">Dieser Zeitraum überschneidet sich mit einem bereits vorhandenen an diesem Tag.</string>
+    <string name="sem_periodos_neste_dia">Kein Zeitraum für diesen Tag festgelegt.</string>
+    <string name="novo_periodo">Neuer Zeitraum</string>
+    <string name="tempo_limite">Zeitlimit</string>
+    <string name="rssi_limite">Mindestsignal</string>
+    <string name="sec_escuta">Abhören</string>
+    <string name="blocos_visiveis">Sichtbare Blöcke</string>
+</resources>

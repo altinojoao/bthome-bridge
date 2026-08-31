@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Anel exterior: sugere um botao fisico circular -->
+    <path
+        android:strokeColor="#2BA6E0"
+        android:strokeWidth="3"
+        android:strokeAlpha="0.35"
+        android:pathData="M54,54 m-32,0 a32,32 0 1,0 64,0 a32,32 0 1,0 -64,0" />
+    <!-- Simbolo Bluetooth classico, centrado -->
+    <path
+        android:strokeColor="#2BA6E0"
+        android:strokeWidth="5.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M54,32 L68,43 L54,54 L68,65 L54,76 L54,32 M40,43 L68,65 M40,65 L68,43" />
+</vector>
