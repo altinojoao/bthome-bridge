@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Gateway BLU Dev</string>
+
+    <string name="ouvir">Nasłuchuje</string>
+    <string name="ecra_apagado">W oczekiwaniu</string>
+    <string name="a_pesquisar">Szukanie…</string>
+
+    <string name="cmd_assoc_1">1 pilot powiązany</string>
+    <string name="cmd_assoc_n">Piloty powiązane: %1$d</string>
+
+    <string name="sec_comandos">Piloty</string>
+    <string name="sec_conta">Konto Shelly</string>
+    <string name="sec_perfis">Profile akcji</string>
+    <string name="sec_registo">Dziennik</string>
+    <string name="sec_diag">Diagnostyka</string>
+    <string name="sec_config">Konfiguracja</string>
+
+    <string name="definida">ustawiony</string>
+    <string name="servidor">Serwer</string>
+    <string name="num">Nr</string>
+    <string name="auth_key">KLUCZ AUTH CHMURY</string>
+    <string name="mostrar">pokaż</string>
+    <string name="ocultar">ukryj</string>
+    <string name="aviso_conta">Daje pełną kontrolę nad kontem. Nie pokazuj na zrzutach ekranu.</string>
+
+    <string name="dica_perfis">Jeden profil może być używany przez wiele pilotów.</string>
+    <string name="novo_perfil">+ Nowy profil</string>
+    <string name="nome_novo_perfil">Nowy profil</string>
+    <string name="sem_nome">Profil bez nazwy</string>
+    <string name="abrir">otwórz</string>
+    <string name="aberto">otwarty</string>
+    <string name="apagar_q">usunąć?</string>
+    <string name="esquecer_q">zapomnieć?</string>
+    <string name="fechar_perfil">Zamknij profil</string>
+
+    <string name="nenhum_comando">Brak pilotów. Dotknij 🔍, aby wyszukać.</string>
+
+    <string name="ev0">Pojedyncze kliknięcie</string>
+    <string name="ev1">Podwójne kliknięcie</string>
+    <string name="ev2">Potrójne kliknięcie</string>
+    <string name="ev3">Długie naciśnięcie</string>
+    <string name="ev4">Długie podwójne kliknięcie</string>
+    <string name="ev5">Długie potrójne kliknięcie</string>
+    <string name="ev6">Przytrzymanie</string>
+
+    <string name="cenario">Scena</string>
+    <string name="url">URL</string>
+    <string name="ntfy">Ntfy</string>
+
+    <string name="id_cenario">ID SCENY</string>
+    <string name="endereco">ADRES</string>
+    <string name="topico_ntfy">TEMAT NTFY</string>
+    <string name="msg_ntfy">WIADOMOŚĆ (OPCJONALNIE)</string>
+    <string name="msg_exemplo">{evento} · {bateria}%</string>
+    <string name="add_acao">+ Dodaj akcję</string>
+
+    <string name="acao_1">1 akcja</string>
+    <string name="acao_n">Akcje: %1$d</string>
+    <string name="perfil_1">1 profil</string>
+    <string name="perfil_n">Profile: %1$d</string>
+    <string name="cmd_1">1 pilot</string>
+    <string name="cmd_n">Piloty: %1$d</string>
+
+    <string name="legenda">Każde kliknięcie obsługuje wiele akcji: scena, URL lub ntfy.</string>
+
+    <string name="tt_detetar">Szukaj nowego pilota</string>
+    <string name="tt_parar">Zatrzymaj wyszukiwanie</string>
+    <string name="tt_notacao">Zmień notację</string>
+    <string name="tt_tema">Zmień motyw</string>
+    <string name="tt_idioma">Język</string>
+    <string name="tt_apagar_perfil">Usuń profil</string>
+    <string name="tt_abrir_perfil">Otwórz profil</string>
+    <string name="tt_esquecer">Zapomnij pilota</string>
+    <string name="tt_ultimo_perfil">Musi pozostać co najmniej jeden profil</string>
+    <string name="tt_remover">Usuń</string>
+    <string name="tt_confirmar">Potwierdź</string>
+    <string name="tt_config">Ustawienia</string>
+
+    <string name="log_detetado">Wykryto pilota BLU</string>
+    <string name="bt_sem_suporte">Ten telefon nie ma Bluetooth Low Energy.</string>
+    <string name="bt_erro">Skanowanie nieudane: %1$s</string>
+    <string name="bt_nenhum">Nie znaleziono pilota BLU</string>
+    <string name="bt_ja_associado">Pilot już powiązany</string>
+    <string name="bt_permissao">Odmowa dostępu do Bluetooth</string>
+    <string name="bt_desligado">Bluetooth jest wyłączony</string>
+    <string name="carregue_botao">Naciśnij teraz pilota, aby go zidentyfikować.</string>
+    <string name="adicionar_cmd">dodaj</string>
+    <string name="candidatos">Znalezione</string>
+
+    <string name="acao_enviada">wysłano</string>
+    <string name="acao_falhou">niepowodzenie: %1$s</string>
+    <string name="falta_conta">Brak serwera lub klucza auth konta Shelly</string>
+
+    <string name="diag_espera">Oczekiwanie na kliknięcie pilota</string>
+    <string name="diag_sem_dados">jeszcze brak ramek</string>
+    <string name="lab_trama">Odebrana ramka (hex)</string>
+
+    <string name="perm_titulo">Wymagane uprawnienia</string>
+    <string name="perm_bluetooth">Bluetooth (do wykrywania pilota)</string>
+    <string name="perm_notificacoes">Powiadomienia (dla alertów o błędach w tle)</string>
+    <string name="perm_pedir">Przyznaj uprawnienia</string>
+
+    <string name="canal_servico_nome">Gateway BLU w tle</string>
+    <string name="canal_servico_desc">Utrzymuje aktywne nasłuchiwanie pilota</string>
+    <string name="notif_servico_titulo">Gateway BLU aktywny</string>
+    <string name="notif_servico_texto">Nasłuchiwanie %1$d pilota/ów</string>
+    <string name="avancados">Pokaż typy zaawansowane</string>
+    <string name="menos_avancados">Ukryj typy zaawansowane</string>
+    <string name="combinacoes">Kombinacje</string>
+    <string name="modo_combinacao">Tryb kombinacji</string>
+    <string name="modo_combinacao_dica">Ignoruje kliknięcia poniżej i reaguje tylko na sekwencje zdefiniowane tutaj.</string>
+    <string name="janela">Okno oczekiwania</string>
+    <string name="segundos">s</string>
+    <string name="nova_combinacao">+ Nowa kombinacja</string>
+    <string name="nome_combinacao">Nazwa kombinacji</string>
+    <string name="sequencia">Sekwencja</string>
+    <string name="tocar_para_adicionar">Dotknij symboli po kolei</string>
+    <string name="limpar_sequencia">wyczyść</string>
+    <string name="apagar_ultimo">usuń ostatni</string>
+    <string name="combinacao">Kombinacja</string>
+    <string name="sem_combinacoes">Brak jeszcze zdefiniowanej kombinacji.</string>
+    <string name="guardar_combinacao">Zapisz</string>
+    <string name="sequencia_vazia">Dodaj co najmniej 2 kliknięcia do sekwencji.</string>
+    <string name="cancelar">Anuluj</string>
+    <string name="sem_comandos_especiais">Brak skonfigurowanych poleceń specjalnych</string>
+    <string name="comandos_especiais">Polecenia specjalne</string>
+    <string name="aguardando_sequencia">Oczekiwanie na sekwencję…</string>
+    <string name="scan_reiniciado">Nasłuchiwanie zostało automatycznie zrestartowane</string>
+    <string name="tt_som">Dźwięk</string>
+    <string name="alertar_fora_alcance">Powiadom przy utracie zasięgu (wymaga trybu beacon)</string>
+    <string name="fora_de_alcance">Poza zasięgiem</string>
+    <string name="associar_manual">Dodaj ręcznie</string>
+    <string name="associar_manual_dica">Dla pilotów, które mają już włączone Zabezpieczenia/bezpieczne połączenie Bluetooth — nie pojawiają się jako kandydaci podczas normalnego skanowania.</string>
+    <string name="mac_dispositivo">MAC urządzenia</string>
+    <string name="nome_comando">Nazwa</string>
+    <string name="chave_encriptacao_opcional">Klucz szyfrowania (opcjonalnie)</string>
+    <string name="mac_invalido_ou_existente">Nieprawidłowy MAC lub pilot z tym MAC już istnieje.</string>
+    <string name="chave_definida">Klucz szyfrowania ustawiony</string>
+    <string name="definir_chave">Ustaw klucz szyfrowania</string>
+    <string name="chave_encriptacao_32hex">KLUCZ (32 ZNAKI HEX)</string>
+
+    <string name="fechar">Zamknij</string>
+    <string name="ajuda_escuta">Aplikacja nasłuchuje Bluetooth zawsze w tle. Dotknij lupy tylko, aby sparować nowy przycisk — już sparowane tego nie wymagają.</string>
+    <string name="ajuda_diag">Pokazuje przycisk i ostatnio odebrany typ kliknięcia oraz dane techniczne w hex.</string>
+    <string name="ajuda_comandos">Już sparowane przyciski fizyczne. Aby sparować nowy: dotknij lupy powyżej, a następnie naciśnij przycisk.</string>
+    <string name="ajuda_config">Konto Shelly Cloud i profile — każdy profil określa akcję dla danego typu kliknięcia.</string>
+    <string name="ajuda_registo">Historia kliknięć i akcji — przydatna do potwierdzenia, że wszystko działa poprawnie.</string>
+    <string name="sem_escuta">Brak nasłuchu</string>
+    <string name="ativo_24h">Aktywne 24h</string>
+    <string name="dia_dom">Nd</string>
+    <string name="dia_seg">Pn</string>
+    <string name="dia_ter">Wt</string>
+    <string name="dia_qua">Śr</string>
+    <string name="dia_qui">Cz</string>
+    <string name="dia_sex">Pt</string>
+    <string name="dia_sab">Sb</string>
+    <string name="periodo_sobreposto">Ten okres pokrywa się z już istniejącym w tym dniu.</string>
+    <string name="sem_periodos_neste_dia">Brak okresów ustawionych na ten dzień.</string>
+    <string name="novo_periodo">Nowy okres</string>
+    <string name="tempo_limite">Limit czasu</string>
+    <string name="rssi_limite">Minimalny sygnał</string>
+    <string name="sec_escuta">Nasłuch</string>
+    <string name="blocos_visiveis">Widoczne bloki</string>
+</resources>

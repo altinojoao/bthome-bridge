@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.BluGateway" parent="android:Theme.Material.NoActionBar">
+        <item name="android:statusBarColor">#0D1117</item>
+        <item name="android:windowBackground">#0D1117</item>
+    </style>
+
+    <!-- Tema do ecrã de arranque (SplashScreen API, Android 12+, com
+         compatibilidade ate API 21 via androidx.core:core-splashscreen).
+         Usa o mesmo simbolo Bluetooth do icone da app, sobre o fundo
+         escuro da marca. A animacao de saida (fade + escala) e definida
+         em codigo, em MainActivity, atraves de setOnExitAnimationListener. -->
+    <style name="Theme.BluGateway.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">#0D1117</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="windowSplashScreenAnimationDuration">700</item>
+        <item name="postSplashScreenTheme">@style/Theme.BluGateway</item>
+    </style>
+</resources>

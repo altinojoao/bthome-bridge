@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Gateway BLU Dev</string>
+
+    <string name="ouvir">Luistert</string>
+    <string name="ecra_apagado">In afwachting</string>
+    <string name="a_pesquisar">Zoeken…</string>
+
+    <string name="cmd_assoc_1">1 afstandsbediening gekoppeld</string>
+    <string name="cmd_assoc_n">%1$d afstandsbedieningen gekoppeld</string>
+
+    <string name="sec_comandos">Afstandsbedieningen</string>
+    <string name="sec_conta">Shelly-account</string>
+    <string name="sec_perfis">Actieprofielen</string>
+    <string name="sec_registo">Logboek</string>
+    <string name="sec_diag">Diagnose</string>
+    <string name="sec_config">Instellingen</string>
+
+    <string name="definida">ingesteld</string>
+    <string name="servidor">Server</string>
+    <string name="num">Nr.</string>
+    <string name="auth_key">CLOUD-AUTHSLEUTEL</string>
+    <string name="mostrar">tonen</string>
+    <string name="ocultar">verbergen</string>
+    <string name="aviso_conta">Geeft volledige toegang tot het account. Niet tonen in schermafbeeldingen.</string>
+
+    <string name="dica_perfis">Een profiel kan door meerdere afstandsbedieningen gebruikt worden.</string>
+    <string name="novo_perfil">+ Nieuw profiel</string>
+    <string name="nome_novo_perfil">Nieuw profiel</string>
+    <string name="sem_nome">Naamloos profiel</string>
+    <string name="abrir">openen</string>
+    <string name="aberto">open</string>
+    <string name="apagar_q">verwijderen?</string>
+    <string name="esquecer_q">vergeten?</string>
+    <string name="fechar_perfil">Profiel sluiten</string>
+
+    <string name="nenhum_comando">Geen afstandsbediening. Tik op 🔍 om te zoeken.</string>
+
+    <string name="ev0">Enkele klik</string>
+    <string name="ev1">Dubbele klik</string>
+    <string name="ev2">Drievoudige klik</string>
+    <string name="ev3">Lang indrukken</string>
+    <string name="ev4">Lange dubbele klik</string>
+    <string name="ev5">Lange drievoudige klik</string>
+    <string name="ev6">Ingedrukt houden</string>
+
+    <string name="cenario">Scène</string>
+    <string name="url">URL</string>
+    <string name="ntfy">Ntfy</string>
+
+    <string name="id_cenario">SCÈNE-ID</string>
+    <string name="endereco">ADRES</string>
+    <string name="topico_ntfy">NTFY-ONDERWERP</string>
+    <string name="msg_ntfy">BERICHT (OPTIONEEL)</string>
+    <string name="msg_exemplo">{evento} · {bateria}%</string>
+    <string name="add_acao">+ Actie toevoegen</string>
+
+    <string name="acao_1">1 actie</string>
+    <string name="acao_n">%1$d acties</string>
+    <string name="perfil_1">1 profiel</string>
+    <string name="perfil_n">%1$d profielen</string>
+    <string name="cmd_1">1 afstandsbediening</string>
+    <string name="cmd_n">%1$d afstandsbedieningen</string>
+
+    <string name="legenda">Elke klik ondersteunt meerdere acties: scène, URL of ntfy.</string>
+
+    <string name="tt_detetar">Nieuwe afstandsbediening zoeken</string>
+    <string name="tt_parar">Zoeken stoppen</string>
+    <string name="tt_notacao">Notatie wisselen</string>
+    <string name="tt_tema">Thema wisselen</string>
+    <string name="tt_idioma">Taal</string>
+    <string name="tt_apagar_perfil">Profiel verwijderen</string>
+    <string name="tt_abrir_perfil">Profiel openen</string>
+    <string name="tt_esquecer">Afstandsbediening vergeten</string>
+    <string name="tt_ultimo_perfil">Er moet minstens één profiel blijven</string>
+    <string name="tt_remover">Verwijderen</string>
+    <string name="tt_confirmar">Bevestigen</string>
+    <string name="tt_config">Instellingen</string>
+
+    <string name="log_detetado">BLU-afstandsbediening gevonden</string>
+    <string name="bt_sem_suporte">Deze telefoon heeft geen Bluetooth Low Energy.</string>
+    <string name="bt_erro">Scan mislukt: %1$s</string>
+    <string name="bt_nenhum">Geen BLU-afstandsbediening gevonden</string>
+    <string name="bt_ja_associado">Afstandsbediening al gekoppeld</string>
+    <string name="bt_permissao">Bluetooth-toestemming geweigerd</string>
+    <string name="bt_desligado">Bluetooth is uitgeschakeld</string>
+    <string name="carregue_botao">Druk nu op de afstandsbediening om deze te herkennen.</string>
+    <string name="adicionar_cmd">toevoegen</string>
+    <string name="candidatos">Gevonden</string>
+
+    <string name="acao_enviada">verzonden</string>
+    <string name="acao_falhou">mislukt: %1$s</string>
+    <string name="falta_conta">Shelly-server of cloud-authsleutel ontbreekt</string>
+
+    <string name="diag_espera">Wacht op een klik van de afstandsbediening</string>
+    <string name="diag_sem_dados">nog geen frames</string>
+    <string name="lab_trama">Ontvangen frame (hex)</string>
+
+    <string name="perm_titulo">Machtigingen vereist</string>
+    <string name="perm_bluetooth">Bluetooth (om de afstandsbediening te herkennen)</string>
+    <string name="perm_notificacoes">Meldingen (voor foutmeldingen op de achtergrond)</string>
+    <string name="perm_pedir">Machtigingen verlenen</string>
+
+    <string name="canal_servico_nome">Gateway BLU op achtergrond</string>
+    <string name="canal_servico_desc">Houdt het luisteren naar de afstandsbediening actief</string>
+    <string name="notif_servico_titulo">Gateway BLU actief</string>
+    <string name="notif_servico_texto">Luistert naar %1$d afstandsbediening(en)</string>
+    <string name="avancados">Geavanceerde typen tonen</string>
+    <string name="menos_avancados">Geavanceerde typen verbergen</string>
+    <string name="combinacoes">Combinaties</string>
+    <string name="modo_combinacao">Combinatiemodus</string>
+    <string name="modo_combinacao_dica">Negeert de klikken hieronder en reageert alleen op hier gedefinieerde reeksen.</string>
+    <string name="janela">Wachtvenster</string>
+    <string name="segundos">s</string>
+    <string name="nova_combinacao">+ Nieuwe combinatie</string>
+    <string name="nome_combinacao">Naam van de combinatie</string>
+    <string name="sequencia">Reeks</string>
+    <string name="tocar_para_adicionar">Tik de symbolen in volgorde aan</string>
+    <string name="limpar_sequencia">wissen</string>
+    <string name="apagar_ultimo">laatste verwijderen</string>
+    <string name="combinacao">Combinatie</string>
+    <string name="sem_combinacoes">Nog geen combinatie gedefinieerd.</string>
+    <string name="guardar_combinacao">Opslaan</string>
+    <string name="sequencia_vazia">Voeg minstens 2 klikken toe aan de reeks.</string>
+    <string name="cancelar">Annuleren</string>
+    <string name="sem_comandos_especiais">Geen speciale opdrachten geconfigureerd</string>
+    <string name="comandos_especiais">Speciale opdrachten</string>
+    <string name="aguardando_sequencia">Wacht op reeks…</string>
+    <string name="scan_reiniciado">Luisteren automatisch opnieuw gestart</string>
+    <string name="tt_som">Geluid</string>
+    <string name="alertar_fora_alcance">Waarschuwen bij buiten bereik (vereist beacon-modus)</string>
+    <string name="fora_de_alcance">Buiten bereik</string>
+    <string name="associar_manual">Handmatig toevoegen</string>
+    <string name="associar_manual_dica">Voor afstandsbedieningen die al Beveiliging/veilige Bluetooth-verbinding hebben ingeschakeld — verschijnen niet als kandidaten tijdens normaal scannen.</string>
+    <string name="mac_dispositivo">MAC van apparaat</string>
+    <string name="nome_comando">Naam</string>
+    <string name="chave_encriptacao_opcional">Versleutelingssleutel (optioneel)</string>
+    <string name="mac_invalido_ou_existente">Ongeldige MAC, of er bestaat al een afstandsbediening met deze MAC.</string>
+    <string name="chave_definida">Versleutelingssleutel ingesteld</string>
+    <string name="definir_chave">Versleutelingssleutel instellen</string>
+    <string name="chave_encriptacao_32hex">SLEUTEL (32 HEX-TEKENS)</string>
+
+    <string name="fechar">Sluiten</string>
+    <string name="ajuda_escuta">De app luistert altijd op de achtergrond naar Bluetooth. Tik alleen op het vergrootglas om een nieuwe knop te koppelen — al gekoppelde knoppen hebben dit niet nodig.</string>
+    <string name="ajuda_diag">Toont de knop en het meest recente kliktype, en de technische gegevens in hex.</string>
+    <string name="ajuda_comandos">Reeds gekoppelde fysieke knoppen. Om een nieuwe te koppelen: tik hierboven op het vergrootglas en druk dan op de knop.</string>
+    <string name="ajuda_config">Shelly Cloud-account en profielen — elk profiel bepaalt de actie per kliktype.</string>
+    <string name="ajuda_registo">Geschiedenis van klikken en acties — handig om te bevestigen dat alles goed is gegaan.</string>
+    <string name="sem_escuta">Geen luister</string>
+    <string name="ativo_24h">24u actief</string>
+    <string name="dia_dom">Zo</string>
+    <string name="dia_seg">Ma</string>
+    <string name="dia_ter">Di</string>
+    <string name="dia_qua">Wo</string>
+    <string name="dia_qui">Do</string>
+    <string name="dia_sex">Vr</string>
+    <string name="dia_sab">Za</string>
+    <string name="periodo_sobreposto">Deze periode overlapt met een periode die al bestaat op die dag.</string>
+    <string name="sem_periodos_neste_dia">Geen periodes ingesteld voor deze dag.</string>
+    <string name="novo_periodo">Nieuwe periode</string>
+    <string name="tempo_limite">Tijdslimiet</string>
+    <string name="rssi_limite">Minimaal signaal</string>
+    <string name="sec_escuta">Luisteren</string>
+    <string name="blocos_visiveis">Zichtbare blokken</string>
+</resources>

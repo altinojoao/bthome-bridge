@@ -76,6 +76,24 @@ Alternativa sem chave: uma VPN até casa e chamar o RPC do dispositivo
 diretamente por IP local. Sem cloud, sem chave — mas perdem-se os cenários
 (vivem na cloud), e é preciso algo em casa a correr a VPN.
 
+## Alarme de fora de alcance
+
+Por comando, é possível ativar um alerta que dispara se não chegar nenhum
+sinal (clique ou anúncio) durante um tempo configurável, ou se o último RSSI
+recebido for mais fraco que um limite configurável. Requer que o comando
+tenha o modo beacon ativado — sem beacon, o único sinal possível é o próprio
+clique, o que não permite distinguir "fora de alcance" de "não foi premido".
+
+O alarme pode ficar sempre ativo (24h) ou só dentro de uma agenda semanal
+configurável por dia, com vários períodos por dia, incluindo períodos que
+atravessam a meia-noite.
+
+## Combinações de cliques
+
+Um perfil pode reagir a uma sequência de cliques (ex: duplo → simples →
+longo) dentro de uma janela de tempo, em vez de reagir a cada clique
+isoladamente.
+
 ## Notas técnicas
 
 O comando repete o mesmo anúncio cerca de vinte vezes por clique. A app
@@ -88,8 +106,10 @@ O filtro de scan é obrigatório: o Android recusa scans por `PendingIntent` sem
 pelo menos um `ScanFilter`. Aqui filtra-se pelo service data BTHome (`0xFCD2`)
 e pelo endereço do comando.
 
-Se o comando estiver emparelhado com encriptação, as tramas chegam ilegíveis e
-o registo di-lo. Nesse caso é preciso desemparelhá-lo.
+Se o comando estiver emparelhado com encriptação (AES-128-CCM), a app consegue
+decifrar as tramas desde que a chave de 32 caracteres hex seja introduzida
+manualmente no comando associado — essa chave só é exposta pela Shelly através
+de ferramentas de debug BLE, não pela app normal.
 
 ## Limitações
 
@@ -99,7 +119,6 @@ o registo di-lo. Nesse caso é preciso desemparelhá-lo.
   não para a Play Store.
 - **Custo de bateria.** Usa o modo de scan de baixa latência para não perder
   cliques. É o modo caro.
-- **Só BTHome sem encriptação.**
 - **Não substitui um gateway fixo.** Para sensores que ficam em casa, um
   dispositivo Plus/Pro ou a dongle continuam a ser a resposta certa. Isto
   serve para dispositivos BLU que andam consigo.
