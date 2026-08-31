@@ -132,10 +132,15 @@ object ExecutorAcoes {
             )
             return
         }
-        val url = "$servidor/scene/manual_run?id=${encURL(sceneId)}" +
-            "&auth_key=${encURL(conta.authKey)}"
-
-        enviaGet(url, context.getString(R.string.cenario))
+        // auth_key vai no CORPO do pedido (nao na query string) para nao
+        // ficar exposta em logs de proxy, historico de DNS/CDN, cabecalhos
+        // Referer reencaminhados, etc. -- a propria documentacao da Shelly
+        // Cloud API recomenda POST com o corpo application/x-www-form-urlencoded
+        // para qualquer pedido que altere estado (o GET com auth_key na URL
+        // so persiste noutros endpoints por compatibilidade historica).
+        val url = "$servidor/scene/manual_run"
+        val corpo = "id=${encURL(sceneId)}&auth_key=${encURL(conta.authKey)}"
+        enviaPost(url, corpo, "application/x-www-form-urlencoded", context.getString(R.string.cenario))
     }
 
     private fun executaUrlLivre(context: Context, valorBruto: String, metodo: Metodo, ctx: ContextoClique) {
