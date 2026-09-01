@@ -64,5 +64,11 @@ dependencies {
     implementation 'com.squareup.okhttp3:okhttp:4.12.0'
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1'
 
+    // Mapa do historico de trajeto (EcraMapa) -- osmdroid, sem chave
+    // de API. Projeto arquivado pelo mantenedor desde 2022 (sem mais
+    // atualizacoes previstas), mas continua estavel e funcional; a
+    // ultima versao publicada e a 6.1.14.
+    implementation 'org.osmdroid:osmdroid-android:6.1.14'
+
     debugImplementation 'androidx.compose.ui:ui-tooling'
 }

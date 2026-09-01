@@ -46,7 +46,14 @@ object ExecutorAcoes {
         val acoes = perfil.eventos.getOrNull(indiceEvento) ?: return
         if (acoes.isEmpty()) return
 
-        val ctx = ContextoClique(evento, codigo, mac, bateria, rssi, timestampIso())
+        val localizacao = if (comando.incluirLocalizacao) {
+            GestorLocalizacao.obtemLocalizacaoAtual(context)
+        } else null
+        localizacao?.let { (lat, lon) ->
+            pt.blugateway.ble.GestorTrajeto.registaPontoDeClique(context, mac, lat, lon)
+        }
+
+        val ctx = ContextoClique(evento, codigo, mac, bateria, rssi, timestampIso(), localizacao?.first, localizacao?.second)
         for (acao in acoes) executaAcao(context, acao, ctx)
     }
 
@@ -60,10 +67,17 @@ object ExecutorAcoes {
         codigo: Int,
         mac: String,
         bateria: Int?,
-        rssi: Int?
+        rssi: Int?,
+        incluirLocalizacao: Boolean = false
     ) {
         if (acoes.isEmpty()) return
-        val ctx = ContextoClique(evento, codigo, mac, bateria, rssi, timestampIso())
+        val localizacao = if (incluirLocalizacao) {
+            GestorLocalizacao.obtemLocalizacaoAtual(context)
+        } else null
+        localizacao?.let { (lat, lon) ->
+            pt.blugateway.ble.GestorTrajeto.registaPontoDeClique(context, mac, lat, lon)
+        }
+        val ctx = ContextoClique(evento, codigo, mac, bateria, rssi, timestampIso(), localizacao?.first, localizacao?.second)
         for (acao in acoes) executaAcao(context, acao, ctx)
     }
 
@@ -80,7 +94,8 @@ object ExecutorAcoes {
 
     data class ContextoClique(
         val evento: String, val codigo: Int, val mac: String,
-        val bateria: Int?, val rssi: Int?, val timestamp: String
+        val bateria: Int?, val rssi: Int?, val timestamp: String,
+        val latitude: Double? = null, val longitude: Double? = null
     )
 
     private fun timestampIso(): String {
@@ -96,6 +111,8 @@ object ExecutorAcoes {
         put("bateria", ctx.bateria ?: JSONObject.NULL)
         put("rssi", ctx.rssi ?: JSONObject.NULL)
         put("timestamp", ctx.timestamp)
+        put("lat", ctx.latitude ?: JSONObject.NULL)
+        put("lon", ctx.longitude ?: JSONObject.NULL)
     }.toString()
 
     // URLEncoder.encode() do Java codifica espaco como '+', nao '%20' --
@@ -111,6 +128,8 @@ object ExecutorAcoes {
             .replace("{bateria}", encURL(ctx.bateria?.toString() ?: ""))
             .replace("{rssi}", encURL(ctx.rssi?.toString() ?: ""))
             .replace("{timestamp}", encURL(ctx.timestamp))
+            .replace("{lat}", encURL(ctx.latitude?.toString() ?: ""))
+            .replace("{lon}", encURL(ctx.longitude?.toString() ?: ""))
     }
 
     private fun preencheTexto(txt: String, ctx: ContextoClique): String = txt
@@ -120,6 +139,8 @@ object ExecutorAcoes {
         .replace("{bateria}", ctx.bateria?.toString() ?: "")
         .replace("{rssi}", ctx.rssi?.toString() ?: "")
         .replace("{timestamp}", ctx.timestamp)
+        .replace("{lat}", ctx.latitude?.toString() ?: "")
+        .replace("{lon}", ctx.longitude?.toString() ?: "")
 
     private fun executaCenario(context: Context, sceneId: String) {
         val repo = Repositorio(context)

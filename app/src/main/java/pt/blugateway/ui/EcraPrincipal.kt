@@ -41,6 +41,7 @@ fun EcraPrincipal(vm: GatewayViewModel = viewModel()) {
     var mostraScan by remember { mutableStateOf(false) }
     var mostraSeletorIdioma by remember { mutableStateOf(false) }
     var mostraCardsVisiveis by remember { mutableStateOf(false) }
+    var mostraMapa by remember { mutableStateOf(false) }
     var balaoAtivo by remember { mutableStateOf(BalaoAtivo.NENHUM) }
 
     val contextoBase = LocalContext.current
@@ -73,7 +74,8 @@ fun EcraPrincipal(vm: GatewayViewModel = viewModel()) {
                     onAlternaTema = { vm.trocaTema() },
                     onAlternaSom = { vm.trocaSom() },
                     onEscolheIdioma = { mostraSeletorIdioma = true },
-                    onAbreCardsVisiveis = { mostraCardsVisiveis = true }
+                    onAbreCardsVisiveis = { mostraCardsVisiveis = true },
+                    onAbreMapa = { mostraMapa = true }
                 )
 
                 if ("hero" !in cardsDesativados) {
@@ -120,7 +122,10 @@ fun EcraPrincipal(vm: GatewayViewModel = viewModel()) {
                             onAdicionaPeriodoAgenda = vm::adicionaPeriodoAgenda,
                             onRemovePeriodoAgenda = vm::removePeriodoAgenda,
                             onDefineChave = vm::defineChaveEncriptacao,
-                            onAssociaManual = vm::associaComandoManual
+                            onAssociaManual = vm::associaComandoManual,
+                            onAlternaIncluirLocalizacao = vm::defineIncluirLocalizacao,
+                            onAlternaModoBeaconTrajeto = vm::alternaModoBeaconTrajeto,
+                            onDefineIntervaloBeaconTrajeto = vm::defineIntervaloBeaconTrajeto
                         )
                     }
 
@@ -218,6 +223,14 @@ fun EcraPrincipal(vm: GatewayViewModel = viewModel()) {
                     cardsDesativados = cardsDesativados,
                     onAlternaCard = vm::defineCardAtivo,
                     onFecha = { mostraCardsVisiveis = false }
+                )
+            }
+
+            if (mostraMapa) {
+                EcraMapa(
+                    comandos = comandos,
+                    onLimpaTrajeto = vm::limpaTrajeto,
+                    onFecha = { mostraMapa = false }
                 )
             }
         }
