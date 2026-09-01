@@ -30,6 +30,7 @@ class Repositorio private constructor(context: Context) {
 
     companion object {
         const val TEMPO_DESTAQUE_COMBINACAO_MS = 6000L
+        private const val DIAS_HISTORICO_TRAJETO_MS = 30L * 24 * 60 * 60 * 1000
 
         @Volatile private var instancia: Repositorio? = null
 
@@ -324,6 +325,28 @@ class Repositorio private constructor(context: Context) {
         guardaComandos(lista)
     }
 
+    fun defineIncluirLocalizacao(mac: String, incluir: Boolean) {
+        val lista = _comandos.value.map {
+            if (it.mac == mac) it.copy(incluirLocalizacao = incluir) else it
+        }
+        guardaComandos(lista)
+    }
+
+    fun alternaModoBeaconTrajeto(mac: String, ativo: Boolean) {
+        val lista = _comandos.value.map {
+            if (it.mac == mac) it.copy(modoBeaconTrajeto = ativo) else it
+        }
+        guardaComandos(lista)
+    }
+
+    fun defineIntervaloBeaconTrajeto(mac: String, segundos: Int) {
+        val ms = segundos.coerceAtLeast(1) * 1000L
+        val lista = _comandos.value.map {
+            if (it.mac == mac) it.copy(intervaloBeaconMs = ms) else it
+        }
+        guardaComandos(lista)
+    }
+
     /** Chamado pelo vigilante de alcance quando um comando passa a
      *  estar/deixar de estar fora de alcance. Devolve true se o
      *  estado realmente mudou (para o chamador so tocar o alarme na
@@ -399,5 +422,39 @@ class Repositorio private constructor(context: Context) {
         val atuais = cardsDesativados().toMutableSet()
         if (ativo) atuais.remove(idBloco) else atuais.add(idBloco)
         prefs.edit().putStringSet("cards_desativados", atuais).apply()
+    }
+
+    /** Historico de trajeto por comando -- uma chave SharedPreferences
+     *  POR MAC (nao um unico blob gigante com todos os comandos), para
+     *  poder ler/escrever o historico de um comando sem tocar nos
+     *  outros. Mantem so os ultimos DIAS_HISTORICO_TRAJETO dias --
+     *  pontos mais antigos sao descartados a cada gravacao. */
+    fun historicoTrajeto(mac: String): List<PontoTrajeto> {
+        val raw = prefs.getString("trajeto_$mac", null) ?: return emptyList()
+        return try {
+            val arr = JSONArray(raw)
+            (0 until arr.length()).mapNotNull { i -> PontoTrajeto.deJson(arr.getJSONObject(i)) }
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    fun adicionaPontoTrajeto(mac: String, ponto: PontoTrajeto) {
+        val limite = System.currentTimeMillis() - DIAS_HISTORICO_TRAJETO_MS
+        val atualizado = (historicoTrajeto(mac) + ponto).filter { it.timestamp >= limite }
+        val arr = JSONArray()
+        atualizado.forEach { arr.put(it.paraJson()) }
+        prefs.edit().putString("trajeto_$mac", arr.toString()).apply()
+    }
+
+    fun limpaTrajeto(mac: String) {
+        prefs.edit().remove("trajeto_$mac").apply()
+    }
+
+    fun atualizaUltimoPontoTrajeto(mac: String, timestamp: Long) {
+        val lista = _comandos.value.map {
+            if (it.mac == mac) it.copy(ultimoPontoTrajetoEm = timestamp) else it
+        }
+        guardaComandos(lista)
     }
 }

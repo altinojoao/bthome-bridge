@@ -1,5 +1,7 @@
 package pt.blugateway.ui
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -10,6 +12,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -19,6 +22,7 @@ import pt.blugateway.R
 import pt.blugateway.ble.Candidato
 import pt.blugateway.data.Comando
 import pt.blugateway.data.Perfil
+import pt.blugateway.net.GestorLocalizacao
 import pt.blugateway.ui.theme.LocalCoresGateway
 
 @Composable
@@ -40,11 +44,28 @@ fun CartaoComandos(
     onAdicionaPeriodoAgenda: (String, Int, String, String) -> Boolean,
     onRemovePeriodoAgenda: (String, Int, Int) -> Unit,
     onDefineChave: (String, String?) -> Unit,
-    onAssociaManual: (String, String, String?) -> Boolean
+    onAssociaManual: (String, String, String?) -> Boolean,
+    onAlternaIncluirLocalizacao: (String, Boolean) -> Unit,
+    onAlternaModoBeaconTrajeto: (String, Boolean) -> Unit,
+    onDefineIntervaloBeaconTrajeto: (String, Int) -> Unit
 ) {
     val cores = LocalCoresGateway.current
     var aberto by remember { mutableStateOf(true) }
     var mostraDialogoManual by remember { mutableStateOf(false) }
+    var macPendenteLocalizacao by remember { mutableStateOf<String?>(null) }
+
+    val lancadorPermissaoLocalizacao = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { resultados ->
+        // so ativa de facto se pelo menos uma das duas permissoes (fina
+        // ou aproximada) foi concedida -- se o utilizador recusou as
+        // duas, o interruptor desse comando fica desligado
+        val mac = macPendenteLocalizacao
+        if (mac != null && resultados.values.any { it }) {
+            onAlternaIncluirLocalizacao(mac, true)
+        }
+        macPendenteLocalizacao = null
+    }
 
     Column(
         Modifier
@@ -109,7 +130,19 @@ fun CartaoComandos(
                         onAlternaAgendaSempreAtiva = { sa -> onAlternaAgendaSempreAtiva(c.mac, sa) },
                         onAdicionaPeriodoAgenda = { dia, ini, fim -> onAdicionaPeriodoAgenda(c.mac, dia, ini, fim) },
                         onRemovePeriodoAgenda = { dia, idx -> onRemovePeriodoAgenda(c.mac, dia, idx) },
-                        onDefineChave = { chave -> onDefineChave(c.mac, chave) }
+                        onDefineChave = { chave -> onDefineChave(c.mac, chave) },
+                        onAlternaIncluirLocalizacao = { incluir -> onAlternaIncluirLocalizacao(c.mac, incluir) },
+                        onAlternaModoBeaconTrajeto = { ativo -> onAlternaModoBeaconTrajeto(c.mac, ativo) },
+                        onDefineIntervaloBeaconTrajeto = { seg -> onDefineIntervaloBeaconTrajeto(c.mac, seg) },
+                        onPedePermissaoLocalizacao = {
+                            macPendenteLocalizacao = c.mac
+                            lancadorPermissaoLocalizacao.launch(
+                                arrayOf(
+                                    android.Manifest.permission.ACCESS_FINE_LOCATION,
+                                    android.Manifest.permission.ACCESS_COARSE_LOCATION
+                                )
+                            )
+                        }
                     )
                 }
 
@@ -158,7 +191,11 @@ private fun LinhaComando(
     onAlternaAgendaSempreAtiva: (Boolean) -> Unit,
     onAdicionaPeriodoAgenda: (Int, String, String) -> Boolean,
     onRemovePeriodoAgenda: (Int, Int) -> Unit,
-    onDefineChave: (String?) -> Unit
+    onDefineChave: (String?) -> Unit,
+    onAlternaIncluirLocalizacao: (Boolean) -> Unit,
+    onAlternaModoBeaconTrajeto: (Boolean) -> Unit,
+    onDefineIntervaloBeaconTrajeto: (Int) -> Unit,
+    onPedePermissaoLocalizacao: () -> Unit
 ) {
     val cores = LocalCoresGateway.current
     var menuAberto by remember { mutableStateOf(false) }
@@ -308,6 +345,82 @@ private fun LinhaComando(
                 onAdicionaPeriodo = onAdicionaPeriodoAgenda,
                 onRemovePeriodo = onRemovePeriodoAgenda
             )
+        }
+
+        val contexto = LocalContext.current
+
+        Row(
+            Modifier.fillMaxWidth().padding(top = 6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                stringResource(R.string.incluir_localizacao),
+                color = cores.suave,
+                fontSize = 9.5.sp,
+                modifier = Modifier.weight(1f)
+            )
+            Switch(
+                checked = c.incluirLocalizacao,
+                onCheckedChange = { ligar ->
+                    if (!ligar) {
+                        // desligar nunca precisa de permissao
+                        onAlternaIncluirLocalizacao(false)
+                    } else if (GestorLocalizacao.temPermissao(contexto)) {
+                        // permissao ja concedida (ex: em Android <=11, onde
+                        // ja foi pedida no arranque para o Bluetooth) --
+                        // liga diretamente, sem pedir de novo
+                        onAlternaIncluirLocalizacao(true)
+                    } else {
+                        // primeira vez neste comando: pede a permissao em
+                        // runtime, atraves do lancador partilhado do
+                        // CartaoComandos pai (ver onPedePermissaoLocalizacao)
+                        onPedePermissaoLocalizacao()
+                    }
+                },
+                modifier = Modifier.height(20.dp)
+            )
+        }
+
+        Row(
+            Modifier.fillMaxWidth().padding(top = 6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                stringResource(R.string.modo_beacon_trajeto),
+                color = cores.suave,
+                fontSize = 9.5.sp,
+                modifier = Modifier.weight(1f)
+            )
+            Switch(
+                checked = c.modoBeaconTrajeto,
+                onCheckedChange = { ligar ->
+                    if (!ligar) {
+                        onAlternaModoBeaconTrajeto(false)
+                    } else if (GestorLocalizacao.temPermissao(contexto)) {
+                        onAlternaModoBeaconTrajeto(true)
+                    } else {
+                        onPedePermissaoLocalizacao()
+                    }
+                },
+                modifier = Modifier.height(20.dp)
+            )
+        }
+
+        if (c.modoBeaconTrajeto) {
+            var intervaloTexto by remember(c.mac) { mutableStateOf((c.intervaloBeaconMs / 1000).toString()) }
+            Row(Modifier.fillMaxWidth().padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.weight(1f)) {
+                    CampoTexto(
+                        rotulo = stringResource(R.string.intervalo_beacon),
+                        valor = intervaloTexto,
+                        placeholder = "60",
+                        onValor = { novo ->
+                            intervaloTexto = novo
+                            novo.toIntOrNull()?.let { onDefineIntervaloBeaconTrajeto(it) }
+                        }
+                    )
+                }
+            }
         }
 
         Row(

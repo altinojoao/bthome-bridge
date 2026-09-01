@@ -3,9 +3,12 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <!-- Bluetooth: API 31+ usa BLUETOOTH_SCAN/CONNECT com neverForLocation
-         porque não precisamos de localização física do dispositivo, só
-         identificar o comando por MAC. API <31 ainda exige localização
-         para BLE por herança histórica do Android. -->
+         porque o scan BLE em si não precisa de localização física do
+         dispositivo, só identificar o comando por MAC. API abaixo de 31 ainda
+         exige localização para BLE por herança histórica do Android
+         coberto pela ACCESS_FINE_LOCATION declarada mais abaixo, que
+         hoje serve os dois propósitos (BLE legado + GPS opcional por
+         comando, ver essa declaração para detalhe). -->
     <uses-permission android:name="android.permission.BLUETOOTH_SCAN"
         android:usesPermissionFlags="neverForLocation"
         tools:targetApi="s" />
@@ -14,8 +17,14 @@
         android:maxSdkVersion="30" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"
         android:maxSdkVersion="30" />
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"
-        android:maxSdkVersion="30" />
+    <!-- Localizacao: ACCESS_FINE_LOCATION e tambem o requisito legado do
+         BLE em API 30 ou anterior (o BLUETOOTH_SCAN acima cobre a partir da 31).
+         Alem disso, sem maxSdkVersion, e usada em qualquer versao para
+         os marcadores {lat}/{lon} das acoes, so pedida em runtime se
+         o utilizador ativar "incluir localizacao" nalgum comando
+         (opt-in explicito, ver Comando.incluirLocalizacao). -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />

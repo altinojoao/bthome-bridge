@@ -208,7 +208,7 @@ fun LinhaAcao(
                         onValor = { v -> onAtualiza { it.copy(mensagem = v) } }
                     )
                     Text(
-                        "{evento} {codigo} {mac} {bateria} {rssi} {timestamp}",
+                        "{evento} {codigo} {mac} {bateria} {rssi} {timestamp} {lat} {lon}",
                         color = cores.suave, fontSize = 10.sp, fontFamily = FontFamily.Monospace,
                         modifier = Modifier.padding(top = 5.dp)
                     )
