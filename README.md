@@ -46,20 +46,28 @@ Em POST, se não indicar corpo, é enviado um JSON com todos estes campos.
 ## Ativar um cenário Shelly
 
 ```
-https://shelly-XX-eu.shelly.cloud/scene/manual_run?id=SCENE_ID&auth_key=YOUR_AUTH_KEY
+POST https://shelly-XX-eu.shelly.cloud/scene/manual_run
+Content-Type: application/x-www-form-urlencoded
+
+id=SCENE_ID&auth_key=YOUR_AUTH_KEY
 ```
 
-Método GET. O endereço do servidor e a auth key estão na app Shelly, em
-Definições de utilizador → Authorization cloud key. O ID do cenário obtém-se
-abrindo o cenário para edição em control.shelly.cloud e lendo-o na barra de
-endereço.
+Método POST, com `id` e `auth_key` no **corpo** do pedido — nunca na URL.
+Uma auth key na query string fica exposta em qualquer sítio por onde essa
+URL passe (logs de proxy, histórico de DNS/CDN, um *man-in-the-middle* que
+capture a URL completa); repetir essa URL captada bastaria para disparar
+cenários com a conta comprometida. O corpo do pedido não sofre dessa
+exposição da mesma forma. O endereço do servidor e a auth key estão na app
+Shelly, em Definições de utilizador → Authorization cloud key. O ID do
+cenário obtém-se abrindo o cenário para edição em control.shelly.cloud e
+lendo-o na barra de endereço.
 
 Este endpoint não está documentado pela Shelly e pode mudar sem aviso. A auth
 key dá controlo total da conta e não pode ser revogada individualmente — mudar
 a palavra-passe da conta é a única forma de a invalidar. Não a exponha em
 capturas de ecrã.
 
-**Porque não precisa de gateway físico:** o GET não passa pelo sistema de
+**Porque não precisa de gateway físico:** o pedido não passa pelo sistema de
 eventos BLU da Shelly — vai diretamente à cloud a pedir "executa o cenário X".
 A cloud verifica a auth key e executa; não pergunta de onde veio o pedido nem
 que dispositivo o originou. O comando BLU só interessa deste lado, é o que faz
