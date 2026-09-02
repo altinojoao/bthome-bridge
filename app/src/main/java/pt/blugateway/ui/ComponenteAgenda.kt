@@ -13,6 +13,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -52,11 +53,13 @@ fun BlocoAgenda(
                 fontSize = 9.5.sp,
                 modifier = Modifier.weight(1f)
             )
-            Switch(
-                checked = comando.agendaSempreAtiva,
-                onCheckedChange = onAlternaSempreAtiva,
-                modifier = Modifier.height(20.dp)
-            )
+            Box(Modifier.size(width = 38.dp, height = 24.dp), contentAlignment = Alignment.Center) {
+                Switch(
+                    checked = comando.agendaSempreAtiva,
+                    onCheckedChange = onAlternaSempreAtiva,
+                    modifier = Modifier.scale(0.7f)
+                )
+            }
         }
 
         if (!comando.agendaSempreAtiva) {
