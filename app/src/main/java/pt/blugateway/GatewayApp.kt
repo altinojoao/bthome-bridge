@@ -17,6 +17,31 @@ import pt.blugateway.data.Repositorio
 class GatewayApp : Application() {
     override fun onCreate() {
         super.onCreate()
+
+        // Apanha qualquer excecao nao tratada em qualquer thread e
+        // guarda-a em SharedPreferences antes de deixar a app fechar --
+        // sem isto, um crash no arranque fecha a app silenciosamente,
+        // sem qualquer forma de diagnosticar sem adb. MainActivity le e
+        // mostra este erro na proxima vez que abrir, em vez do ecra
+        // normal (ver EcraDiagnosticoCrash).
+        val anterior = Thread.getDefaultUncaughtExceptionHandler()
+        Thread.setDefaultUncaughtExceptionHandler { thread, excecao ->
+            try {
+                val sw = java.io.StringWriter()
+                excecao.printStackTrace(java.io.PrintWriter(sw))
+                getSharedPreferences("blugateway_diagnostico", MODE_PRIVATE)
+                    .edit()
+                    .putString("ultimo_crash", sw.toString())
+                    .commit() // sincrono de proposito: o processo pode
+                              // terminar antes de um apply() assincrono
+                              // conseguir escrever
+            } catch (e: Throwable) {
+                // se ate isto falhar, nao ha nada mais a fazer -- deixa
+                // seguir para o handler anterior
+            }
+            anterior?.uncaughtException(thread, excecao)
+        }
+
         criaCanalNotificacao()
         // restaura a preferencia de som guardada -- GestorSons arranca
         // sempre com som ligado por omissao, mas o utilizador pode ja
