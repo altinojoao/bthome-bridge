@@ -163,9 +163,4 @@
     <string name="sec_escuta">Ascolto</string>
     <string name="blocos_visiveis">Blocchi visibili</string>
     <string name="incluir_localizacao">Includi posizione</string>
-    <string name="mapa_trajeto">Mappa del percorso</string>
-    <string name="modo_beacon_trajeto">Modalità beacon (registra percorso)</string>
-    <string name="intervalo_beacon">Intervallo (s)</string>
-    <string name="limpar">Cancella</string>
-    <string name="limpar_trajeto_q">Cancellare la cronologia del percorso?</string>
 </resources>
