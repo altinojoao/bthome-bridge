@@ -166,4 +166,6 @@
     <string name="mapa_trajeto">Carte du trajet</string>
     <string name="limpar_trajeto_q">Effacer l\'historique du trajet ?</string>
     <string name="limpar">Effacer</string>
+    <string name="modo_beacon_trajeto">Mode beacon (enregistre trajet)</string>
+    <string name="intervalo_beacon">Intervalle (s)</string>
 </resources>
