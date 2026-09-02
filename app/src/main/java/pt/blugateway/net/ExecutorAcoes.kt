@@ -49,6 +49,9 @@ object ExecutorAcoes {
         val localizacao = if (comando.incluirLocalizacao) {
             GestorLocalizacao.obtemLocalizacaoAtual(context)
         } else null
+        localizacao?.let { (lat, lon) ->
+            pt.blugateway.ble.GestorTrajeto.registaPontoDeClique(context, mac, lat, lon)
+        }
 
         val ctx = ContextoClique(evento, codigo, mac, bateria, rssi, timestampIso(), localizacao?.first, localizacao?.second)
         for (acao in acoes) executaAcao(context, acao, ctx)
@@ -71,6 +74,9 @@ object ExecutorAcoes {
         val localizacao = if (incluirLocalizacao) {
             GestorLocalizacao.obtemLocalizacaoAtual(context)
         } else null
+        localizacao?.let { (lat, lon) ->
+            pt.blugateway.ble.GestorTrajeto.registaPontoDeClique(context, mac, lat, lon)
+        }
         val ctx = ContextoClique(evento, codigo, mac, bateria, rssi, timestampIso(), localizacao?.first, localizacao?.second)
         for (acao in acoes) executaAcao(context, acao, ctx)
     }

@@ -46,7 +46,9 @@ fun CartaoComandos(
     onRemovePeriodoAgenda: (String, Int, Int) -> Unit,
     onDefineChave: (String, String?) -> Unit,
     onAssociaManual: (String, String, String?) -> Boolean,
-    onAlternaIncluirLocalizacao: (String, Boolean) -> Unit
+    onAlternaIncluirLocalizacao: (String, Boolean) -> Unit,
+    onAlternaModoBeaconTrajeto: (String, Boolean) -> Unit,
+    onDefineIntervaloBeaconTrajeto: (String, Int) -> Unit
 ) {
     val cores = LocalCoresGateway.current
     var aberto by remember { mutableStateOf(true) }
@@ -131,6 +133,8 @@ fun CartaoComandos(
                         onRemovePeriodoAgenda = { dia, idx -> onRemovePeriodoAgenda(c.mac, dia, idx) },
                         onDefineChave = { chave -> onDefineChave(c.mac, chave) },
                         onAlternaIncluirLocalizacao = { incluir -> onAlternaIncluirLocalizacao(c.mac, incluir) },
+                        onAlternaModoBeaconTrajeto = { ativo -> onAlternaModoBeaconTrajeto(c.mac, ativo) },
+                        onDefineIntervaloBeaconTrajeto = { seg -> onDefineIntervaloBeaconTrajeto(c.mac, seg) },
                         onPedePermissaoLocalizacao = {
                             macPendenteLocalizacao = c.mac
                             lancadorPermissaoLocalizacao.launch(
@@ -190,6 +194,8 @@ private fun LinhaComando(
     onRemovePeriodoAgenda: (Int, Int) -> Unit,
     onDefineChave: (String?) -> Unit,
     onAlternaIncluirLocalizacao: (Boolean) -> Unit,
+    onAlternaModoBeaconTrajeto: (Boolean) -> Unit,
+    onDefineIntervaloBeaconTrajeto: (Int) -> Unit,
     onPedePermissaoLocalizacao: () -> Unit
 ) {
     val cores = LocalCoresGateway.current
@@ -377,6 +383,50 @@ private fun LinhaComando(
                     },
                     modifier = Modifier.scale(0.7f)
                 )
+            }
+        }
+
+        Row(
+            Modifier.fillMaxWidth().padding(top = 6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                stringResource(R.string.modo_beacon_trajeto),
+                color = cores.suave,
+                fontSize = 9.5.sp,
+                modifier = Modifier.weight(1f)
+            )
+            Box(Modifier.size(width = 38.dp, height = 24.dp), contentAlignment = Alignment.Center) {
+                Switch(
+                    checked = c.modoBeaconTrajeto,
+                    onCheckedChange = { ligar ->
+                        if (!ligar) {
+                            onAlternaModoBeaconTrajeto(false)
+                        } else if (GestorLocalizacao.temPermissao(contexto)) {
+                            onAlternaModoBeaconTrajeto(true)
+                        } else {
+                            onPedePermissaoLocalizacao()
+                        }
+                    },
+                    modifier = Modifier.scale(0.7f)
+                )
+            }
+        }
+
+        if (c.modoBeaconTrajeto) {
+            var intervaloTexto by remember(c.mac) { mutableStateOf((c.intervaloBeaconMs / 1000).toString()) }
+            Row(Modifier.fillMaxWidth().padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.weight(1f)) {
+                    CampoTexto(
+                        rotulo = stringResource(R.string.intervalo_beacon),
+                        valor = intervaloTexto,
+                        placeholder = "60",
+                        onValor = { novo ->
+                            intervaloTexto = novo
+                            novo.toIntOrNull()?.let { onDefineIntervaloBeaconTrajeto(it) }
+                        }
+                    )
+                }
             }
         }
 
