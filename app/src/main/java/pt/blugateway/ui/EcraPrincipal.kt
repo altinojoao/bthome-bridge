@@ -1,5 +1,7 @@
 package pt.blugateway.ui
 
+import androidx.activity.compose.LocalActivityResultRegistryOwner
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -7,6 +9,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import pt.blugateway.ui.theme.LocalCoresGateway
 import pt.blugateway.ui.theme.TemaGateway
@@ -57,7 +60,31 @@ fun EcraPrincipal(vm: GatewayViewModel = viewModel()) {
         contextoBase.createConfigurationContext(config)
     }
 
-    androidx.compose.runtime.CompositionLocalProvider(LocalContext provides contextoLocalizado) {
+    // O Context localizado acima NAO e a Activity (e um wrapper de
+    // configuracao), por isso deixa de implementar as interfaces que a
+    // ComponentActivity fornece -- ActivityResultRegistryOwner,
+    // OnBackPressedDispatcherOwner, LifecycleOwner. Sem fornecer estes
+    // explicitamente, qualquer rememberLauncherForActivityResult() (ex:
+    // o pedido de permissao de localizacao) dentro desta arvore rebenta
+    // com "No ActivityResultRegistryOwner was provided", porque esses
+    // CompositionLocal tentam inferir o owner a partir do LocalContext
+    // atual, que agora e so o wrapper de configuracao. Capturam-se os
+    // valores REAIS (da Activity) aqui, antes da troca, e fornecem-se
+    // ao lado do novo LocalContext.
+    val registryOwnerReal = requireNotNull(LocalActivityResultRegistryOwner.current) {
+        "EcraPrincipal so deve correr dentro de uma ComponentActivity"
+    }
+    val dispatcherOwnerReal = requireNotNull(LocalOnBackPressedDispatcherOwner.current) {
+        "EcraPrincipal so deve correr dentro de uma ComponentActivity"
+    }
+    val lifecycleOwnerReal = LocalLifecycleOwner.current
+
+    androidx.compose.runtime.CompositionLocalProvider(
+        LocalContext provides contextoLocalizado,
+        LocalActivityResultRegistryOwner provides registryOwnerReal,
+        LocalOnBackPressedDispatcherOwner provides dispatcherOwnerReal,
+        LocalLifecycleOwner provides lifecycleOwnerReal
+    ) {
         TemaGateway(temaClaro = temaClaro) {
             val cores = LocalCoresGateway.current
             val perfilAtivo = vm.acharPerfil(perfilAtivoId)
