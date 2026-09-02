@@ -163,9 +163,4 @@
     <string name="sec_escuta">Listening</string>
     <string name="blocos_visiveis">Visible blocks</string>
     <string name="incluir_localizacao">Include location</string>
-    <string name="mapa_trajeto">Trajectory map</string>
-    <string name="modo_beacon_trajeto">Beacon mode (records trajectory)</string>
-    <string name="intervalo_beacon">Interval (s)</string>
-    <string name="limpar">Clear</string>
-    <string name="limpar_trajeto_q">Clear trajectory history?</string>
 </resources>

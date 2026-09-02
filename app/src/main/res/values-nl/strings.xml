@@ -163,9 +163,4 @@
     <string name="sec_escuta">Luisteren</string>
     <string name="blocos_visiveis">Zichtbare blokken</string>
     <string name="incluir_localizacao">Locatie toevoegen</string>
-    <string name="mapa_trajeto">Trajectkaart</string>
-    <string name="modo_beacon_trajeto">Beaconmodus (traject vastleggen)</string>
-    <string name="intervalo_beacon">Interval (s)</string>
-    <string name="limpar">Wissen</string>
-    <string name="limpar_trajeto_q">Trajectgeschiedenis wissen?</string>
 </resources>

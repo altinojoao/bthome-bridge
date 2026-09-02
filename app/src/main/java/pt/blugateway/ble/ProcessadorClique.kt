@@ -46,12 +46,6 @@ object ProcessadorClique {
         if (comandoExistente != null) {
             repo.atualizaSinal(mac, rssi, trama.bateria)
 
-            if (comandoExistente.modoBeaconTrajeto) {
-                CoroutineScope(Dispatchers.IO).launch {
-                    GestorTrajeto.registaPontoDeBeaconSeNecessario(context, comandoExistente)
-                }
-            }
-
             if (novoPacote && trama.evento != null) {
                 val indice = pt.blugateway.data.TipoClique.indiceDeCodigo(trama.evento)
                 if (indice != -1) {

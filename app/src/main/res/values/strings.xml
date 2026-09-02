@@ -164,9 +164,4 @@
     <string name="sec_escuta">Escuta</string>
     <string name="blocos_visiveis">Blocos visíveis</string>
     <string name="incluir_localizacao">Incluir localização</string>
-    <string name="mapa_trajeto">Mapa de trajeto</string>
-    <string name="modo_beacon_trajeto">Modo beacon (grava trajeto)</string>
-    <string name="intervalo_beacon">Intervalo (s)</string>
-    <string name="limpar">Limpar</string>
-    <string name="limpar_trajeto_q">Limpar o histórico de trajeto?</string>
 </resources>
