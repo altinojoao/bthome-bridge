@@ -11,11 +11,41 @@ android {
         applicationId "pt.blugateway.dev"
         minSdk 26
         targetSdk 34
-        versionCode 1
-        versionName "1.0"
+        // O Android so reconhece um APK como "atualizacao" (preservando
+        // dados locais) se versionCode for MAIOR que o ja instalado --
+        // caso contrario recusa a instalacao (FAILED_VERSION_DOWNGRADE)
+        // e obriga a desinstalar primeiro, perdendo tudo. Incrementar
+        // SEMPRE a cada release, mesmo que o numero visivel (versionName)
+        // pareca so um "patch". Historico: v1.0.0/v1.0.1 saíram as
+        // duas com versionCode 1 (erro corrigido aqui, na v1.0.2).
+        versionCode 2
+        versionName "1.0.2"
+    }
+
+    signingConfigs {
+        debug {
+            // Chave de debug FIXA, comprometida no repositorio
+            // (app/debug.keystore) -- nao a chave automatica que o
+            // Android Gradle Plugin gera em ~/.android/debug.keystore,
+            // que e diferente em CADA execucao de uma maquina limpa
+            // como o GitHub Actions. Sem isto, cada build teria uma
+            // assinatura diferente e o Android recusaria qualquer
+            // atualizacao (INSTALL_FAILED_UPDATE_INCOMPATIBLE),
+            // obrigando sempre a desinstalar antes de reinstalar.
+            // Credenciais padrao/publicas do debug keystore do Android
+            // (nao e segredo -- e a mesma senha "android" usada por
+            // omissao em todo o ecossistema Android).
+            storeFile file('debug.keystore')
+            storePassword 'android'
+            keyAlias 'androiddebugkey'
+            keyPassword 'android'
+        }
     }
 
     buildTypes {
+        debug {
+            signingConfig signingConfigs.debug
+        }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
