@@ -12,6 +12,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
@@ -296,11 +297,13 @@ private fun LinhaComando(
                 fontSize = 9.5.sp,
                 modifier = Modifier.weight(1f)
             )
-            Switch(
-                checked = c.alertaAlcance,
-                onCheckedChange = onAlternaAlertaAlcance,
-                modifier = Modifier.height(20.dp)
-            )
+            Box(Modifier.size(width = 38.dp, height = 24.dp), contentAlignment = Alignment.Center) {
+                Switch(
+                    checked = c.alertaAlcance,
+                    onCheckedChange = onAlternaAlertaAlcance,
+                    modifier = Modifier.scale(0.7f)
+                )
+            }
         }
 
         if (c.alertaAlcance) {
@@ -353,26 +356,28 @@ private fun LinhaComando(
                 fontSize = 9.5.sp,
                 modifier = Modifier.weight(1f)
             )
-            Switch(
-                checked = c.incluirLocalizacao,
-                onCheckedChange = { ligar ->
-                    if (!ligar) {
-                        // desligar nunca precisa de permissao
-                        onAlternaIncluirLocalizacao(false)
-                    } else if (GestorLocalizacao.temPermissao(contexto)) {
-                        // permissao ja concedida (ex: em Android <=11, onde
-                        // ja foi pedida no arranque para o Bluetooth) --
-                        // liga diretamente, sem pedir de novo
-                        onAlternaIncluirLocalizacao(true)
-                    } else {
-                        // primeira vez neste comando: pede a permissao em
-                        // runtime, atraves do lancador partilhado do
-                        // CartaoComandos pai (ver onPedePermissaoLocalizacao)
-                        onPedePermissaoLocalizacao()
-                    }
-                },
-                modifier = Modifier.height(20.dp)
-            )
+            Box(Modifier.size(width = 38.dp, height = 24.dp), contentAlignment = Alignment.Center) {
+                Switch(
+                    checked = c.incluirLocalizacao,
+                    onCheckedChange = { ligar ->
+                        if (!ligar) {
+                            // desligar nunca precisa de permissao
+                            onAlternaIncluirLocalizacao(false)
+                        } else if (GestorLocalizacao.temPermissao(contexto)) {
+                            // permissao ja concedida (ex: em Android <=11, onde
+                            // ja foi pedida no arranque para o Bluetooth) --
+                            // liga diretamente, sem pedir de novo
+                            onAlternaIncluirLocalizacao(true)
+                        } else {
+                            // primeira vez neste comando: pede a permissao em
+                            // runtime, atraves do lancador partilhado do
+                            // CartaoComandos pai (ver onPedePermissaoLocalizacao)
+                            onPedePermissaoLocalizacao()
+                        }
+                    },
+                    modifier = Modifier.scale(0.7f)
+                )
+            }
         }
 
         Row(
