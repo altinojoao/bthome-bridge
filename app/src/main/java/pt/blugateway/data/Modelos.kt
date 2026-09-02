@@ -224,7 +224,17 @@ data class Comando(
     // acoes desse comando. Falso por omissao -- a app so pede a
     // permissao de localizacao em runtime na primeira vez que o
     // utilizador ligar isto num comando, nunca no arranque.
-    var incluirLocalizacao: Boolean = false
+    var incluirLocalizacao: Boolean = false,
+    // opt-in SEPARADO de incluirLocalizacao: grava um ponto no
+    // historico de trajeto deste comando sempre que chega um anuncio
+    // BTHome (nao so em cliques), respeitando intervaloBeaconMs como
+    // espacamento minimo entre pontos gravados. Tal como
+    // incluirLocalizacao, so pede a permissao de localizacao quando
+    // ativado, nunca no arranque -- e os dois opt-ins sao
+    // independentes (pode ter um sem o outro).
+    var modoBeaconTrajeto: Boolean = false,
+    var intervaloBeaconMs: Long = 60_000L,
+    var ultimoPontoTrajetoEm: Long? = null
 ) {
     fun paraJson(): JSONObject = JSONObject().apply {
         put("mac", mac)
@@ -249,6 +259,9 @@ data class Comando(
         })
         chaveEncriptacao?.let { put("chaveEncriptacao", it) }
         put("incluirLocalizacao", incluirLocalizacao)
+        put("modoBeaconTrajeto", modoBeaconTrajeto)
+        put("intervaloBeaconMs", intervaloBeaconMs)
+        ultimoPontoTrajetoEm?.let { put("ultimoPontoTrajetoEm", it) }
     }
 
     companion object {
@@ -285,7 +298,10 @@ data class Comando(
                 mapa
             },
             chaveEncriptacao = if (o.has("chaveEncriptacao")) o.optString("chaveEncriptacao") else null,
-            incluirLocalizacao = o.optBoolean("incluirLocalizacao", false)
+            incluirLocalizacao = o.optBoolean("incluirLocalizacao", false),
+            modoBeaconTrajeto = o.optBoolean("modoBeaconTrajeto", false),
+            intervaloBeaconMs = o.optLong("intervaloBeaconMs", 60_000L),
+            ultimoPontoTrajetoEm = if (o.has("ultimoPontoTrajetoEm")) o.optLong("ultimoPontoTrajetoEm") else null
         )
     }
 }
@@ -300,3 +316,35 @@ data class ContaShelly(
         return "https://shelly-$servidorNum-$regiao.shelly.cloud"
     }
 }
+
+/** Um ponto do historico de trajeto de um comando, gravado ao
+ *  disparar um clique com incluirLocalizacao=true, ou ao receber
+ *  um anuncio com modoBeaconTrajeto=true (ver GestorTrajeto). */
+data class PontoTrajeto(
+    val latitude: Double,
+    val longitude: Double,
+    val timestamp: Long,
+    val origem: OrigemPonto
+) {
+    fun paraJson(): JSONObject = JSONObject().apply {
+        put("lat", latitude)
+        put("lon", longitude)
+        put("timestamp", timestamp)
+        put("origem", origem.name)
+    }
+
+    companion object {
+        fun deJson(o: JSONObject): PontoTrajeto? {
+            if (!o.has("lat") || !o.has("lon") || !o.has("timestamp")) return null
+            val origemStr = o.optString("origem", OrigemPonto.CLIQUE.name)
+            val origem = try {
+                OrigemPonto.valueOf(origemStr)
+            } catch (e: IllegalArgumentException) {
+                OrigemPonto.CLIQUE
+            }
+            return PontoTrajeto(o.optDouble("lat"), o.optDouble("lon"), o.optLong("timestamp"), origem)
+        }
+    }
+}
+
+enum class OrigemPonto { CLIQUE, BEACON }

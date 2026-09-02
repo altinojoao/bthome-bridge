@@ -142,6 +142,22 @@ class GatewayViewModel(app: Application) : AndroidViewModel(app) {
         repo.defineIncluirLocalizacao(mac, incluir)
     }
 
+    fun alternaModoBeaconTrajeto(mac: String, ativo: Boolean) {
+        repo.alternaModoBeaconTrajeto(mac, ativo)
+    }
+
+    fun defineIntervaloBeaconTrajeto(mac: String, segundos: Int) {
+        repo.defineIntervaloBeaconTrajeto(mac, segundos)
+    }
+
+    fun limpaTrajeto(mac: String) {
+        repo.limpaTrajeto(mac)
+    }
+
+    fun historicoTrajeto(mac: String): List<pt.blugateway.data.PontoTrajeto> {
+        return repo.historicoTrajeto(mac)
+    }
+
     fun mudaPerfilComando(mac: String, perfilId: String) {
         repo.mudaPerfilComando(mac, perfilId)
     }

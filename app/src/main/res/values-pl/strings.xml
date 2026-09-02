@@ -163,4 +163,7 @@
     <string name="sec_escuta">Nasłuch</string>
     <string name="blocos_visiveis">Widoczne bloki</string>
     <string name="incluir_localizacao">Dołącz lokalizację</string>
+    <string name="mapa_trajeto">Mapa trasy</string>
+    <string name="limpar_trajeto_q">Wyczyścić historię trasy?</string>
+    <string name="limpar">Wyczyść</string>
 </resources>
