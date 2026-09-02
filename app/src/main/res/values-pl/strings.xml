@@ -166,4 +166,6 @@
     <string name="mapa_trajeto">Mapa trasy</string>
     <string name="limpar_trajeto_q">Wyczyścić historię trasy?</string>
     <string name="limpar">Wyczyść</string>
+    <string name="modo_beacon_trajeto">Tryb beacon (zapisuje trasę)</string>
+    <string name="intervalo_beacon">Interwał (s)</string>
 </resources>

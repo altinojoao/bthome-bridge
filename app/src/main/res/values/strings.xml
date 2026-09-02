@@ -167,4 +167,6 @@
     <string name="mapa_trajeto">Mapa de trajeto</string>
     <string name="limpar_trajeto_q">Limpar o histórico de trajeto?</string>
     <string name="limpar">Limpar</string>
+    <string name="modo_beacon_trajeto">Modo beacon (grava trajeto)</string>
+    <string name="intervalo_beacon">Intervalo (s)</string>
 </resources>

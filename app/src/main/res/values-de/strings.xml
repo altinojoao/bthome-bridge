@@ -166,4 +166,6 @@
     <string name="mapa_trajeto">Streckenkarte</string>
     <string name="limpar_trajeto_q">Streckenverlauf löschen?</string>
     <string name="limpar">Löschen</string>
+    <string name="modo_beacon_trajeto">Beacon-Modus (Weg aufzeichnen)</string>
+    <string name="intervalo_beacon">Intervall (s)</string>
 </resources>

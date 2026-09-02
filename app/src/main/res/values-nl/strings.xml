@@ -166,4 +166,6 @@
     <string name="mapa_trajeto">Trajectkaart</string>
     <string name="limpar_trajeto_q">Trajectgeschiedenis wissen?</string>
     <string name="limpar">Wissen</string>
+    <string name="modo_beacon_trajeto">Beaconmodus (traject vastleggen)</string>
+    <string name="intervalo_beacon">Interval (s)</string>
 </resources>
