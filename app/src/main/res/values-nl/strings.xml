@@ -172,4 +172,9 @@
     <string name="trajeto_ecra_desligado_texto">Zonder "Altijd toestaan" in Instellingen legt het beacon-traject alleen punten vast als de app open is of het scherm aan staat. Nu Instellingen openen?</string>
     <string name="abrir_definicoes">Instellingen openen</string>
     <string name="agora_nao">Niet nu</string>
+    <string name="bateria_titulo">Batterijbesparing</string>
+    <string name="bateria_texto">Sommige telefoons schorten apps op de achtergrond op, wat de detectie van klikken met uitgeschermd scherm kan vertragen of verhinderen.</string>
+    <string name="bateria_ja_isenta">Al vrijgesteld van deze beperking</string>
+    <string name="bateria_pedir_isencao">Vrijstelling aanvragen</string>
+    <string name="bateria_aviso_marca">%1$s staat bekend om agressiever batterijbeheer dan standaard Android. Mogelijk moet u ook optimalisatie handmatig uitschakelen via Instellingen > Apps > Batterij, en de app vergrendelen in de lijst met recente apps.</string>
 </resources>

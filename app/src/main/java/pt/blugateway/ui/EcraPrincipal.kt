@@ -172,6 +172,8 @@ fun EcraPrincipal(vm: GatewayViewModel = viewModel()) {
                 DialogoConfiguracao(onFecha = { mostraConfiguracao = false }) {
                     CartaoConta(conta = conta, onGuarda = vm::guardaConta)
 
+                    CartaoBateria()
+
                     CartaoPerfis(
                         perfis = perfis,
                         comandos = comandos,

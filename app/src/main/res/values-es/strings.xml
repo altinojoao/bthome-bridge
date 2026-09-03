@@ -172,4 +172,9 @@
     <string name="trajeto_ecra_desligado_texto">Sin "Permitir siempre" en Ajustes, el trayecto por beacon solo registra puntos con la app abierta o la pantalla encendida. ¿Abrir Ajustes ahora?</string>
     <string name="abrir_definicoes">Abrir Ajustes</string>
     <string name="agora_nao">Ahora no</string>
+    <string name="bateria_titulo">Ahorro de batería</string>
+    <string name="bateria_texto">Algunos teléfonos suspenden las apps en segundo plano, lo que puede retrasar o impedir la detección de clics con la pantalla apagada.</string>
+    <string name="bateria_ja_isenta">Ya exenta de esta restricción</string>
+    <string name="bateria_pedir_isencao">Pedir exención</string>
+    <string name="bateria_aviso_marca">%1$s es conocido por gestionar la batería de forma más agresiva que el Android estándar. También puede ser necesario desactivar la optimización manualmente en Ajustes > Apps > Batería, y bloquear la app en la lista de apps recientes.</string>
 </resources>

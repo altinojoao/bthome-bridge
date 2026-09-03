@@ -173,4 +173,9 @@
     <string name="trajeto_ecra_desligado_texto">Sem "Permitir sempre" nas Definições, o trajeto por beacon só grava pontos com a app aberta ou o ecrã ligado. Quer abrir as Definições agora?</string>
     <string name="abrir_definicoes">Abrir Definições</string>
     <string name="agora_nao">Agora não</string>
+    <string name="bateria_titulo">Poupança de bateria</string>
+    <string name="bateria_texto">Alguns telemóveis suspendem apps em segundo plano, o que pode atrasar ou impedir a deteção de cliques com o ecrã desligado.</string>
+    <string name="bateria_ja_isenta">Já isenta desta restrição</string>
+    <string name="bateria_pedir_isencao">Pedir isenção</string>
+    <string name="bateria_aviso_marca">%1$s é conhecido por gerir a bateria de forma mais agressiva que o Android normal. Pode ser necessário também desativar a otimização manualmente em Definições > Apps > Bateria, e bloquear a app na lista de apps recentes.</string>
 </resources>
