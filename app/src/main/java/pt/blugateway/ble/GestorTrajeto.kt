@@ -50,25 +50,41 @@ object GestorTrajeto {
      * realmente guardado, nao da ultima tentativa.
      */
     suspend fun registaPontoDeBeaconSeNecessario(context: Context, comando: Comando) {
-        if (!comando.modoBeaconTrajeto) return
+        if (!comando.modoBeaconTrajeto) {
+            RegistoDiagnostico.regista(context, "trajeto[${comando.mac}]: modoBeaconTrajeto desligado, ignorado")
+            return
+        }
 
         val agora = System.currentTimeMillis()
         val ultimo = comando.ultimoPontoTrajetoEm
-        if (ultimo != null && (agora - ultimo) < comando.intervaloBeaconMs) return
+        if (ultimo != null && (agora - ultimo) < comando.intervaloBeaconMs) {
+            RegistoDiagnostico.regista(context, "trajeto[${comando.mac}]: dentro do intervalo (${agora - ultimo}ms < ${comando.intervaloBeaconMs}ms), ignorado")
+            return
+        }
 
         // ja ha um pedido de localizacao em curso para este comando
         // (pode acontecer se o intervalo configurado for menor que o
         // tempo que um pedido de GPS demora a responder) -- ignora
         // este anuncio, o proximo tenta de novo
-        if (!pedidosEmCurso.add(comando.mac)) return
+        if (!pedidosEmCurso.add(comando.mac)) {
+            RegistoDiagnostico.regista(context, "trajeto[${comando.mac}]: ja ha pedido de GPS em curso, ignorado")
+            return
+        }
         try {
-            val localizacao = GestorLocalizacao.obtemLocalizacaoAtual(context) ?: return
+            RegistoDiagnostico.regista(context, "trajeto[${comando.mac}]: a pedir localizacao...")
+            val localizacao = GestorLocalizacao.obtemLocalizacaoAtual(context)
+            if (localizacao == null) {
+                RegistoDiagnostico.regista(context, "trajeto[${comando.mac}]: SEM localizacao (timeout, sem permissao, ou providers desligados)")
+                return
+            }
+            RegistoDiagnostico.regista(context, "trajeto[${comando.mac}]: localizacao obtida com sucesso")
 
             val repo = Repositorio(context)
             repo.adicionaPontoTrajeto(
                 comando.mac, PontoTrajeto(localizacao.first, localizacao.second, agora, OrigemPonto.BEACON)
             )
             repo.atualizaUltimoPontoTrajeto(comando.mac, agora)
+            RegistoDiagnostico.regista(context, "trajeto[${comando.mac}]: ponto gravado")
         } finally {
             pedidosEmCurso.remove(comando.mac)
         }
