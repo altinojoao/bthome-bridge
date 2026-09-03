@@ -26,7 +26,20 @@ import java.util.concurrent.Executor
  */
 object GestorLocalizacao {
 
-    private const val TIMEOUT_MS = 8_000L
+    // 30s, alinhado com GET_CURRENT_LOCATION_TIMEOUT_MS da propria
+    // androidx.core (LocationManagerCompat) -- um valor deliberado da
+    // Google para pedidos de localizacao unica, nao um numero
+    // arbitrario. Um timeout mais curto (8s, o valor anterior) corta
+    // pedidos em segundo plano antes de terem oportunidade de
+    // completar: sem o ecra ligado, o "time to fix" do GPS/rede e
+    // tipicamente mais lento (hot/warm/cold start, sem os sensores
+    // tao responsivos como com o ecra ativo), e o proprio codigo-fonte
+    // da androidx.core avisa que pedidos feitos em segundo plano
+    // "fail to determine a valid location fix more often than while
+    // in the foreground" -- e exatamente o sintoma que motivou este
+    // aumento: pontos de beacon simplesmente nunca eram gravados com
+    // o ecra desligado, mesmo com a permissao ja concedida.
+    private const val TIMEOUT_MS = 30_000L
 
     fun temPermissao(context: Context): Boolean {
         return ContextCompat.checkSelfPermission(
