@@ -25,6 +25,15 @@ import pt.blugateway.net.GestorLocalizacao
  */
 object GestorTrajeto {
 
+    // MACs com um pedido de localizacao em curso neste momento --
+    // evita disparar varios pedidos de GPS em simultaneo para o
+    // mesmo comando se anuncios chegarem mais depressa que o tempo
+    // que um pedido demora a responder (agora ate 30s, ver
+    // GestorLocalizacao.TIMEOUT_MS). Um Set simples e seguro aqui
+    // porque so e lido/escrito a partir de Dispatchers.IO, nunca
+    // concorrentemente com a UI.
+    private val pedidosEmCurso = java.util.concurrent.ConcurrentHashMap.newKeySet<String>()
+
     fun registaPontoDeClique(context: Context, mac: String, latitude: Double, longitude: Double) {
         val repo = Repositorio(context)
         repo.adicionaPontoTrajeto(
@@ -47,12 +56,21 @@ object GestorTrajeto {
         val ultimo = comando.ultimoPontoTrajetoEm
         if (ultimo != null && (agora - ultimo) < comando.intervaloBeaconMs) return
 
-        val localizacao = GestorLocalizacao.obtemLocalizacaoAtual(context) ?: return
+        // ja ha um pedido de localizacao em curso para este comando
+        // (pode acontecer se o intervalo configurado for menor que o
+        // tempo que um pedido de GPS demora a responder) -- ignora
+        // este anuncio, o proximo tenta de novo
+        if (!pedidosEmCurso.add(comando.mac)) return
+        try {
+            val localizacao = GestorLocalizacao.obtemLocalizacaoAtual(context) ?: return
 
-        val repo = Repositorio(context)
-        repo.adicionaPontoTrajeto(
-            comando.mac, PontoTrajeto(localizacao.first, localizacao.second, agora, OrigemPonto.BEACON)
-        )
-        repo.atualizaUltimoPontoTrajeto(comando.mac, agora)
+            val repo = Repositorio(context)
+            repo.adicionaPontoTrajeto(
+                comando.mac, PontoTrajeto(localizacao.first, localizacao.second, agora, OrigemPonto.BEACON)
+            )
+            repo.atualizaUltimoPontoTrajeto(comando.mac, agora)
+        } finally {
+            pedidosEmCurso.remove(comando.mac)
+        }
     }
 }
