@@ -172,4 +172,9 @@
     <string name="trajeto_ecra_desligado_texto">Ohne "Immer zulassen" in den Einstellungen zeichnet der Beacon-Weg nur Punkte auf, während die App geöffnet oder der Bildschirm an ist. Jetzt Einstellungen öffnen?</string>
     <string name="abrir_definicoes">Einstellungen öffnen</string>
     <string name="agora_nao">Nicht jetzt</string>
+    <string name="bateria_titulo">Akkusparen</string>
+    <string name="bateria_texto">Manche Telefone versetzen Hintergrund-Apps in den Ruhezustand, was die Klickerkennung bei ausgeschaltetem Bildschirm verzögern oder verhindern kann.</string>
+    <string name="bateria_ja_isenta">Bereits von dieser Einschränkung ausgenommen</string>
+    <string name="bateria_pedir_isencao">Ausnahme anfordern</string>
+    <string name="bateria_aviso_marca">%1$s ist dafür bekannt, den Akku aggressiver zu verwalten als das Standard-Android. Möglicherweise muss die Optimierung auch manuell unter Einstellungen > Apps > Akku deaktiviert und die App in der Liste der letzten Apps gesperrt werden.</string>
 </resources>

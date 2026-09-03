@@ -172,4 +172,9 @@
     <string name="trajeto_ecra_desligado_texto">Senza "Consenti sempre" nelle Impostazioni, il percorso beacon registra punti solo con l\'app aperta o lo schermo acceso. Aprire le Impostazioni ora?</string>
     <string name="abrir_definicoes">Apri Impostazioni</string>
     <string name="agora_nao">Non ora</string>
+    <string name="bateria_titulo">Risparmio batteria</string>
+    <string name="bateria_texto">Alcuni telefoni sospendono le app in background, il che può ritardare o impedire il rilevamento dei clic a schermo spento.</string>
+    <string name="bateria_ja_isenta">Già esente da questa restrizione</string>
+    <string name="bateria_pedir_isencao">Richiedi esenzione</string>
+    <string name="bateria_aviso_marca">%1$s è noto per gestire la batteria in modo più aggressivo rispetto ad Android standard. Potrebbe essere necessario disattivare manualmente l\'ottimizzazione in Impostazioni > App > Batteria, e bloccare l\'app nell\'elenco delle app recenti.</string>
 </resources>
