@@ -65,6 +65,7 @@ fun EcraMapa(
     var confirmaLimpar by remember { mutableStateOf<String?>(null) }
     var paginaCarregada by remember { mutableStateOf(false) }
     var webViewRef by remember { mutableStateOf<WebView?>(null) }
+    var erroMapa by remember { mutableStateOf<String?>(null) }
 
     // le o historico de cada comando UMA vez por composicao, tanto
     // para desenhar o mapa como para a lista de "limpar trajeto"
@@ -113,8 +114,20 @@ fun EcraMapa(
                     onPaginaCarregada = { webView ->
                         webViewRef = webView
                         paginaCarregada = true
+                    },
+                    onErro = { msg ->
+                        if (erroMapa == null) erroMapa = msg
                     }
                 )
+
+                erroMapa?.let { msg ->
+                    Text(
+                        msg,
+                        color = cores.avisoTinta,
+                        fontSize = 9.sp,
+                        modifier = Modifier.fillMaxWidth().padding(top = 4.dp)
+                    )
+                }
 
                 comandosComHistorico.forEach { (c, _) ->
                     Row(
@@ -151,7 +164,11 @@ fun EcraMapa(
 
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
-private fun MapaWebView(modifier: Modifier = Modifier, onPaginaCarregada: (WebView) -> Unit) {
+private fun MapaWebView(
+    modifier: Modifier = Modifier,
+    onPaginaCarregada: (WebView) -> Unit,
+    onErro: (String) -> Unit
+) {
     AndroidView(
         modifier = modifier,
         factory = { ctx ->
@@ -164,6 +181,30 @@ private fun MapaWebView(modifier: Modifier = Modifier, onPaginaCarregada: (WebVi
                     override fun onPageFinished(view: WebView, url: String?) {
                         super.onPageFinished(view, url)
                         onPaginaCarregada(view)
+                    }
+
+                    override fun onReceivedError(
+                        view: WebView?,
+                        request: android.webkit.WebResourceRequest?,
+                        error: android.webkit.WebResourceError?
+                    ) {
+                        super.onReceivedError(view, request, error)
+                        // so nos interessam erros do proprio documento
+                        // principal ou dos ficheiros locais do Leaflet --
+                        // erros de tiles individuais falhados sao normais
+                        // (rede lenta, tile fora de cache) e nao intercetam
+                        // o mapa de todo
+                        if (request?.isForMainFrame == true || request?.url?.toString()?.contains("android_asset") == true) {
+                            onErro("onReceivedError: ${request?.url} -- ${error?.description}")
+                        }
+                    }
+                }
+                webChromeClient = object : android.webkit.WebChromeClient() {
+                    override fun onConsoleMessage(msg: android.webkit.ConsoleMessage): Boolean {
+                        if (msg.messageLevel() == android.webkit.ConsoleMessage.MessageLevel.ERROR) {
+                            onErro("console.error: ${msg.message()} (${msg.sourceId()}:${msg.lineNumber()})")
+                        }
+                        return true
                     }
                 }
                 loadUrl("file:///android_asset/leaflet/mapa.html")
