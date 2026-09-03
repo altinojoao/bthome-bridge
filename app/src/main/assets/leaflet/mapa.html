@@ -5,7 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <link rel="stylesheet" href="leaflet.css" />
   <style>
-    html, body, #mapa { height: 100%; margin: 0; padding: 0; background: #0D1117; }
+    html, body { height: 100%; margin: 0; padding: 0; }
+    /* Vermelho vivo TEMPORARIO, so para o diagnostico: se aparecer
+       vermelho, o WebView esta a renderizar e o problema e so o
+       Leaflet/tiles. Se continuar preto/nada, o WebView em si nao
+       esta a desenhar de todo. Reverter para o fundo normal
+       (#0D1117) assim que a causa for confirmada. */
+    #mapa { height: 100%; background: #FF0000; }
     .leaflet-control-attribution { font-size: 9px; }
   </style>
 </head>
