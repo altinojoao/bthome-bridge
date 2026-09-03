@@ -3,12 +3,14 @@ package pt.blugateway.ui
 import android.annotation.SuppressLint
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -24,6 +26,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import org.json.JSONArray
 import org.json.JSONObject
@@ -41,20 +44,18 @@ private val CORES_TRAJETO = listOf(
 
 /* Ecra de mapa: mostra o historico de trajeto de todos os comandos
    com pontos guardados, sobrepostos, cada um com uma cor propria.
-   Usa um WebView com Leaflet.js e tiles OpenStreetMap -- os ficheiros
-   do Leaflet (JS/CSS/imagens) estao empacotados em assets/leaflet/,
-   nao dependem de rede so para ABRIR o mapa (os tiles em si, sim,
-   precisam de rede para carregar as imagens do mapa-base).
+   Usa um WebView com Leaflet.js e tiles OpenStreetMap.
 
-   E um retrato do trajeto no momento em que o ecra abre -- nao se
-   atualiza sozinho enquanto fica aberto, mesmo que chegue um ponto
-   novo de beacon nesse intervalo (historicoTrajeto() le direto de
-   SharedPreferences, nao e um StateFlow observavel).
+   Usa Dialog() diretamente, NAO AlertDialog -- a documentacao
+   oficial do Compose recomenda Dialog com conteudo proprio para
+   qualquer coisa mais complexa que os slots rigidos de
+   title/text/buttons do AlertDialog cobrem, e AndroidView (WebView)
+   dentro de AlertDialog e um cenario menos testado/mais restrito
+   pela propria Window/Surface que o AlertDialog cria internamente.
 
    Os pontos sao enviados para dentro da pagina via
    evaluateJavascript() depois da pagina ja estar carregada
-   (onPageFinished), nunca embutidos no HTML inicial -- evita ter de
-   escapar JSON dinamico dentro de uma string HTML. */
+   (onPageFinished), nunca embutidos no HTML inicial. */
 @Composable
 fun EcraMapa(
     comandos: List<Comando>,
@@ -67,8 +68,6 @@ fun EcraMapa(
     var webViewRef by remember { mutableStateOf<WebView?>(null) }
     var erroMapa by remember { mutableStateOf<String?>(null) }
 
-    // le o historico de cada comando UMA vez por composicao, tanto
-    // para desenhar o mapa como para a lista de "limpar trajeto"
     val comandosComHistorico = remember(comandos) {
         comandos.mapNotNull { c ->
             val pontos = vm.historicoTrajeto(c.mac)
@@ -87,30 +86,34 @@ fun EcraMapa(
         }
     }
 
-    AlertDialog(
+    Dialog(
         onDismissRequest = onFecha,
-        confirmButton = {},
-        containerColor = cores.cartao,
-        modifier = Modifier.fillMaxWidth(0.96f).fillMaxHeight(0.9f),
-        properties = DialogProperties(usePlatformDefaultWidth = false),
-        title = {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    stringResource(R.string.mapa_trajeto),
-                    color = cores.tinta,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.weight(1f)
-                )
-                IconButton(onClick = onFecha) {
-                    Icon(Icons.Default.Close, contentDescription = stringResource(R.string.fechar), tint = cores.suave)
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = cores.cartao
+        ) {
+            Column(Modifier.fillMaxSize().padding(16.dp)) {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        stringResource(R.string.mapa_trajeto),
+                        color = cores.tinta,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.weight(1f)
+                    )
+                    IconButton(onClick = onFecha) {
+                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.fechar), tint = cores.suave)
+                    }
                 }
-            }
-        },
-        text = {
-            Column(Modifier.fillMaxSize()) {
+
                 MapaWebView(
-                    modifier = Modifier.weight(1f).fillMaxWidth(),
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .padding(top = 8.dp)
+                        .background(cores.elevado),
                     onPaginaCarregada = { webView ->
                         webViewRef = webView
                         paginaCarregada = true
@@ -142,7 +145,7 @@ fun EcraMapa(
                 }
             }
         }
-    )
+    }
 
     confirmaLimpar?.let { mac ->
         AlertDialog(
@@ -173,10 +176,11 @@ private fun MapaWebView(
         modifier = modifier,
         factory = { ctx ->
             WebView(ctx).apply {
+                layoutParams = android.view.ViewGroup.LayoutParams(
+                    android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                    android.view.ViewGroup.LayoutParams.MATCH_PARENT
+                )
                 settings.javaScriptEnabled = true
-                // sem acesso a rede alem dos tiles do proprio mapa (que
-                // usam http/https normal, nao file://) -- nao precisa de
-                // allowFileAccess nem de outras permissoes de WebView
                 webViewClient = object : WebViewClient() {
                     override fun onPageFinished(view: WebView, url: String?) {
                         super.onPageFinished(view, url)
@@ -189,11 +193,6 @@ private fun MapaWebView(
                         error: android.webkit.WebResourceError?
                     ) {
                         super.onReceivedError(view, request, error)
-                        // so nos interessam erros do proprio documento
-                        // principal ou dos ficheiros locais do Leaflet --
-                        // erros de tiles individuais falhados sao normais
-                        // (rede lenta, tile fora de cache) e nao intercetam
-                        // o mapa de todo
                         if (request?.isForMainFrame == true || request?.url?.toString()?.contains("android_asset") == true) {
                             onErro("onReceivedError: ${request?.url} -- ${error?.description}")
                         }
