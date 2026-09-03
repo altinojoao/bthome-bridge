@@ -75,6 +75,13 @@ fun DialogoDiagnosticoTrajeto(onFecha: () -> Unit) {
                     }
                 }
 
+                Text(
+                    "[L] ecrã ligado · [D] ecrã desligado · [P] poupança de bateria ativa",
+                    color = cores.suave,
+                    fontSize = 9.sp,
+                    modifier = Modifier.padding(top = 2.dp)
+                )
+
                 if (linhas.isEmpty()) {
                     Text(
                         "Sem registos ainda. Ative o modo trajeto por beacon num comando e aguarde.",
