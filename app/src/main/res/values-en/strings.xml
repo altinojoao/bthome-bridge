@@ -168,4 +168,8 @@
     <string name="limpar">Clear</string>
     <string name="modo_beacon_trajeto">Beacon mode (records trajectory)</string>
     <string name="intervalo_beacon">Interval (s)</string>
+    <string name="trajeto_ecra_desligado_titulo">Record trajectory with the screen off</string>
+    <string name="trajeto_ecra_desligado_texto">Without "Allow all the time" in Settings, beacon trajectory only records points while the app is open or the screen is on. Open Settings now?</string>
+    <string name="abrir_definicoes">Open Settings</string>
+    <string name="agora_nao">Not now</string>
 </resources>

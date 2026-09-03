@@ -37,6 +37,39 @@ object GestorLocalizacao {
     }
 
     /**
+     * Sem esta permissao concedida ("Permitir sempre" nas Definicoes
+     * da app), o modo trajeto por beacon so grava pontos com a app
+     * visivel/ecra ligado -- em segundo plano, o pedido de
+     * localizacao e bloqueado pelo sistema, mesmo com o servico em
+     * primeiro plano ativo (ver AndroidManifest.xml, comentario junto
+     * a ACCESS_BACKGROUND_LOCATION). Em versoes anteriores ao Android
+     * 10 (API 29), esta permissao nao existe -- ACCESS_FINE_LOCATION
+     * sozinha ja da acesso completo, incluindo em segundo plano.
+     */
+    fun temPermissaoSegundoPlano(context: Context): Boolean {
+        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.Q) return temPermissao(context)
+        return ContextCompat.checkSelfPermission(
+            context, Manifest.permission.ACCESS_BACKGROUND_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+    }
+
+    /**
+     * A partir do Android 11, ACCESS_BACKGROUND_LOCATION nao pode ser
+     * pedida atraves do dialogo normal de permissoes -- o sistema
+     * ignora esse pedido silenciosamente. A unica via é abrir o ecra
+     * de Definicoes da propria app e o utilizador escolher "Permitir
+     * sempre" manualmente.
+     */
+    fun abreDefinicoesApp(context: Context) {
+        val intent = android.content.Intent(
+            android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+            android.net.Uri.fromParts("package", context.packageName, null)
+        )
+        intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+        context.startActivity(intent)
+    }
+
+    /**
      * Devolve (latitude, longitude) ou null se a permissao nao foi
      * concedida, o GPS/rede estiverem desligados, ou nao houver
      * fix dentro de TIMEOUT_MS. Nunca lanca excecao para o chamador

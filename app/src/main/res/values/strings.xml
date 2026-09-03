@@ -169,4 +169,8 @@
     <string name="limpar">Limpar</string>
     <string name="modo_beacon_trajeto">Modo beacon (grava trajeto)</string>
     <string name="intervalo_beacon">Intervalo (s)</string>
+    <string name="trajeto_ecra_desligado_titulo">Registar trajeto com o ecrã desligado</string>
+    <string name="trajeto_ecra_desligado_texto">Sem "Permitir sempre" nas Definições, o trajeto por beacon só grava pontos com a app aberta ou o ecrã ligado. Quer abrir as Definições agora?</string>
+    <string name="abrir_definicoes">Abrir Definições</string>
+    <string name="agora_nao">Agora não</string>
 </resources>

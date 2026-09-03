@@ -168,4 +168,8 @@
     <string name="limpar">Borrar</string>
     <string name="modo_beacon_trajeto">Modo beacon (graba trayecto)</string>
     <string name="intervalo_beacon">Intervalo (s)</string>
+    <string name="trajeto_ecra_desligado_titulo">Registrar trayecto con la pantalla apagada</string>
+    <string name="trajeto_ecra_desligado_texto">Sin "Permitir siempre" en Ajustes, el trayecto por beacon solo registra puntos con la app abierta o la pantalla encendida. ¿Abrir Ajustes ahora?</string>
+    <string name="abrir_definicoes">Abrir Ajustes</string>
+    <string name="agora_nao">Ahora no</string>
 </resources>

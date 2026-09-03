@@ -168,4 +168,8 @@
     <string name="limpar">Effacer</string>
     <string name="modo_beacon_trajeto">Mode beacon (enregistre trajet)</string>
     <string name="intervalo_beacon">Intervalle (s)</string>
+    <string name="trajeto_ecra_desligado_titulo">Enregistrer le trajet écran éteint</string>
+    <string name="trajeto_ecra_desligado_texto">Sans "Toujours autoriser" dans les Paramètres, le trajet par beacon n\'enregistre des points que lorsque l\'app est ouverte ou l\'écran allumé. Ouvrir les Paramètres maintenant ?</string>
+    <string name="abrir_definicoes">Ouvrir les Paramètres</string>
+    <string name="agora_nao">Pas maintenant</string>
 </resources>

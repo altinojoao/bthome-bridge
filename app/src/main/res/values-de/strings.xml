@@ -168,4 +168,8 @@
     <string name="limpar">Löschen</string>
     <string name="modo_beacon_trajeto">Beacon-Modus (Weg aufzeichnen)</string>
     <string name="intervalo_beacon">Intervall (s)</string>
+    <string name="trajeto_ecra_desligado_titulo">Strecke bei ausgeschaltetem Bildschirm aufzeichnen</string>
+    <string name="trajeto_ecra_desligado_texto">Ohne "Immer zulassen" in den Einstellungen zeichnet der Beacon-Weg nur Punkte auf, während die App geöffnet oder der Bildschirm an ist. Jetzt Einstellungen öffnen?</string>
+    <string name="abrir_definicoes">Einstellungen öffnen</string>
+    <string name="agora_nao">Nicht jetzt</string>
 </resources>
