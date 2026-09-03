@@ -27,13 +27,31 @@ object RegistoDiagnostico {
 
     private val formato = SimpleDateFormat("HH:mm:ss", Locale.US)
 
+    /** "L" (ecra ligado/interativo) ou "D" (ecra desligado) -- prefixo
+     *  curto em cada linha do registo, para nunca mais haver duvida
+     *  sobre em que estado cada evento aconteceu. Inclui tambem se o
+     *  modo de poupanca de bateria do proprio Android esta ativo,
+     *  porque esse modo pode restringir especificamente a localizacao
+     *  quando o ecra esta desligado (LOCATION_MODE_GPS_DISABLED_WHEN_SCREEN_OFF
+     *  e variantes, configuraveis pelo fabricante/utilizador). */
+    private fun prefixoEstado(context: Context): String {
+        return try {
+            val pm = context.getSystemService(Context.POWER_SERVICE) as? android.os.PowerManager
+            val interativo = pm?.isInteractive ?: true
+            val poupanca = pm?.isPowerSaveMode ?: false
+            (if (interativo) "L" else "D") + (if (poupanca) "P" else "-")
+        } catch (e: Exception) {
+            "??"
+        }
+    }
+
     fun regista(context: Context, evento: String) {
         try {
             val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             val raw = prefs.getString(CHAVE_ENTRADAS, null)
             val arr = if (raw != null) JSONArray(raw) else JSONArray()
 
-            val linha = "${formato.format(Date())}  $evento"
+            val linha = "${formato.format(Date())} [${prefixoEstado(context)}]  $evento"
             arr.put(linha)
 
             // fila circular: descarta as mais antigas quando excede o limite
