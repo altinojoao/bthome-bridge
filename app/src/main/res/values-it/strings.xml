@@ -168,4 +168,8 @@
     <string name="limpar">Cancella</string>
     <string name="modo_beacon_trajeto">Modalità beacon (registra percorso)</string>
     <string name="intervalo_beacon">Intervallo (s)</string>
+    <string name="trajeto_ecra_desligado_titulo">Registrare il percorso a schermo spento</string>
+    <string name="trajeto_ecra_desligado_texto">Senza "Consenti sempre" nelle Impostazioni, il percorso beacon registra punti solo con l\'app aperta o lo schermo acceso. Aprire le Impostazioni ora?</string>
+    <string name="abrir_definicoes">Apri Impostazioni</string>
+    <string name="agora_nao">Non ora</string>
 </resources>

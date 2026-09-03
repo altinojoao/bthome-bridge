@@ -51,9 +51,16 @@ fun CartaoComandos(
     onDefineIntervaloBeaconTrajeto: (String, Int) -> Unit
 ) {
     val cores = LocalCoresGateway.current
+    val contexto = LocalContext.current
     var aberto by remember { mutableStateOf(true) }
     var mostraDialogoManual by remember { mutableStateOf(false) }
     var macPendenteLocalizacao by remember { mutableStateOf<String?>(null) }
+    // guarda qual dos dois interruptores originou o pedido de
+    // permissao em curso -- "localizacao" (incluir localizacao nas
+    // acoes) ou "trajeto" (modo beacon trajeto). O resultado do
+    // lancador so deve ativar o interruptor que de facto pediu.
+    var tipoPendenteLocalizacao by remember { mutableStateOf<String?>(null) }
+    var mostraExplicacaoSegundoPlano by remember { mutableStateOf<String?>(null) }
 
     val lancadorPermissaoLocalizacao = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -62,10 +69,23 @@ fun CartaoComandos(
         // ou aproximada) foi concedida -- se o utilizador recusou as
         // duas, o interruptor desse comando fica desligado
         val mac = macPendenteLocalizacao
+        val tipo = tipoPendenteLocalizacao
         if (mac != null && resultados.values.any { it }) {
-            onAlternaIncluirLocalizacao(mac, true)
+            when (tipo) {
+                "trajeto" -> {
+                    onAlternaModoBeaconTrajeto(mac, true)
+                    // ativado com sucesso -- se ainda faltar a permissao
+                    // de segundo plano, explica e oferece o atalho para
+                    // Definicoes (nao bloqueia, so informa)
+                    if (!GestorLocalizacao.temPermissaoSegundoPlano(contexto)) {
+                        mostraExplicacaoSegundoPlano = mac
+                    }
+                }
+                else -> onAlternaIncluirLocalizacao(mac, true)
+            }
         }
         macPendenteLocalizacao = null
+        tipoPendenteLocalizacao = null
     }
 
     Column(
@@ -135,15 +155,17 @@ fun CartaoComandos(
                         onAlternaIncluirLocalizacao = { incluir -> onAlternaIncluirLocalizacao(c.mac, incluir) },
                         onAlternaModoBeaconTrajeto = { ativo -> onAlternaModoBeaconTrajeto(c.mac, ativo) },
                         onDefineIntervaloBeaconTrajeto = { seg -> onDefineIntervaloBeaconTrajeto(c.mac, seg) },
-                        onPedePermissaoLocalizacao = {
+                        onPedePermissaoLocalizacao = { tipo ->
                             macPendenteLocalizacao = c.mac
+                            tipoPendenteLocalizacao = tipo
                             lancadorPermissaoLocalizacao.launch(
                                 arrayOf(
                                     android.Manifest.permission.ACCESS_FINE_LOCATION,
                                     android.Manifest.permission.ACCESS_COARSE_LOCATION
                                 )
                             )
-                        }
+                        },
+                        onPedeExplicacaoSegundoPlano = { mostraExplicacaoSegundoPlano = c.mac }
                     )
                 }
 
@@ -176,6 +198,37 @@ fun CartaoComandos(
             onAssocia = { mac, nome, chave -> onAssociaManual(mac, nome, chave) }
         )
     }
+
+    mostraExplicacaoSegundoPlano?.let {
+        DialogoLocalizacaoSegundoPlano(
+            onAbreDefinicoes = {
+                GestorLocalizacao.abreDefinicoesApp(contexto)
+                mostraExplicacaoSegundoPlano = null
+            },
+            onFecha = { mostraExplicacaoSegundoPlano = null }
+        )
+    }
+}
+
+/* Explica, apos ativar o modo trajeto por beacon, que sem "Permitir
+   sempre" nas Definicoes da app o trajeto so grava pontos com o ecra
+   ligado -- puramente informativo, nao bloqueia nada: o utilizador
+   pode fechar sem ir a Definicoes e continuar a usar o modo trajeto
+   com essa limitacao. */
+@Composable
+private fun DialogoLocalizacaoSegundoPlano(onAbreDefinicoes: () -> Unit, onFecha: () -> Unit) {
+    val cores = LocalCoresGateway.current
+    AlertDialog(
+        onDismissRequest = onFecha,
+        title = { Text(stringResource(R.string.trajeto_ecra_desligado_titulo)) },
+        text = { Text(stringResource(R.string.trajeto_ecra_desligado_texto), color = cores.suave, fontSize = 12.sp) },
+        confirmButton = {
+            TextButton(onClick = onAbreDefinicoes) { Text(stringResource(R.string.abrir_definicoes)) }
+        },
+        dismissButton = {
+            TextButton(onClick = onFecha) { Text(stringResource(R.string.agora_nao)) }
+        }
+    )
 }
 
 @Composable
@@ -196,7 +249,8 @@ private fun LinhaComando(
     onAlternaIncluirLocalizacao: (Boolean) -> Unit,
     onAlternaModoBeaconTrajeto: (Boolean) -> Unit,
     onDefineIntervaloBeaconTrajeto: (Int) -> Unit,
-    onPedePermissaoLocalizacao: () -> Unit
+    onPedePermissaoLocalizacao: (String) -> Unit,
+    onPedeExplicacaoSegundoPlano: () -> Unit
 ) {
     val cores = LocalCoresGateway.current
     var menuAberto by remember { mutableStateOf(false) }
@@ -378,7 +432,7 @@ private fun LinhaComando(
                             // primeira vez neste comando: pede a permissao em
                             // runtime, atraves do lancador partilhado do
                             // CartaoComandos pai (ver onPedePermissaoLocalizacao)
-                            onPedePermissaoLocalizacao()
+                            onPedePermissaoLocalizacao("localizacao")
                         }
                     },
                     modifier = Modifier.scale(0.7f)
@@ -404,8 +458,11 @@ private fun LinhaComando(
                             onAlternaModoBeaconTrajeto(false)
                         } else if (GestorLocalizacao.temPermissao(contexto)) {
                             onAlternaModoBeaconTrajeto(true)
+                            if (!GestorLocalizacao.temPermissaoSegundoPlano(contexto)) {
+                                onPedeExplicacaoSegundoPlano()
+                            }
                         } else {
-                            onPedePermissaoLocalizacao()
+                            onPedePermissaoLocalizacao("trajeto")
                         }
                     },
                     modifier = Modifier.scale(0.7f)

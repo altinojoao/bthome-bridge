@@ -168,4 +168,8 @@
     <string name="limpar">Wissen</string>
     <string name="modo_beacon_trajeto">Beaconmodus (traject vastleggen)</string>
     <string name="intervalo_beacon">Interval (s)</string>
+    <string name="trajeto_ecra_desligado_titulo">Traject vastleggen met scherm uit</string>
+    <string name="trajeto_ecra_desligado_texto">Zonder "Altijd toestaan" in Instellingen legt het beacon-traject alleen punten vast als de app open is of het scherm aan staat. Nu Instellingen openen?</string>
+    <string name="abrir_definicoes">Instellingen openen</string>
+    <string name="agora_nao">Niet nu</string>
 </resources>

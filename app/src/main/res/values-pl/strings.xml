@@ -168,4 +168,8 @@
     <string name="limpar">Wyczyść</string>
     <string name="modo_beacon_trajeto">Tryb beacon (zapisuje trasę)</string>
     <string name="intervalo_beacon">Interwał (s)</string>
+    <string name="trajeto_ecra_desligado_titulo">Zapisuj trasę przy wyłączonym ekranie</string>
+    <string name="trajeto_ecra_desligado_texto">Bez "Zezwól zawsze" w Ustawieniach trasa beacon zapisuje punkty tylko gdy aplikacja jest otwarta lub ekran włączony. Otworzyć Ustawienia teraz?</string>
+    <string name="abrir_definicoes">Otwórz Ustawienia</string>
+    <string name="agora_nao">Nie teraz</string>
 </resources>

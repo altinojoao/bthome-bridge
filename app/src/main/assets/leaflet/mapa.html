@@ -8,6 +8,26 @@
     html, body { height: 100%; margin: 0; padding: 0; }
     #mapa { height: 100%; background: #0D1117; }
     .leaflet-control-attribution { font-size: 9px; }
+
+    /* Radar pulsante: um anel vermelho que expande e desvanece em
+       loop, sobreposto ao ultimo ponto de um comando em movimento
+       recente. Puramente CSS, sem JS a repetir a animacao. */
+    @keyframes radar-pulsar {
+      0% { transform: scale(0.3); opacity: 0.8; }
+      100% { transform: scale(2.2); opacity: 0; }
+    }
+    .radar-anel {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 28px;
+      height: 28px;
+      margin: -14px 0 0 -14px;
+      border-radius: 50%;
+      border: 2px solid #FF3B30;
+      animation: radar-pulsar 1.6s ease-out infinite;
+      pointer-events: none;
+    }
   </style>
 </head>
 <body>
@@ -76,6 +96,85 @@
       });
     }
 
+    /* Icone do radar pulsante (anel vermelho, ver @keyframes
+       radar-pulsar no <style>), sobreposto ao ultimo ponto de um
+       comando em movimento recente. Um divIcon maior que o proprio
+       anel (56x56), para o anel ter espaco para expandir sem cortar
+       nas bordas do icone. */
+    function iconeRadar() {
+      return L.divIcon({
+        className: '',
+        html: '<div style="position:relative;width:56px;height:56px;">' +
+          '<div class="radar-anel"></div></div>',
+        iconSize: [56, 56],
+        iconAnchor: [28, 28]
+      });
+    }
+
+    /* Seta de direcao, rotacionada segundo o rumo (graus, 0=norte).
+       CSS rotate() roda a partir do centro do elemento por omissao,
+       coerente com iconAnchor no centro. */
+    function iconeDirecao(cor, rumoGraus) {
+      return L.divIcon({
+        className: '',
+        html: '<div style="width:22px;height:22px;transform:rotate(' + rumoGraus + 'deg);">' +
+          '<svg viewBox="0 0 24 24" width="22" height="22">' +
+          '<path d="M12,2 L19,21 L12,17 L5,21 Z" fill="' + cor + '" stroke="#fff" stroke-width="1"/>' +
+          '</svg></div>',
+        iconSize: [22, 22],
+        iconAnchor: [11, 11]
+      });
+    }
+
+    var toRad = function (g) { return g * Math.PI / 180; };
+    var toDeg = function (r) { return r * 180 / Math.PI; };
+
+    /* Rumo (bearing) do primeiro para o segundo ponto, em graus,
+       0=norte, 90=este, 180=sul, 270=oeste -- formula padrao de
+       navegacao esferica. */
+    function calculaRumo(lat1, lon1, lat2, lon2) {
+      var dLon = toRad(lon2 - lon1);
+      var y = Math.sin(dLon) * Math.cos(toRad(lat2));
+      var x = Math.cos(toRad(lat1)) * Math.sin(toRad(lat2)) -
+        Math.sin(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.cos(dLon);
+      var rumo = toDeg(Math.atan2(y, x));
+      return (rumo + 360) % 360;
+    }
+
+    /* Distancia aproximada entre dois pontos, em metros (Haversine).
+       Precisao suficiente para decidir "moveu-se o suficiente para
+       nao ser so ruido de GPS", nao para navegacao. */
+    function distanciaMetros(lat1, lon1, lat2, lon2) {
+      var R = 6371000;
+      var dLat = toRad(lat2 - lat1);
+      var dLon = toRad(lon2 - lon1);
+      var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    }
+
+    var MOVIMENTO_MIN_METROS = 15;
+    var MOVIMENTO_JANELA_MS = 10 * 60 * 1000; // 10 minutos
+
+    /* "Em movimento" exige as DUAS condicoes: o ultimo ponto tem de
+       ser recente (senao um comando parado ha horas continuaria a
+       mostrar radar so por causa de dois pontos antigos distantes),
+       E a distancia entre os dois ultimos pontos tem de exceder o
+       minimo (para nao reagir a ruido normal de GPS com o comando
+       parado). */
+    function estaEmMovimento(pontos, agora) {
+      if (pontos.length < 2) return false;
+      var ultimo = pontos[pontos.length - 1];
+      var penultimo = pontos[pontos.length - 2];
+
+      if ((agora - ultimo.timestamp) > MOVIMENTO_JANELA_MS) return false;
+
+      var dist = distanciaMetros(penultimo.lat, penultimo.lon, ultimo.lat, ultimo.lon);
+      return dist >= MOVIMENTO_MIN_METROS;
+    }
+
     function desenhaTrajetos(jsonTexto) {
       // segunda chamada, num momento ainda mais fiavel (a app so invoca
       // esta funcao depois de onPageFinished) -- nao faz mal chamar
@@ -83,6 +182,7 @@
       // esta correto.
       mapa.invalidateSize();
 
+      var agora = Date.now();
       camadasAtuais.forEach(function (camada) { mapa.removeLayer(camada); });
       camadasAtuais = [];
 
@@ -128,6 +228,28 @@
         }).addTo(mapa);
         marcador.bindPopup(comando.nome);
         camadasAtuais.push(marcador);
+
+        // radar pulsante + seta de direcao, so quando ha sinal
+        // recente de movimento (ver estaEmMovimento) -- um comando
+        // parado nao mostra nenhum dos dois
+        if (estaEmMovimento(comando.pontos, agora)) {
+          var penultimo = comando.pontos[comando.pontos.length - 2];
+
+          var radar = L.marker([ultimo.lat, ultimo.lon], {
+            icon: iconeRadar(),
+            interactive: false,
+            zIndexOffset: -100 // atras do proprio marcador do ponto
+          }).addTo(mapa);
+          camadasAtuais.push(radar);
+
+          var rumo = calculaRumo(penultimo.lat, penultimo.lon, ultimo.lat, ultimo.lon);
+          var seta = L.marker([ultimo.lat, ultimo.lon], {
+            icon: iconeDirecao(comando.cor, rumo),
+            interactive: false,
+            zIndexOffset: 100 // a frente do marcador e do radar
+          }).addTo(mapa);
+          camadasAtuais.push(seta);
+        }
       });
 
       if (todosPontos.length > 0) {

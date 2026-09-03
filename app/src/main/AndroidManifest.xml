@@ -25,6 +25,19 @@
          (opt-in explicito, ver Comando.incluirLocalizacao). -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!-- ACCESS_BACKGROUND_LOCATION: exigida pelo Android 10+ para o
+         servico em primeiro plano conseguir obter localizacao quando a
+         app nao esta visivel (ecra apagado ou noutra app) — sem esta
+         permissao, GestorLocalizacao.obtemLocalizacaoAtual() falha
+         silenciosamente nesse cenario (nunca lanca excecao, so devolve
+         null). So tem efeito se o utilizador ja tiver concedido
+         ACCESS_FINE_LOCATION/ACCESS_COARSE_LOCATION primeiro — pedidos
+         "incrementais" sao obrigatorios a partir do Android 11, nao e
+         possivel pedir as duas ao mesmo tempo (ver GestorPermissoes). -->
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+    <!-- Exigida pelo Android 14+ para o servico em primeiro plano poder
+         declarar o tipo "location" abaixo. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -70,13 +83,16 @@
         </receiver>
 
         <!-- Mantém a app viva em segundo plano com notificação persistente.
-             foregroundServiceType="connectedDevice" é o tipo correto para
-             tarefas de Bluetooth em primeiro plano (API 34+ exige a
-             declaração explícita do tipo). -->
+             foregroundServiceType inclui "location" (a par de
+             "connectedDevice") para o servico conseguir obter
+             localizacao com o ecra apagado/app fora do primeiro plano —
+             sem este tipo declarado, o pedido de localizacao e
+             bloqueado pelo sistema mesmo com o servico ativo (API 34+
+             exige a declaracao explicita do tipo). -->
         <service
             android:name=".ble.ServicoGateway"
             android:exported="false"
-            android:foregroundServiceType="connectedDevice" />
+            android:foregroundServiceType="connectedDevice|location" />
 
     </application>
 </manifest>
