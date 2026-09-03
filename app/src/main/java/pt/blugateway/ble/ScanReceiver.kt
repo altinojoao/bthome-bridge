@@ -41,6 +41,8 @@ class ScanReceiver : BroadcastReceiver() {
 
         if (resultados.isNotEmpty()) GestorScan.marcaAtividade()
 
+        RegistoDiagnostico.regista(context, "onReceive: ${resultados.size} resultado(s)")
+
         for (resultado in resultados) {
             processaResultado(context, resultado)
         }
@@ -77,6 +79,8 @@ class ScanReceiver : BroadcastReceiver() {
         val trama = BTHome.descodifica(serviceData) ?: return
         val nome = registo.deviceName ?: dispositivo.name ?: "BTHome"
         val rssi = resultado.rssi
+
+        RegistoDiagnostico.regista(context, "processaResultado: mac=$mac rssi=$rssi evento=${trama.evento}")
 
         ProcessadorClique.processa(
             context = context,
