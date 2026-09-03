@@ -197,6 +197,31 @@ private fun MapaWebView(
                             onErro("onReceivedError: ${request?.url} -- ${error?.description}")
                         }
                     }
+
+                    // O WebView so sabe navegar dentro de si mesmo para
+                    // http/https -- qualquer outro esquema (geo:, tel:,
+                    // mailto:, intent:) e ignorado silenciosamente por
+                    // omissao. Os links "abrir localizacao" dos popups do
+                    // mapa usam geo:, por isso precisam de ser
+                    // explicitamente reencaminhados para uma Activity
+                    // externa via Intent -- e o unico jeito de o
+                    // utilizador escolher a app de mapas que prefere.
+                    override fun shouldOverrideUrlLoading(
+                        view: WebView?,
+                        request: android.webkit.WebResourceRequest?
+                    ): Boolean {
+                        val url = request?.url ?: return false
+                        if (url.scheme == "http" || url.scheme == "https") return false
+                        return try {
+                            val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, url)
+                            intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                            view?.context?.startActivity(intent)
+                            true
+                        } catch (e: android.content.ActivityNotFoundException) {
+                            onErro("Nenhuma app instalada consegue abrir: $url")
+                            true
+                        }
+                    }
                 }
                 webChromeClient = object : android.webkit.WebChromeClient() {
                     override fun onConsoleMessage(msg: android.webkit.ConsoleMessage): Boolean {
@@ -228,6 +253,7 @@ private fun construirJsonTrajetos(comandosComHistorico: List<Pair<Comando, List<
                 put("lat", p.latitude)
                 put("lon", p.longitude)
                 put("timestamp", p.timestamp)
+                put("origem", p.origem.name)
             })
         }
         obj.put("pontos", arrPontos)
