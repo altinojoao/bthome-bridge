@@ -39,7 +39,10 @@ Deixe em branco os cliques que não quer usar.
 
 ### Marcadores disponíveis no endereço
 
-`{evento}` `{codigo}` `{botao}` `{mac}` `{bateria}` `{rssi}`
+`{evento}` `{codigo}` `{botao}` `{mac}` `{bateria}` `{rssi}` `{lat}` `{lon}`
+
+`{lat}`/`{lon}` só têm valor se "Incluir localização" estiver ativado nesse
+comando — ver [Localização e mapa de trajeto](../../wiki/Localização-e-mapa-de-trajeto).
 
 Em POST, se não indicar corpo, é enviado um JSON com todos estes campos.
 
@@ -102,6 +105,24 @@ Um perfil pode reagir a uma sequência de cliques (ex: duplo → simples →
 longo) dentro de uma janela de tempo, em vez de reagir a cada clique
 isoladamente.
 
+## Localização e mapa de trajeto
+
+"Incluir localização" preenche `{lat}`/`{lon}` nas ações desse comando com a
+posição atual do telemóvel. "Modo trajeto por beacon" (opt-in separado)
+grava um ponto no histórico a cada anúncio do comando, não só em cliques,
+com intervalo mínimo configurável — requer o mesmo modo beacon do alarme de
+fora de alcance.
+
+O botão 🗺️ no topo mostra o trajeto de todos os comandos com pontos
+guardados, sobreposto num mapa OpenStreetMap. Cada clique aparece com o seu
+próprio marcador; tocar nele mostra a data/hora e um link `geo:` que abre a
+localização numa app de mapas externa à escolha. O histórico mantém só os
+últimos 30 dias.
+
+A localização é sempre do telemóvel no momento do clique/anúncio, nunca do
+comando em si (que não tem GPS). O mapa em si precisa de rede para desenhar
+os tiles — os marcadores já registados aparecem mesmo sem rede.
+
 ## Notas técnicas
 
 O comando repete o mesmo anúncio cerca de vinte vezes por clique. A app
@@ -127,6 +148,8 @@ de ferramentas de debug BLE, não pela app normal.
   não para a Play Store.
 - **Custo de bateria.** Usa o modo de scan de baixa latência para não perder
   cliques. É o modo caro.
+- **Localização é do telemóvel, não do comando.** O comando não tem GPS; a
+  posição registada é sempre a do telemóvel no momento do clique/anúncio.
 - **Não substitui um gateway fixo.** Para sensores que ficam em casa, um
   dispositivo Plus/Pro ou a dongle continuam a ser a resposta certa. Isto
   serve para dispositivos BLU que andam consigo.
