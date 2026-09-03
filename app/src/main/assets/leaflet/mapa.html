@@ -23,6 +23,17 @@
       attribution: '&copy; OpenStreetMap'
     }).addTo(mapa);
 
+    // O Leaflet le o tamanho do container (#mapa) no momento exato em
+    // que L.map() e chamado -- dentro de um WebView carregado num
+    // dialogo/AlertDialog, o layout pode ainda nao estar completamente
+    // assente nesse instante (herda um tamanho 0x0 ou desatualizado),
+    // o que faz o Leaflet calcular os tiles a pedir com base num
+    // viewport errado e nunca os recalcular sozinho depois -- resulta
+    // num mapa em branco/preto, so com o fundo definido no CSS,
+    // mesmo com rede a funcionar bem. invalidateSize() forca o
+    // Leaflet a reler o tamanho real e re-pedir os tiles certos.
+    setTimeout(function () { mapa.invalidateSize(); }, 100);
+
     var camadasAtuais = [];
 
     /**
@@ -33,6 +44,12 @@
      * escapar strings grandes/dinamicas dentro do proprio HTML.
      */
     function desenhaTrajetos(jsonTexto) {
+      // segunda chamada, num momento ainda mais fiavel (a app so invoca
+      // esta funcao depois de onPageFinished) -- nao faz mal chamar
+      // duas vezes, invalidateSize() e barato quando o tamanho ja
+      // esta correto.
+      mapa.invalidateSize();
+
       camadasAtuais.forEach(function (camada) { mapa.removeLayer(camada); });
       camadasAtuais = [];
 
