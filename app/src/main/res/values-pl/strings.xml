@@ -184,4 +184,20 @@
     <string name="retencao_manter_pontos">Zachowaj ostatnie</string>
     <string name="retencao_pontos">punkty</string>
     <string name="retencao_modo_dias">Przechowywane w dniach</string>
+    <string name="acoes_do_cenario">Akcje do uruchomienia</string>
+    <string name="adicionar_acao">Dodaj akcję</string>
+    <string name="cenario_trajeto_detalhe">Uruchamia się przy %1$d%%, promień %2$dm, %3$d punktów</string>
+    <string name="cenarios_trajeto_titulo">Scenariusze trasy — %1$s</string>
+    <string name="criar_cenario">Utwórz scenariusz</string>
+    <string name="escolher_viagem_template">Wybierz już zapisaną podróż jako punkt odniesienia</string>
+    <string name="limiar_semelhanca">Uruchom przy (%)</string>
+    <string name="nome_cenario">Nazwa scenariusza</string>
+    <string name="nome_cenario_exemplo">Np.: W drodze do domu</string>
+    <string name="novo_cenario_trajeto">Nowy scenariusz trasy</string>
+    <string name="raio_correspondencia">Promień (m)</string>
+    <string name="sem_cenarios_trajeto">Dla tego polecenia nie utworzono jeszcze żadnego scenariusza trasy.</string>
+    <string name="sem_viagens_gravadas">Dla tego polecenia nie zapisano jeszcze żadnej podróży. Najpierw włącz tryb trasy beacon i przejedź trasę raz.</string>
+    <string name="ultimo_disparo">Ostatnie uruchomienie: %1$s</string>
+    <string name="viagem_resumo">%1$s → %2$s (%3$d punktów)</string>
+    <string name="cenarios_trajeto_botao">Scenariusze</string>
 </resources>

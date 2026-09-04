@@ -49,6 +49,12 @@ object ProcessadorClique {
             if (comandoExistente.modoBeaconTrajeto) {
                 CoroutineScope(Dispatchers.IO).launch {
                     GestorTrajeto.registaPontoDeBeaconSeNecessario(context, comandoExistente)
+                    // so faz sentido verificar semelhanca com os cenarios de
+                    // trajeto depois de ter tentado gravar um ponto novo --
+                    // GestorSemelhancaTrajeto.verificaCenarios ja verifica
+                    // por si so se ha cenarios definidos para este comando,
+                    // sai cedo (sem trabalho extra) se nao houver nenhum
+                    GestorSemelhancaTrajeto.verificaCenarios(context, comandoExistente.mac)
                 }
             }
 

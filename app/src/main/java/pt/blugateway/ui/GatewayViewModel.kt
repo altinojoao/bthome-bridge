@@ -182,6 +182,20 @@ class GatewayViewModel(app: Application) : AndroidViewModel(app) {
         _quantidadeRetencaoTrajeto.value = quantidade
     }
 
+    val cenariosTrajeto: StateFlow<List<pt.blugateway.data.CenarioTrajeto>> = repo.cenariosTrajeto
+
+    fun adicionaCenarioTrajeto(cenario: pt.blugateway.data.CenarioTrajeto) {
+        repo.adicionaCenarioTrajeto(cenario)
+    }
+
+    fun atualizaCenarioTrajeto(cenario: pt.blugateway.data.CenarioTrajeto) {
+        repo.atualizaCenarioTrajeto(cenario)
+    }
+
+    fun removeCenarioTrajeto(id: String) {
+        repo.removeCenarioTrajeto(id)
+    }
+
     fun mudaPerfilComando(mac: String, perfilId: String) {
         repo.mudaPerfilComando(mac, perfilId)
     }

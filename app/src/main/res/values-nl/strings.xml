@@ -184,4 +184,20 @@
     <string name="retencao_manter_pontos">Laatste behouden</string>
     <string name="retencao_pontos">punten</string>
     <string name="retencao_modo_dias">Bewaard in dagen</string>
+    <string name="acoes_do_cenario">Acties om te activeren</string>
+    <string name="adicionar_acao">Actie toevoegen</string>
+    <string name="cenario_trajeto_detalhe">Activeert bij %1$d%%, straal %2$dm, %3$d punten</string>
+    <string name="cenarios_trajeto_titulo">Trajectscenario\'s — %1$s</string>
+    <string name="criar_cenario">Scenario maken</string>
+    <string name="escolher_viagem_template">Kies een reeds vastgelegde rit als referentie</string>
+    <string name="limiar_semelhanca">Activeren bij (%)</string>
+    <string name="nome_cenario">Naam van het scenario</string>
+    <string name="nome_cenario_exemplo">Bijv.: Op weg naar huis</string>
+    <string name="novo_cenario_trajeto">Nieuw trajectscenario</string>
+    <string name="raio_correspondencia">Straal (m)</string>
+    <string name="sem_cenarios_trajeto">Nog geen trajectscenario aangemaakt voor deze opdracht.</string>
+    <string name="sem_viagens_gravadas">Nog geen rit vastgelegd voor deze opdracht. Schakel eerst de beacon-trajectmodus in en leg de route eenmaal af.</string>
+    <string name="ultimo_disparo">Laatst geactiveerd: %1$s</string>
+    <string name="viagem_resumo">%1$s → %2$s (%3$d punten)</string>
+    <string name="cenarios_trajeto_botao">Scenario\'s</string>
 </resources>

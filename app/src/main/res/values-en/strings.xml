@@ -184,4 +184,20 @@
     <string name="retencao_manter_pontos">Keep the last</string>
     <string name="retencao_pontos">points</string>
     <string name="retencao_modo_dias">Kept by days</string>
+    <string name="acoes_do_cenario">Actions to trigger</string>
+    <string name="adicionar_acao">Add action</string>
+    <string name="cenario_trajeto_detalhe">Triggers at %1$d%%, radius %2$dm, %3$d points</string>
+    <string name="cenarios_trajeto_titulo">Trajectory scenarios — %1$s</string>
+    <string name="criar_cenario">Create scenario</string>
+    <string name="escolher_viagem_template">Choose a recorded trip as reference</string>
+    <string name="limiar_semelhanca">Trigger at (%)</string>
+    <string name="nome_cenario">Scenario name</string>
+    <string name="nome_cenario_exemplo">E.g.: Heading home</string>
+    <string name="novo_cenario_trajeto">New trajectory scenario</string>
+    <string name="raio_correspondencia">Radius (m)</string>
+    <string name="sem_cenarios_trajeto">No trajectory scenario created for this command yet.</string>
+    <string name="sem_viagens_gravadas">No trip recorded yet for this command. Turn on beacon trajectory mode and travel the route once first.</string>
+    <string name="ultimo_disparo">Last triggered: %1$s</string>
+    <string name="viagem_resumo">%1$s → %2$s (%3$d points)</string>
+    <string name="cenarios_trajeto_botao">Scenarios</string>
 </resources>
