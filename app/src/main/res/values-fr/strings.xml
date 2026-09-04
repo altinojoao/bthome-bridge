@@ -187,7 +187,6 @@
     <string name="acoes_do_cenario">Actions à déclencher</string>
     <string name="adicionar_acao">Ajouter une action</string>
     <string name="cenario_trajeto_detalhe">Se déclenche à %1$d%%, rayon %2$dm, %3$d points</string>
-    <string name="cenarios_trajeto_titulo">Scénarios de trajet — %1$s</string>
     <string name="criar_cenario">Créer le scénario</string>
     <string name="escolher_viagem_template">Choisir un trajet déjà enregistré comme référence</string>
     <string name="limiar_semelhanca">Déclencher à (%)</string>
@@ -200,4 +199,9 @@
     <string name="ultimo_disparo">Dernier déclenchement : %1$s</string>
     <string name="viagem_resumo">%1$s → %2$s (%3$d points)</string>
     <string name="cenarios_trajeto_botao">Scénarios</string>
+    <string name="cenarios_trajeto_titulo_geral">Scénarios de trajet</string>
+    <string name="escolher_comando_origem">Choisir la commande à surveiller</string>
+    <string name="template_atual_mantido">Conserve le modèle actuel (%1$d points)</string>
+    <string name="editar_cenario">Modifier</string>
+    <string name="guardar_cenario">Enregistrer</string>
 </resources>

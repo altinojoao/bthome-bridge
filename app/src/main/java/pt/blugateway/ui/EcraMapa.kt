@@ -195,11 +195,11 @@ fun EcraMapa(
     mostraCenariosPara?.let { mac ->
         val comandoAlvo = comandos.firstOrNull { it.mac == mac }
         if (comandoAlvo != null) {
-            val cenariosDoComando by vm.cenariosTrajeto.collectAsState()
+            val todosCenarios by vm.cenariosTrajeto.collectAsState()
             DialogoCenariosTrajeto(
-                comando = comandoAlvo,
-                cenarios = cenariosDoComando.filter { it.macComando == mac },
-                historico = vm.historicoTrajeto(mac),
+                comandoInicial = comandoAlvo,
+                comandosComHistorico = comandosComHistorico,
+                cenarios = todosCenarios,
                 onCria = { vm.adicionaCenarioTrajeto(it) },
                 onAtualiza = { vm.atualizaCenarioTrajeto(it) },
                 onRemove = { vm.removeCenarioTrajeto(it) },

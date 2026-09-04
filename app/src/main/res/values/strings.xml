@@ -188,7 +188,6 @@
     <string name="acoes_do_cenario">Ações a disparar</string>
     <string name="adicionar_acao">Adicionar ação</string>
     <string name="cenario_trajeto_detalhe">Dispara aos %1$d%%, raio %2$dm, %3$d pontos</string>
-    <string name="cenarios_trajeto_titulo">Cenários de trajeto — %1$s</string>
     <string name="criar_cenario">Criar cenário</string>
     <string name="escolher_viagem_template">Escolher uma viagem já gravada como referência</string>
     <string name="limiar_semelhanca">Disparar aos (%)</string>
@@ -201,4 +200,9 @@
     <string name="ultimo_disparo">Último disparo: %1$s</string>
     <string name="viagem_resumo">%1$s → %2$s (%3$d pontos)</string>
     <string name="cenarios_trajeto_botao">Cenários</string>
+    <string name="cenarios_trajeto_titulo_geral">Cenários de trajeto</string>
+    <string name="escolher_comando_origem">Escolher o comando a vigiar</string>
+    <string name="template_atual_mantido">Mantém o template atual (%1$d pontos)</string>
+    <string name="editar_cenario">Editar</string>
+    <string name="guardar_cenario">Guardar</string>
 </resources>

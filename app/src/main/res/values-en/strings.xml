@@ -187,7 +187,6 @@
     <string name="acoes_do_cenario">Actions to trigger</string>
     <string name="adicionar_acao">Add action</string>
     <string name="cenario_trajeto_detalhe">Triggers at %1$d%%, radius %2$dm, %3$d points</string>
-    <string name="cenarios_trajeto_titulo">Trajectory scenarios — %1$s</string>
     <string name="criar_cenario">Create scenario</string>
     <string name="escolher_viagem_template">Choose a recorded trip as reference</string>
     <string name="limiar_semelhanca">Trigger at (%)</string>
@@ -200,4 +199,9 @@
     <string name="ultimo_disparo">Last triggered: %1$s</string>
     <string name="viagem_resumo">%1$s → %2$s (%3$d points)</string>
     <string name="cenarios_trajeto_botao">Scenarios</string>
+    <string name="cenarios_trajeto_titulo_geral">Trajectory scenarios</string>
+    <string name="escolher_comando_origem">Choose the command to watch</string>
+    <string name="template_atual_mantido">Keeps the current template (%1$d points)</string>
+    <string name="editar_cenario">Edit</string>
+    <string name="guardar_cenario">Save</string>
 </resources>
