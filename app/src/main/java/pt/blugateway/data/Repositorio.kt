@@ -57,6 +57,9 @@ class Repositorio private constructor(context: Context) {
     private val _conta = MutableStateFlow(carregaConta())
     val conta: StateFlow<ContaShelly> = _conta
 
+    private val _cenariosTrajeto = MutableStateFlow(carregaCenariosTrajeto())
+    val cenariosTrajeto: StateFlow<List<CenarioTrajeto>> = _cenariosTrajeto
+
     // --- perfis ---
 
     private fun carregaPerfis(): List<Perfil> {
@@ -179,6 +182,101 @@ class Repositorio private constructor(context: Context) {
     }
 
     fun acharComandoPorMac(mac: String): Comando? = _comandos.value.firstOrNull { it.mac == mac }
+
+    // --- cenarios de trajeto ---
+
+    private fun carregaCenariosTrajeto(): List<CenarioTrajeto> {
+        val raw = prefs.getString("cenarios_trajeto", null) ?: return emptyList()
+        return try {
+            val arr = JSONArray(raw)
+            (0 until arr.length()).mapNotNull { arr.getJSONObject(it)?.let { o -> CenarioTrajeto.deJson(o) } }
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    private fun guardaCenariosTrajeto(lista: List<CenarioTrajeto>) {
+        val arr = JSONArray()
+        lista.forEach { arr.put(it.paraJson()) }
+        prefs.edit().putString("cenarios_trajeto", arr.toString()).apply()
+        _cenariosTrajeto.value = lista
+    }
+
+    fun cenariosTrajetoPara(mac: String): List<CenarioTrajeto> =
+        _cenariosTrajeto.value.filter { it.macComando == mac }
+
+    fun adicionaCenarioTrajeto(cenario: CenarioTrajeto) {
+        guardaCenariosTrajeto(_cenariosTrajeto.value + cenario)
+    }
+
+    fun atualizaCenarioTrajeto(cenario: CenarioTrajeto) {
+        guardaCenariosTrajeto(_cenariosTrajeto.value.map { if (it.id == cenario.id) cenario else it })
+    }
+
+    fun removeCenarioTrajeto(id: String) {
+        guardaCenariosTrajeto(_cenariosTrajeto.value.filter { it.id != id })
+        limpaBloqueioDisparo(id)
+    }
+
+    fun alternaCenarioAtivo(id: String, ativo: Boolean) {
+        guardaCenariosTrajeto(_cenariosTrajeto.value.map {
+            if (it.id == id) it.copy(ativo = ativo) else it
+        })
+    }
+
+    fun atualizaUltimoDisparoCenario(id: String, timestamp: Long) {
+        guardaCenariosTrajeto(_cenariosTrajeto.value.map {
+            if (it.id == id) it.copy(ultimoDisparoEm = timestamp) else it
+        })
+    }
+
+    /**
+     * Bloqueio de disparo repetido por viagem -- guarda, por
+     * cenarioId, o timestamp de INICIO DA VIAGEM em que esse cenario
+     * ja disparou. Um cenario so pode disparar de novo se o inicio
+     * da viagem atual for DIFERENTE do ultimo em que disparou --
+     * nao interessa quantos pontos novos cheguem dentro da MESMA
+     * viagem, so interessa quando uma viagem nova comeca (ver
+     * GestorSemelhancaTrajeto.inicioViagemAtual).
+     *
+     * Guardado num unico blob JSON (nao um StateFlow -- este estado
+     * e' efemero e interno, a UI nunca precisa de o mostrar
+     * diretamente) para simplificar; o volume e' minimo (um par
+     * id->timestamp por cenario).
+     */
+    private fun mapaBloqueioDisparo(): MutableMap<String, Long> {
+        val raw = prefs.getString("cenarios_disparados", null) ?: return mutableMapOf()
+        return try {
+            val obj = JSONObject(raw)
+            val mapa = mutableMapOf<String, Long>()
+            obj.keys().forEach { chave -> mapa[chave] = obj.optLong(chave) }
+            mapa
+        } catch (e: Exception) {
+            mutableMapOf()
+        }
+    }
+
+    private fun guardaMapaBloqueioDisparo(mapa: Map<String, Long>) {
+        val obj = JSONObject()
+        mapa.forEach { (chave, valor) -> obj.put(chave, valor) }
+        prefs.edit().putString("cenarios_disparados", obj.toString()).apply()
+    }
+
+    fun jaDisparadoNestaViagem(cenarioId: String, inicioViagem: Long): Boolean {
+        return mapaBloqueioDisparo()[cenarioId] == inicioViagem
+    }
+
+    fun marcaDisparado(cenarioId: String, inicioViagem: Long) {
+        val mapa = mapaBloqueioDisparo()
+        mapa[cenarioId] = inicioViagem
+        guardaMapaBloqueioDisparo(mapa)
+    }
+
+    private fun limpaBloqueioDisparo(cenarioId: String) {
+        val mapa = mapaBloqueioDisparo()
+        mapa.remove(cenarioId)
+        guardaMapaBloqueioDisparo(mapa)
+    }
 
     fun associaComando(mac: String, nome: String, perfilId: String) {
         if (acharComandoPorMac(mac) != null) return

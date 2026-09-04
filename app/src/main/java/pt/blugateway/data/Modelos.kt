@@ -361,3 +361,97 @@ enum class ModoRetencaoTrajeto {
     DIAS,       // mantem so os ultimos N dias (comportamento original)
     QUANTIDADE  // mantem so os ultimos N pontos, independente da idade
 }
+
+/** Um ponto do template de um cenario de trajeto -- so lat/lon, ao
+ *  contrario de PontoTrajeto nao guarda timestamp nem origem (o
+ *  template e uma forma geometrica de referencia, nao um historico
+ *  temporal). A ORDEM na lista e' que importa -- representa a
+ *  sequencia do inicio ao fim do percurso de referencia. */
+data class PontoTemplate(val lat: Double, val lon: Double) {
+    fun paraJson(): JSONObject = JSONObject().apply {
+        put("lat", lat)
+        put("lon", lon)
+    }
+
+    companion object {
+        fun deJson(o: JSONObject): PontoTemplate? {
+            if (!o.has("lat") || !o.has("lon")) return null
+            return PontoTemplate(o.optDouble("lat"), o.optDouble("lon"))
+        }
+    }
+}
+
+/**
+ * Um cenario de trajeto: vigia o historico de trajeto de UM comando
+ * especifico, compara-o continuamente com um template de referencia
+ * (gravado a partir de um percurso ja feito, ou desenhado a mao no
+ * mapa), e dispara uma lista de acoes proprias assim que a
+ * semelhanca ultrapassar limiarPercentagem -- uma unica vez por
+ * viagem (ver Repositorio.jaDisparadoNestaViagem), mesmo que a
+ * semelhanca continue a subir depois disso. So volta a poder
+ * disparar numa viagem seguinte, que tem de progredir na MESMA
+ * direcao do template (ver GestorSemelhancaTrajeto -- o algoritmo
+ * de comparacao e sensivel a ordem, um trajeto no sentido inverso
+ * nao consegue avancar o cursor de correspondencia).
+ */
+data class CenarioTrajeto(
+    var id: String,
+    var nome: String,
+    var macComando: String,
+    var template: List<PontoTemplate>,
+    // % (0-100) de semelhanca necessaria para disparar
+    var limiarPercentagem: Int = 80,
+    // raio de correspondencia entre um ponto do trajeto atual e um
+    // ponto do template, em metros -- mais folgado que o raio de
+    // "paragem" (50m) usado para detetar fim de viagem, porque aqui
+    // e' sobre o erro do GPS em movimento, nao sobre permanencia
+    var raioMetros: Int = 40,
+    var ativo: Boolean = true,
+    var acoes: MutableList<Acao> = mutableListOf(),
+    // timestamp da ultima vez que este cenario disparou -- usado so
+    // para mostrar na UI quando foi a ultima vez, nao para logica de
+    // bloqueio (essa fica no Repositorio, associada ao MAC + inicio
+    // da viagem atual, ver jaDisparadoNestaViagem)
+    var ultimoDisparoEm: Long? = null
+) {
+    fun paraJson(): JSONObject = JSONObject().apply {
+        put("id", id)
+        put("nome", nome)
+        put("macComando", macComando)
+        put("template", JSONArray().apply { template.forEach { put(it.paraJson()) } })
+        put("limiarPercentagem", limiarPercentagem)
+        put("raioMetros", raioMetros)
+        put("ativo", ativo)
+        put("acoes", JSONArray().apply { acoes.forEach { put(it.paraJson()) } })
+        ultimoDisparoEm?.let { put("ultimoDisparoEm", it) }
+    }
+
+    companion object {
+        fun deJson(o: JSONObject): CenarioTrajeto? {
+            val id = o.optString("id").ifBlank { return null }
+            val mac = o.optString("macComando").ifBlank { return null }
+            val arrTemplate = o.optJSONArray("template") ?: return null
+            val template = (0 until arrTemplate.length()).mapNotNull { i ->
+                PontoTemplate.deJson(arrTemplate.getJSONObject(i))
+            }
+            if (template.size < 2) return null
+
+            val arrAcoes = o.optJSONArray("acoes")
+            val acoes = if (arrAcoes != null) {
+                (0 until arrAcoes.length()).map { i -> Acao.deJson(arrAcoes.getJSONObject(i)) }.toMutableList()
+            } else mutableListOf()
+
+            return CenarioTrajeto(
+                id = id,
+                nome = o.optString("nome", "Trajeto"),
+                macComando = mac,
+                template = template,
+                limiarPercentagem = o.optInt("limiarPercentagem", 80),
+                raioMetros = o.optInt("raioMetros", 40),
+                ativo = o.optBoolean("ativo", true),
+                acoes = acoes,
+                ultimoDisparoEm = if (o.has("ultimoDisparoEm")) o.optLong("ultimoDisparoEm") else null
+            )
+        }
+    }
+}

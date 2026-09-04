@@ -184,4 +184,20 @@
     <string name="retencao_manter_pontos">Mantieni gli ultimi</string>
     <string name="retencao_pontos">punti</string>
     <string name="retencao_modo_dias">Conservato in giorni</string>
+    <string name="acoes_do_cenario">Azioni da attivare</string>
+    <string name="adicionar_acao">Aggiungi azione</string>
+    <string name="cenario_trajeto_detalhe">Si attiva al %1$d%%, raggio %2$dm, %3$d punti</string>
+    <string name="cenarios_trajeto_titulo">Scenari di percorso — %1$s</string>
+    <string name="criar_cenario">Crea scenario</string>
+    <string name="escolher_viagem_template">Scegli un percorso già registrato come riferimento</string>
+    <string name="limiar_semelhanca">Attiva al (%)</string>
+    <string name="nome_cenario">Nome dello scenario</string>
+    <string name="nome_cenario_exemplo">Es: Verso casa</string>
+    <string name="novo_cenario_trajeto">Nuovo scenario di percorso</string>
+    <string name="raio_correspondencia">Raggio (m)</string>
+    <string name="sem_cenarios_trajeto">Nessuno scenario di percorso ancora creato per questo comando.</string>
+    <string name="sem_viagens_gravadas">Nessun percorso ancora registrato per questo comando. Attiva prima la modalità percorso beacon e percorri il tragitto una volta.</string>
+    <string name="ultimo_disparo">Ultimo attivazione: %1$s</string>
+    <string name="viagem_resumo">%1$s → %2$s (%3$d punti)</string>
+    <string name="cenarios_trajeto_botao">Scenari</string>
 </resources>

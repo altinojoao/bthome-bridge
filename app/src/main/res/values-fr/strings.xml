@@ -184,4 +184,20 @@
     <string name="retencao_manter_pontos">Conserver les derniers</string>
     <string name="retencao_pontos">points</string>
     <string name="retencao_modo_dias">Conservé en jours</string>
+    <string name="acoes_do_cenario">Actions à déclencher</string>
+    <string name="adicionar_acao">Ajouter une action</string>
+    <string name="cenario_trajeto_detalhe">Se déclenche à %1$d%%, rayon %2$dm, %3$d points</string>
+    <string name="cenarios_trajeto_titulo">Scénarios de trajet — %1$s</string>
+    <string name="criar_cenario">Créer le scénario</string>
+    <string name="escolher_viagem_template">Choisir un trajet déjà enregistré comme référence</string>
+    <string name="limiar_semelhanca">Déclencher à (%)</string>
+    <string name="nome_cenario">Nom du scénario</string>
+    <string name="nome_cenario_exemplo">Ex : En route vers la maison</string>
+    <string name="novo_cenario_trajeto">Nouveau scénario de trajet</string>
+    <string name="raio_correspondencia">Rayon (m)</string>
+    <string name="sem_cenarios_trajeto">Aucun scénario de trajet créé pour cette commande pour l\'instant.</string>
+    <string name="sem_viagens_gravadas">Aucun trajet encore enregistré pour cette commande. Activez d\'abord le mode trajet par beacon et parcourez le trajet une fois.</string>
+    <string name="ultimo_disparo">Dernier déclenchement : %1$s</string>
+    <string name="viagem_resumo">%1$s → %2$s (%3$d points)</string>
+    <string name="cenarios_trajeto_botao">Scénarios</string>
 </resources>
