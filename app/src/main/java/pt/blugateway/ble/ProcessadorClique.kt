@@ -45,6 +45,7 @@ object ProcessadorClique {
 
         if (comandoExistente != null) {
             repo.atualizaSinal(mac, rssi, trama.bateria)
+            RegistoDiagnostico.regista(context, "sinal[$mac]: rssi=$rssi recebido, evento=${trama.evento}")
 
             if (comandoExistente.modoBeaconTrajeto) {
                 CoroutineScope(Dispatchers.IO).launch {
