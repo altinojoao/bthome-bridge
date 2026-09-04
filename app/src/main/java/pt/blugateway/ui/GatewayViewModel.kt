@@ -158,6 +158,30 @@ class GatewayViewModel(app: Application) : AndroidViewModel(app) {
         return repo.historicoTrajeto(mac)
     }
 
+    private val _modoRetencaoTrajeto = MutableStateFlow(repo.modoRetencaoTrajeto())
+    val modoRetencaoTrajeto: StateFlow<pt.blugateway.data.ModoRetencaoTrajeto> = _modoRetencaoTrajeto
+
+    fun defineModoRetencaoTrajeto(modo: pt.blugateway.data.ModoRetencaoTrajeto) {
+        repo.defineModoRetencaoTrajeto(modo)
+        _modoRetencaoTrajeto.value = modo
+    }
+
+    private val _diasRetencaoTrajeto = MutableStateFlow(repo.diasRetencaoTrajeto())
+    val diasRetencaoTrajeto: StateFlow<Int> = _diasRetencaoTrajeto
+
+    fun defineDiasRetencaoTrajeto(dias: Int) {
+        repo.defineDiasRetencaoTrajeto(dias)
+        _diasRetencaoTrajeto.value = dias
+    }
+
+    private val _quantidadeRetencaoTrajeto = MutableStateFlow(repo.quantidadeRetencaoTrajeto())
+    val quantidadeRetencaoTrajeto: StateFlow<Int> = _quantidadeRetencaoTrajeto
+
+    fun defineQuantidadeRetencaoTrajeto(quantidade: Int) {
+        repo.defineQuantidadeRetencaoTrajeto(quantidade)
+        _quantidadeRetencaoTrajeto.value = quantidade
+    }
+
     fun mudaPerfilComando(mac: String, perfilId: String) {
         repo.mudaPerfilComando(mac, perfilId)
     }

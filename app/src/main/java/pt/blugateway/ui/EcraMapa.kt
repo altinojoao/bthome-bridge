@@ -21,6 +21,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -67,6 +68,7 @@ fun EcraMapa(
     var paginaCarregada by remember { mutableStateOf(false) }
     var webViewRef by remember { mutableStateOf<WebView?>(null) }
     var erroMapa by remember { mutableStateOf<String?>(null) }
+    var soUltimaViagem by remember { mutableStateOf(false) }
 
     val comandosComHistorico = remember(comandos) {
         comandos.mapNotNull { c ->
@@ -79,10 +81,12 @@ fun EcraMapa(
         construirJsonTrajetos(comandosComHistorico)
     }
 
-    LaunchedEffect(jsonTrajetos, paginaCarregada) {
+    LaunchedEffect(jsonTrajetos, paginaCarregada, soUltimaViagem) {
         if (paginaCarregada) {
+            val webView = webViewRef ?: return@LaunchedEffect
+            webView.evaluateJavascript("defineMostrarSoUltimaViagem($soUltimaViagem);", null)
             val script = "desenhaTrajetos(${JSONObject.quote(jsonTrajetos)});"
-            webViewRef?.evaluateJavascript(script, null)
+            webView.evaluateJavascript(script, null)
         }
     }
 
@@ -105,6 +109,25 @@ fun EcraMapa(
                     )
                     IconButton(onClick = onFecha) {
                         Icon(Icons.Default.Close, contentDescription = stringResource(R.string.fechar), tint = cores.suave)
+                    }
+                }
+
+                Row(
+                    Modifier.fillMaxWidth().padding(top = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        stringResource(R.string.mapa_so_ultima_viagem),
+                        color = cores.suave,
+                        fontSize = 10.5.sp,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Box(Modifier.size(width = 38.dp, height = 24.dp), contentAlignment = Alignment.Center) {
+                        androidx.compose.material3.Switch(
+                            checked = soUltimaViagem,
+                            onCheckedChange = { soUltimaViagem = it },
+                            modifier = Modifier.scale(0.7f)
+                        )
                     }
                 }
 

@@ -30,7 +30,10 @@ class Repositorio private constructor(context: Context) {
 
     companion object {
         const val TEMPO_DESTAQUE_COMBINACAO_MS = 6000L
-        private const val DIAS_HISTORICO_TRAJETO_MS = 30L * 24 * 60 * 60 * 1000
+        // valores por omissao, usados so na primeira vez (antes do
+        // utilizador escolher algo em Configuracao)
+        const val DIAS_TRAJETO_OMISSAO = 30
+        const val QUANTIDADE_TRAJETO_OMISSAO = 500
 
         @Volatile private var instancia: Repositorio? = null
 
@@ -439,9 +442,51 @@ class Repositorio private constructor(context: Context) {
         }
     }
 
+    /** Politica de retencao do historico de trajeto -- global, aplicada
+     *  a todos os comandos por igual. */
+    fun modoRetencaoTrajeto(): ModoRetencaoTrajeto {
+        val nome = prefs.getString("modo_retencao_trajeto", ModoRetencaoTrajeto.DIAS.name)
+        return try {
+            ModoRetencaoTrajeto.valueOf(nome ?: ModoRetencaoTrajeto.DIAS.name)
+        } catch (e: IllegalArgumentException) {
+            ModoRetencaoTrajeto.DIAS
+        }
+    }
+
+    fun defineModoRetencaoTrajeto(modo: ModoRetencaoTrajeto) {
+        prefs.edit().putString("modo_retencao_trajeto", modo.name).apply()
+    }
+
+    fun diasRetencaoTrajeto(): Int = prefs.getInt("dias_retencao_trajeto", DIAS_TRAJETO_OMISSAO)
+    fun defineDiasRetencaoTrajeto(dias: Int) {
+        prefs.edit().putInt("dias_retencao_trajeto", dias.coerceAtLeast(1)).apply()
+    }
+
+    fun quantidadeRetencaoTrajeto(): Int = prefs.getInt("quantidade_retencao_trajeto", QUANTIDADE_TRAJETO_OMISSAO)
+    fun defineQuantidadeRetencaoTrajeto(quantidade: Int) {
+        prefs.edit().putInt("quantidade_retencao_trajeto", quantidade.coerceAtLeast(1)).apply()
+    }
+
+    /** Aplica a politica de retencao atual (DIAS ou QUANTIDADE) a uma
+     *  lista de pontos ja ordenada cronologicamente (mais antigo
+     *  primeiro) -- usado tanto ao gravar um novo ponto como, se no
+     *  futuro for preciso, para relimpar o historico existente apos
+     *  o utilizador mudar de politica. */
+    private fun aplicaRetencao(pontos: List<PontoTrajeto>): List<PontoTrajeto> {
+        return when (modoRetencaoTrajeto()) {
+            ModoRetencaoTrajeto.DIAS -> {
+                val limite = System.currentTimeMillis() - diasRetencaoTrajeto().toLong() * 24 * 60 * 60 * 1000
+                pontos.filter { it.timestamp >= limite }
+            }
+            ModoRetencaoTrajeto.QUANTIDADE -> {
+                val n = quantidadeRetencaoTrajeto()
+                if (pontos.size > n) pontos.subList(pontos.size - n, pontos.size) else pontos
+            }
+        }
+    }
+
     fun adicionaPontoTrajeto(mac: String, ponto: PontoTrajeto) {
-        val limite = System.currentTimeMillis() - DIAS_HISTORICO_TRAJETO_MS
-        val atualizado = (historicoTrajeto(mac) + ponto).filter { it.timestamp >= limite }
+        val atualizado = aplicaRetencao(historicoTrajeto(mac) + ponto)
         val arr = JSONArray()
         atualizado.forEach { arr.put(it.paraJson()) }
         prefs.edit().putString("trajeto_$mac", arr.toString()).apply()

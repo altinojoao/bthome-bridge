@@ -177,4 +177,11 @@
     <string name="bateria_ja_isenta">Bereits von dieser Einschränkung ausgenommen</string>
     <string name="bateria_pedir_isencao">Ausnahme anfordern</string>
     <string name="bateria_aviso_marca">%1$s ist dafür bekannt, den Akku aggressiver zu verwalten als das Standard-Android. Möglicherweise muss die Optimierung auch manuell unter Einstellungen > Apps > Akku deaktiviert und die App in der Liste der letzten Apps gesperrt werden.</string>
+    <string name="mapa_so_ultima_viagem">Nur die letzte Fahrt anzeigen</string>
+    <string name="retencao_titulo">Streckenverlauf</string>
+    <string name="retencao_manter_dias">Die letzten behalten</string>
+    <string name="retencao_dias">Tage</string>
+    <string name="retencao_manter_pontos">Die letzten behalten</string>
+    <string name="retencao_pontos">Punkte</string>
+    <string name="retencao_modo_dias">Nach Tagen gespeichert</string>
 </resources>

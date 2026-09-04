@@ -177,4 +177,11 @@
     <string name="bateria_ja_isenta">Już zwolniona z tego ograniczenia</string>
     <string name="bateria_pedir_isencao">Poproś o zwolnienie</string>
     <string name="bateria_aviso_marca">%1$s jest znany z bardziej agresywnego zarządzania baterią niż standardowy Android. Może być konieczne również ręczne wyłączenie optymalizacji w Ustawienia > Aplikacje > Bateria oraz zablokowanie aplikacji na liście ostatnich aplikacji.</string>
+    <string name="mapa_so_ultima_viagem">Pokaż tylko ostatnią podróż</string>
+    <string name="retencao_titulo">Historia trasy</string>
+    <string name="retencao_manter_dias">Zachowaj ostatnie</string>
+    <string name="retencao_dias">dni</string>
+    <string name="retencao_manter_pontos">Zachowaj ostatnie</string>
+    <string name="retencao_pontos">punkty</string>
+    <string name="retencao_modo_dias">Przechowywane w dniach</string>
 </resources>
