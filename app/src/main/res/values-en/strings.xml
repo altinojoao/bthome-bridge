@@ -177,4 +177,11 @@
     <string name="bateria_ja_isenta">Already exempt from this restriction</string>
     <string name="bateria_pedir_isencao">Request exemption</string>
     <string name="bateria_aviso_marca">%1$s is known for managing battery more aggressively than standard Android. You may also need to manually disable optimization in Settings > Apps > Battery, and lock the app in the recent apps list.</string>
+    <string name="mapa_so_ultima_viagem">Show only the last trip</string>
+    <string name="retencao_titulo">Trajectory history</string>
+    <string name="retencao_manter_dias">Keep the last</string>
+    <string name="retencao_dias">days</string>
+    <string name="retencao_manter_pontos">Keep the last</string>
+    <string name="retencao_pontos">points</string>
+    <string name="retencao_modo_dias">Kept by days</string>
 </resources>

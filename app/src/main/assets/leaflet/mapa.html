@@ -175,6 +175,48 @@
       return dist >= MOVIMENTO_MIN_METROS;
     }
 
+    var RAIO_PARAGEM_METROS = 50;
+    var TEMPO_MIN_PARAGEM_MS = 20 * 60 * 1000; // 20 minutos
+
+    /**
+     * Filtra os pontos (ja ordenados cronologicamente, mais antigo
+     * primeiro) para so os da "ultima viagem" -- a sequencia mais
+     * recente de pontos desde a ultima vez que o comando ficou
+     * "parado" (todos os pontos dentro de RAIO_PARAGEM_METROS uns dos
+     * outros) durante mais de TEMPO_MIN_PARAGEM_MS seguidos. Uma
+     * pausa curta (ex: semaforo) nao conta como fim de viagem; so
+     * uma permanencia longa na mesma zona conta.
+     */
+    function filtraUltimaViagem(pontos) {
+      if (pontos.length < 2) return pontos;
+
+      var inicioViagemAtual = 0;
+      var i = 0;
+      while (i < pontos.length) {
+        var j = i;
+        while (j + 1 < pontos.length) {
+          var d = distanciaMetros(pontos[i].lat, pontos[i].lon, pontos[j + 1].lat, pontos[j + 1].lon);
+          if (d > RAIO_PARAGEM_METROS) break;
+          j++;
+        }
+        var duracaoParagem = pontos[j].timestamp - pontos[i].timestamp;
+        if (duracaoParagem >= TEMPO_MIN_PARAGEM_MS) {
+          inicioViagemAtual = j + 1;
+          i = j + 1;
+        } else {
+          i++;
+        }
+      }
+
+      return inicioViagemAtual < pontos.length ? pontos.slice(inicioViagemAtual) : [];
+    }
+
+    var mostrarSoUltimaViagem = false;
+
+    function defineMostrarSoUltimaViagem(valor) {
+      mostrarSoUltimaViagem = valor;
+    }
+
     function desenhaTrajetos(jsonTexto) {
       // segunda chamada, num momento ainda mais fiavel (a app so invoca
       // esta funcao depois de onPageFinished) -- nao faz mal chamar
@@ -198,7 +240,12 @@
       dados.forEach(function (comando) {
         if (!comando.pontos || comando.pontos.length === 0) return;
 
-        var latLngs = comando.pontos.map(function (p) { return [p.lat, p.lon]; });
+        var pontosParaDesenhar = mostrarSoUltimaViagem
+          ? filtraUltimaViagem(comando.pontos)
+          : comando.pontos;
+        if (pontosParaDesenhar.length === 0) return;
+
+        var latLngs = pontosParaDesenhar.map(function (p) { return [p.lat, p.lon]; });
         todosPontos = todosPontos.concat(latLngs);
 
         var linha = L.polyline(latLngs, { color: comando.cor, weight: 3, opacity: 0.75 }).addTo(mapa);
@@ -207,7 +254,7 @@
         // um marcador proprio por cada clique (nao por ponto de
         // beacon), com etiqueta de data/hora e link geo: para as
         // coordenadas
-        comando.pontos.forEach(function (p) {
+        pontosParaDesenhar.forEach(function (p) {
           if (p.origem !== 'CLIQUE') return;
           var dataHora = formataTimestamp(p.timestamp);
           var link = linkGeo(p.lat, p.lon, comando.nome);
@@ -218,7 +265,7 @@
           camadasAtuais.push(marcador);
         });
 
-        var ultimo = comando.pontos[comando.pontos.length - 1];
+        var ultimo = pontosParaDesenhar[pontosParaDesenhar.length - 1];
         var marcador = L.circleMarker([ultimo.lat, ultimo.lon], {
           radius: 8,
           color: comando.cor,
@@ -232,8 +279,8 @@
         // radar pulsante + seta de direcao, so quando ha sinal
         // recente de movimento (ver estaEmMovimento) -- um comando
         // parado nao mostra nenhum dos dois
-        if (estaEmMovimento(comando.pontos, agora)) {
-          var penultimo = comando.pontos[comando.pontos.length - 2];
+        if (estaEmMovimento(pontosParaDesenhar, agora)) {
+          var penultimo = pontosParaDesenhar[pontosParaDesenhar.length - 2];
 
           var radar = L.marker([ultimo.lat, ultimo.lon], {
             icon: iconeRadar(),

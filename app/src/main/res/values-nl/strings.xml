@@ -177,4 +177,11 @@
     <string name="bateria_ja_isenta">Al vrijgesteld van deze beperking</string>
     <string name="bateria_pedir_isencao">Vrijstelling aanvragen</string>
     <string name="bateria_aviso_marca">%1$s staat bekend om agressiever batterijbeheer dan standaard Android. Mogelijk moet u ook optimalisatie handmatig uitschakelen via Instellingen > Apps > Batterij, en de app vergrendelen in de lijst met recente apps.</string>
+    <string name="mapa_so_ultima_viagem">Alleen de laatste rit tonen</string>
+    <string name="retencao_titulo">Trajectgeschiedenis</string>
+    <string name="retencao_manter_dias">Laatste behouden</string>
+    <string name="retencao_dias">dagen</string>
+    <string name="retencao_manter_pontos">Laatste behouden</string>
+    <string name="retencao_pontos">punten</string>
+    <string name="retencao_modo_dias">Bewaard in dagen</string>
 </resources>

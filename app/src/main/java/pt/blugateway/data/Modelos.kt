@@ -348,3 +348,16 @@ data class PontoTrajeto(
 }
 
 enum class OrigemPonto { CLIQUE, BEACON }
+
+/** Politica de retencao do historico de trajeto -- decide o que se
+ *  GUARDA em disco (ver Repositorio.adicionaPontoTrajeto), aplicada
+ *  igualmente a todos os comandos (nao configuravel por comando,
+ *  para manter simples). "Ultima viagem" no mapa e um MODO DE
+ *  VISUALIZACAO calculado a partir do historico ja guardado, nao
+ *  depende desta politica -- so precisa que o historico guardado
+ *  cubra pelo menos a ultima viagem inteira, o que qualquer uma
+ *  destas tres opcoes garante em uso normal. */
+enum class ModoRetencaoTrajeto {
+    DIAS,       // mantem so os ultimos N dias (comportamento original)
+    QUANTIDADE  // mantem so os ultimos N pontos, independente da idade
+}

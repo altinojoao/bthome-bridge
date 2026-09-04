@@ -38,6 +38,9 @@ fun EcraPrincipal(vm: GatewayViewModel = viewModel()) {
     val menuPerfisEspeciais by vm.menuPerfisEspeciais.collectAsState()
     val construtorAberto by vm.construtorAberto.collectAsState()
     val construtorSequencia by vm.construtorSequencia.collectAsState()
+    val modoRetencaoTrajeto by vm.modoRetencaoTrajeto.collectAsState()
+    val diasRetencaoTrajeto by vm.diasRetencaoTrajeto.collectAsState()
+    val quantidadeRetencaoTrajeto by vm.quantidadeRetencaoTrajeto.collectAsState()
     val cardsDesativados by vm.cardsDesativados.collectAsState()
 
     var mostraConfiguracao by remember { mutableStateOf(false) }
@@ -173,6 +176,15 @@ fun EcraPrincipal(vm: GatewayViewModel = viewModel()) {
                     CartaoConta(conta = conta, onGuarda = vm::guardaConta)
 
                     CartaoBateria()
+
+                    CartaoRetencaoTrajeto(
+                        modoAtual = modoRetencaoTrajeto,
+                        dias = diasRetencaoTrajeto,
+                        pontos = quantidadeRetencaoTrajeto,
+                        onDefineModo = vm::defineModoRetencaoTrajeto,
+                        onDefineDias = vm::defineDiasRetencaoTrajeto,
+                        onDefinePontos = vm::defineQuantidadeRetencaoTrajeto
+                    )
 
                     CartaoPerfis(
                         perfis = perfis,
