@@ -119,6 +119,18 @@ object GestorAlcance {
             val sinalFraco = comando.rssi != null && comando.rssi!! < comando.rssiLimite
             val foraDeAlcanceAgora = ultimoSinal != null && (semSinalDemasiadoTempo || sinalFraco)
 
+            // diagnostico temporario: grava o estado exato de cada
+            // verificacao, para investigar disparos do alarme sem
+            // sentido aparente (comando perto do telemovel, ecra
+            // ligado ou desligado)
+            val tempoDesdeUltimoSinal = ultimoSinal?.let { agora - it }
+            RegistoDiagnostico.regista(
+                ctx,
+                "alcance[${comando.mac}]: rssi=${comando.rssi} limite=${comando.rssiLimite} " +
+                    "tempoDesdeSinal=${tempoDesdeUltimoSinal}ms limite=${comando.tempoLimiteMs}ms " +
+                    "semSinal=$semSinalDemasiadoTempo sinalFraco=$sinalFraco -> foraDeAlcance=$foraDeAlcanceAgora"
+            )
+
             if (foraDeAlcanceAgora) {
                 val mudouAgora = repo.defineForaDeAlcance(comando.mac, true)
                 val ultimoAlarme = ultimoAlarmeTocado[comando.mac] ?: 0L
