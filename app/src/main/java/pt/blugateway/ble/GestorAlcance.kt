@@ -35,6 +35,20 @@ object GestorAlcance {
     @Volatile private var contexto: Context? = null
     private val ultimoAlarmeTocado = HashMap<String, Long>()
 
+    // exige que a condicao de "fora de alcance" se confirme em DUAS
+    // verificacoes consecutivas (INTERVALO_VERIFICACAO_MS = 15s entre
+    // elas) antes de disparar -- o botao Shelly BLU documenta um
+    // intervalo de beacon de 8s, muito mais curto que qualquer
+    // tempoLimiteMs razoavel, mas pode ocasionalmente falhar um
+    // ciclo de emissao (confirmado por registo de diagnostico real:
+    // uma lacuna isolada de ~68s entre anuncios, com o telemovel a
+    // continuar a captar outros dispositivos normalmente na mesma
+    // janela). Uma unica falha pontual do dispositivo ja nao chega
+    // para soar o alarme -- so uma falha que persista na verificacao
+    // seguinte, dando tempo real ao dispositivo de recuperar entretanto.
+    private const val VERIFICACOES_CONSECUTIVAS_NECESSARIAS = 2
+    private val contagemForaDeAlcance = HashMap<String, Int>()
+
     private val verificacaoRunnable = object : Runnable {
         override fun run() {
             verificaTodos()
@@ -124,14 +138,26 @@ object GestorAlcance {
             // sentido aparente (comando perto do telemovel, ecra
             // ligado ou desligado)
             val tempoDesdeUltimoSinal = ultimoSinal?.let { agora - it }
+            val contagemAntes = contagemForaDeAlcance[comando.mac] ?: 0
             RegistoDiagnostico.regista(
                 ctx,
                 "alcance[${comando.mac}]: rssi=${comando.rssi} limite=${comando.rssiLimite} " +
                     "tempoDesdeSinal=${tempoDesdeUltimoSinal}ms limite=${comando.tempoLimiteMs}ms " +
-                    "semSinal=$semSinalDemasiadoTempo sinalFraco=$sinalFraco -> foraDeAlcance=$foraDeAlcanceAgora"
+                    "semSinal=$semSinalDemasiadoTempo sinalFraco=$sinalFraco -> foraDeAlcance=$foraDeAlcanceAgora " +
+                    "(confirmacoes=$contagemAntes/$VERIFICACOES_CONSECUTIVAS_NECESSARIAS)"
             )
 
             if (foraDeAlcanceAgora) {
+                val contagemAtual = (contagemForaDeAlcance[comando.mac] ?: 0) + 1
+                contagemForaDeAlcance[comando.mac] = contagemAtual
+
+                if (contagemAtual < VERIFICACOES_CONSECUTIVAS_NECESSARIAS) {
+                    // primeira vez que a condicao se verifica -- ainda nao
+                    // confirma, da ao dispositivo oportunidade de recuperar
+                    // ate a proxima verificacao (15s depois)
+                    continue
+                }
+
                 val mudouAgora = repo.defineForaDeAlcance(comando.mac, true)
                 val ultimoAlarme = ultimoAlarmeTocado[comando.mac] ?: 0L
                 val tempoDesdeUltimoAlarme = agora - ultimoAlarme
@@ -147,12 +173,15 @@ object GestorAlcance {
                     GestorSons.tocaAlarmeAlcance()
                     ultimoAlarmeTocado[comando.mac] = agora
                 }
-            } else if (comando.foraDeAlcance) {
-                // ainda nao devia acontecer aqui (atualizaSinal ja limpa
-                // foraDeAlcance ao receber um pacote), mas serve de
-                // salvaguarda caso o estado fique desalinhado
-                repo.defineForaDeAlcance(comando.mac, false)
-                ultimoAlarmeTocado.remove(comando.mac)
+            } else {
+                contagemForaDeAlcance.remove(comando.mac)
+                if (comando.foraDeAlcance) {
+                    // ainda nao devia acontecer aqui (atualizaSinal ja limpa
+                    // foraDeAlcance ao receber um pacote), mas serve de
+                    // salvaguarda caso o estado fique desalinhado
+                    repo.defineForaDeAlcance(comando.mac, false)
+                    ultimoAlarmeTocado.remove(comando.mac)
+                }
             }
         }
     }
