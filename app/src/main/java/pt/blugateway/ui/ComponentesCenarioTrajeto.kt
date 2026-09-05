@@ -148,10 +148,8 @@ fun CriadorOuEditorCenario(
         }
 
         if (comandosComHistorico.isEmpty()) {
-            Text(
+            pt.blugateway.ui.theme.TextoEstadoVazio(
                 stringResource(R.string.sem_viagens_gravadas_geral),
-                color = cores.suave,
-                fontSize = 11.sp,
                 modifier = Modifier.padding(top = 6.dp)
             )
         } else {

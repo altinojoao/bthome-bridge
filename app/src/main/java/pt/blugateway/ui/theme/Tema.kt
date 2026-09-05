@@ -4,6 +4,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Typography
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.sp
 
 // Paleta idêntica às variáveis CSS :root / body.claro da versão web,
 // para que a app nativa pareça a mesma interface já validada.
@@ -64,4 +65,28 @@ fun TemaGateway(temaClaro: Boolean, conteudo: @Composable () -> Unit) {
             content = conteudo
         )
     }
+}
+
+/**
+ * Texto para estados vazios ("nenhum comando associado ainda",
+ * "nenhum cenario criado ainda", etc) -- estilo italico distinto do
+ * texto secundario normal (que usa a mesma cor 'suave' mas sem
+ * italico), para o utilizador perceber de relance que esta perante
+ * um estado "nada aqui", nao uma informacao qualquer. So' estilo:
+ * nenhuma alteracao de comportamento ou de onde estes textos
+ * aparecem.
+ */
+@Composable
+fun TextoEstadoVazio(
+    texto: String,
+    modifier: androidx.compose.ui.Modifier = androidx.compose.ui.Modifier
+) {
+    val cores = LocalCoresGateway.current
+    androidx.compose.material3.Text(
+        texto,
+        color = cores.suave,
+        fontSize = 10.sp,
+        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
+        modifier = modifier
+    )
 }
