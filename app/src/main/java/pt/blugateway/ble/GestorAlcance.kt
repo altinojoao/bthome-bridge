@@ -31,6 +31,32 @@ object GestorAlcance {
     private const val INTERVALO_VERIFICACAO_MS = 15_000L
     private const val INTERVALO_REPETICAO_ALARME_MS = 60_000L
 
+    // Deteccao de presenca por MEDIANA de RSSI (nao um valor isolado)
+    // com HISTERESE: presente >= LIMIAR_RSSI_PRESENTE_DBM (fixo),
+    // ausente < Comando.rssiLimite (configuravel por comando, valor
+    // por omissao -85 dBm para comandos novos -- ver Modelos.kt). Na
+    // zona intermedia entre os dois, mantem o estado anterior --
+    // evita alternar entre presente/ausente so por causa do ruido
+    // normal de RSSI perto do limite.
+    private const val LIMIAR_RSSI_PRESENTE_DBM = -75
+    // 120s sem sinal = ausente: implementado atraves do novo valor por
+    // omissao de Comando.tempoLimiteMs (ver Modelos.kt), nao repetido
+    // aqui como constante separada -- a logica de "tempo sem sinal"
+    // ja usa comando.tempoLimiteMs, que agora comeca em 120_000L por
+    // omissao para comandos novos (e para comandos antigos que nunca
+    // personalizaram o valor).
+
+    // janela circular das ultimas leituras de RSSI por comando (5 a
+    // 10 valores), usada so para calcular a mediana -- em memoria,
+    // nao precisa de sobreviver a reinicios do processo, recompoe-se
+    // rapidamente com os proximos anuncios
+    private const val TAMANHO_JANELA_RSSI = 8
+    private val janelaRssi = HashMap<String, MutableList<Int>>()
+
+    // estado de presenca (true=presente) usado pela histerese -- por
+    // omissao presente, ate' a primeira leitura decidir o contrario
+    private val presencaAtual = HashMap<String, Boolean>()
+
     private var handler: Handler? = null
     @Volatile private var contexto: Context? = null
     private val ultimoAlarmeTocado = HashMap<String, Long>()
@@ -61,6 +87,52 @@ object GestorAlcance {
         if (handler != null) return
         handler = Handler(Looper.getMainLooper())
         handler?.postDelayed(verificacaoRunnable, INTERVALO_VERIFICACAO_MS)
+    }
+
+    /**
+     * Chamado a cada anuncio Bluetooth recebido com RSSI valido (ver
+     * ProcessadorClique) -- alimenta a janela circular usada para
+     * calcular a mediana. Nao faz nada alem disto (nao decide
+     * presenca aqui, so guarda a leitura); a decisao acontece em
+     * verificaTodos(), a cada INTERVALO_VERIFICACAO_MS.
+     */
+    fun registaLeituraRssi(mac: String, rssi: Int) {
+        val janela = janelaRssi.getOrPut(mac) { mutableListOf() }
+        janela.add(rssi)
+        if (janela.size > TAMANHO_JANELA_RSSI) {
+            janela.removeAt(0)
+        }
+    }
+
+    private fun medianaRssi(mac: String): Int? {
+        val janela = janelaRssi[mac] ?: return null
+        if (janela.isEmpty()) return null
+        val ordenados = janela.sorted()
+        val meio = ordenados.size / 2
+        return if (ordenados.size % 2 == 1) {
+            ordenados[meio]
+        } else {
+            (ordenados[meio - 1] + ordenados[meio]) / 2
+        }
+    }
+
+    /**
+     * Decide presenca com histerese: o limiar de PRESENTE e' fixo
+     * (LIMIAR_RSSI_PRESENTE_DBM, -75 dBm), e o limiar de AUSENTE e'
+     * o proprio comando.rssiLimite ja configuravel (por omissao -85
+     * dBm para comandos novos) -- reutiliza o campo existente com
+     * efeito real, sem exigir um segundo campo novo na UI so para
+     * este ajuste fino.
+     */
+    private fun decidePresencaComHisterese(mac: String, medianaAtual: Int, limiarAusente: Int): Boolean {
+        val estadoAnterior = presencaAtual[mac] ?: true
+        val novoEstado = if (estadoAnterior) {
+            medianaAtual >= limiarAusente
+        } else {
+            medianaAtual >= LIMIAR_RSSI_PRESENTE_DBM
+        }
+        presencaAtual[mac] = novoEstado
+        return novoEstado
     }
 
     private fun paraMinutos(hhmm: String): Int {
@@ -130,7 +202,18 @@ object GestorAlcance {
 
             val ultimoSinal = comando.ultimoSinalEm
             val semSinalDemasiadoTempo = ultimoSinal != null && (agora - ultimoSinal) >= comando.tempoLimiteMs
-            val sinalFraco = comando.rssi != null && comando.rssi!! < comando.rssiLimite
+
+            // deteccao por MEDIANA das ultimas leituras de RSSI (nao um
+            // valor isolado, ver registaLeituraRssi/medianaRssi), com
+            // HISTERESE entre presente/ausente para nao oscilar perto
+            // do limite. Se ainda nao houver nenhuma leitura na janela
+            // (comando acabado de detetar, ou app reiniciada), cai de
+            // volta ao ultimo RSSI conhecido do comando -- comportamento
+            // igual ao anterior nesse caso especifico, so ate' a janela
+            // ter dados suficientes.
+            val mediana = medianaRssi(comando.mac) ?: comando.rssi
+            val presente = mediana?.let { decidePresencaComHisterese(comando.mac, it, comando.rssiLimite) } ?: true
+            val sinalFraco = !presente
             val foraDeAlcanceAgora = ultimoSinal != null && (semSinalDemasiadoTempo || sinalFraco)
 
             // diagnostico temporario: grava o estado exato de cada
@@ -141,7 +224,8 @@ object GestorAlcance {
             val contagemAntes = contagemForaDeAlcance[comando.mac] ?: 0
             RegistoDiagnostico.regista(
                 ctx,
-                "alcance[${comando.mac}]: rssi=${comando.rssi} limite=${comando.rssiLimite} " +
+                "alcance[${comando.mac}]: rssiAtual=${comando.rssi} mediana=$mediana " +
+                    "limiarPresente=$LIMIAR_RSSI_PRESENTE_DBM limiarAusente=${comando.rssiLimite} " +
                     "tempoDesdeSinal=${tempoDesdeUltimoSinal}ms limite=${comando.tempoLimiteMs}ms " +
                     "semSinal=$semSinalDemasiadoTempo sinalFraco=$sinalFraco -> foraDeAlcance=$foraDeAlcanceAgora " +
                     "(confirmacoes=$contagemAntes/$VERIFICACOES_CONSECUTIVAS_NECESSARIAS)"
@@ -166,7 +250,7 @@ object GestorAlcance {
                     val motivo = when {
                         semSinalDemasiadoTempo && sinalFraco -> "sem sinal e RSSI fraco"
                         semSinalDemasiadoTempo -> "sem sinal há ${agora - ultimoSinal!!}ms"
-                        else -> "RSSI fraco (${comando.rssi} < ${comando.rssiLimite})"
+                        else -> "RSSI fraco (mediana $mediana < ${comando.rssiLimite})"
                     }
                     Log.w(TAG, "${comando.nome} fora de alcance: $motivo")
                     RegistoEventos.adicionaAlertaAlcance(comando.nome)

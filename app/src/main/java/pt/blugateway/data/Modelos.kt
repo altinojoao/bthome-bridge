@@ -201,9 +201,16 @@ data class Comando(
     var foraDeAlcance: Boolean = false,
     // limite de tempo sem sinal, em milissegundos, e RSSI minimo
     // aceitavel -- configuraveis por comando (antes eram uma
-    // constante fixa global em GestorAlcance).
-    var tempoLimiteMs: Long = 60_000L,
-    var rssiLimite: Int = -80,
+    // constante fixa global em GestorAlcance). Valores por omissao
+    // alinhados com a deteccao por mediana+histerese do GestorAlcance
+    // (120s sem sinal, e -85 dBm como limiar de "ausente" -- o
+    // limiar de "presente", -75 dBm, e fixo e nao configuravel por
+    // comando, ver GestorAlcance.LIMIAR_RSSI_PRESENTE_DBM). So afeta
+    // comandos NOVOS -- comandos ja existentes mantem o valor que ja
+    // tinham guardado, mesmo que nunca tenham sido editados
+    // manualmente.
+    var tempoLimiteMs: Long = 120_000L,
+    var rssiLimite: Int = -85,
     // agenda semanal: se agendaSempreAtiva=true, o alarme corre 24h;
     // caso contrario so dentro dos periodos definidos em agendaDias,
     // indexados 0=domingo .. 6=sabado.
@@ -276,8 +283,8 @@ data class Comando(
             alertaAlcance = o.optBoolean("alertaAlcance", false),
             ultimoSinalEm = if (o.has("ultimoSinalEm")) o.optLong("ultimoSinalEm") else null,
             foraDeAlcance = o.optBoolean("foraDeAlcance", false),
-            tempoLimiteMs = o.optLong("tempoLimiteMs", 60_000L),
-            rssiLimite = o.optInt("rssiLimite", -80),
+            tempoLimiteMs = o.optLong("tempoLimiteMs", 120_000L),
+            rssiLimite = o.optInt("rssiLimite", -85),
             agendaSempreAtiva = o.optBoolean("agendaSempreAtiva", true),
             agendaDias = run {
                 val mapa = mutableMapOf<Int, MutableList<PeriodoAgenda>>(
