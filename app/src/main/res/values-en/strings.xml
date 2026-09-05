@@ -206,4 +206,14 @@
     <string name="toca_no_mapa_escolher_viagem">Tap a line on the map to choose it.</string>
     <string name="tt_cenarios">Trajectory scenarios</string>
     <string name="viagem_selecionada_de">Trip from %1$s selected (%2$d points)</string>
+    <string name="atualizacao_titulo">Updates</string>
+    <string name="atualizacao_versao_atual">Installed version: %1$s</string>
+    <string name="atualizacao_verificar">Check for updates</string>
+    <string name="atualizacao_a_verificar">Checking...</string>
+    <string name="atualizacao_ja_atualizado">You already have the latest version.</string>
+    <string name="atualizacao_disponivel">New version available: %1$s</string>
+    <string name="atualizacao_descarregar_instalar">Download and install</string>
+    <string name="atualizacao_a_descarregar">Downloading...</string>
+    <string name="atualizacao_erro">Could not check for updates: %1$s</string>
+    <string name="atualizacao_falha_download">Failed to download the file.</string>
 </resources>

@@ -3,11 +3,14 @@ name: build
 on:
   push:
     branches: [ main, master ]
+    tags: [ 'v*' ]
   workflow_dispatch:
 
 jobs:
   apk:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - uses: actions/checkout@v4
@@ -29,9 +32,22 @@ jobs:
       - name: Compilar APK de debug
         run: gradle assembleDebug --stacktrace
 
-      - name: Publicar APK
+      - name: Publicar APK (artifact de build, todos os pushes)
         uses: actions/upload-artifact@v4
         with:
           name: bthome-bridge-debug
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
+
+      # So corre quando o push e' de uma tag v* (ex: v1.0.24) -- cria
+      # a release se ainda nao existir, e anexa o APK como asset
+      # diretamente a partir do runner do GitHub. Isto substitui o
+      # passo manual de descarregar o artifact e arrastar o ficheiro
+      # para a pagina de releases: o proprio CI publica o APK onde a
+      # app (e qualquer pessoa) o pode descarregar sem autenticacao.
+      - name: Publicar release com APK anexado
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: app/build/outputs/apk/debug/*.apk
+          fail_on_unmatched_files: true

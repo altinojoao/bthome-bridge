@@ -179,6 +179,8 @@ fun EcraPrincipal(vm: GatewayViewModel = viewModel()) {
 
                     CartaoBateria()
 
+                    CartaoAtualizacao()
+
                     CartaoRetencaoTrajeto(
                         modoAtual = modoRetencaoTrajeto,
                         dias = diasRetencaoTrajeto,

@@ -21,8 +21,8 @@ android {
         // tambem foi a primeira com a keystore de debug fixa -- a
         // v1.0.3 e a primeira atualizacao real desse mecanismo,
         // instalando por cima da v1.0.2 sem perder dados.
-        versionCode 28
-        versionName "1.0.24"
+        versionCode 29
+        versionName "1.0.25"
     }
 
     signingConfigs {
@@ -66,6 +66,7 @@ android {
 
     buildFeatures {
         compose true
+        buildConfig true
     }
 
     composeOptions {
