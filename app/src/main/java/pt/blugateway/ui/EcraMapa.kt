@@ -70,7 +70,6 @@ fun EcraMapa(
     var webViewRef by remember { mutableStateOf<WebView?>(null) }
     var erroMapa by remember { mutableStateOf<String?>(null) }
     var soUltimaViagem by remember { mutableStateOf(false) }
-    var mostraCenariosPara by remember { mutableStateOf<String?>(null) }
 
     val comandosComHistorico = remember(comandos) {
         comandos.mapNotNull { c ->
@@ -166,9 +165,6 @@ fun EcraMapa(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(c.nome, color = cores.suave, fontSize = 10.5.sp, modifier = Modifier.weight(1f))
-                        TextButton(onClick = { mostraCenariosPara = c.mac }) {
-                            Text(stringResource(R.string.cenarios_trajeto_botao), color = cores.azul, fontSize = 10.sp)
-                        }
                         TextButton(onClick = { confirmaLimpar = c.mac }) {
                             Text(stringResource(R.string.limpar), color = cores.avisoTinta, fontSize = 10.sp)
                         }
@@ -193,22 +189,6 @@ fun EcraMapa(
                 TextButton(onClick = { confirmaLimpar = null }) { Text(stringResource(R.string.cancelar)) }
             }
         )
-    }
-
-    mostraCenariosPara?.let { mac ->
-        val comandoAlvo = comandos.firstOrNull { it.mac == mac }
-        if (comandoAlvo != null) {
-            val todosCenarios by vm.cenariosTrajeto.collectAsState()
-            DialogoCenariosTrajeto(
-                comandoVigiado = comandoAlvo,
-                comandosComHistorico = comandosComHistorico,
-                cenarios = todosCenarios.filter { it.macComando == mac },
-                onCria = { vm.adicionaCenarioTrajeto(it) },
-                onAtualiza = { vm.atualizaCenarioTrajeto(it) },
-                onRemove = { vm.removeCenarioTrajeto(it) },
-                onFecha = { mostraCenariosPara = null }
-            )
-        }
     }
 }
 

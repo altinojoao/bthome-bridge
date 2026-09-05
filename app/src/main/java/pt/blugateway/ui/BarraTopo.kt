@@ -30,7 +30,8 @@ fun BarraTopo(
     onAlternaSom: () -> Unit,
     onEscolheIdioma: () -> Unit,
     onAbreCardsVisiveis: () -> Unit,
-    onAbreMapa: () -> Unit
+    onAbreMapa: () -> Unit,
+    onAbreCenarios: () -> Unit
 ) {
     val cores = LocalCoresGateway.current
     Row(
@@ -88,6 +89,13 @@ fun BarraTopo(
             ativo = false,
             descricao = stringResource(R.string.mapa_trajeto),
             onClick = onAbreMapa
+        )
+        Spacer(Modifier.width(7.dp))
+        BotaoTopo(
+            emoji = "\uD83C\uDFAF",
+            ativo = false,
+            descricao = stringResource(R.string.tt_cenarios),
+            onClick = onAbreCenarios
         )
     }
 }
