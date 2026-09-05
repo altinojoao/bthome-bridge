@@ -116,7 +116,7 @@ object GestorSemelhancaTrajeto {
      * pontos, cortada nos mesmos criterios de paragem usados por
      * inicioViagemAtual. Usada pela UI para o utilizador escolher
      * qual viagem ja gravada quer usar como template de um cenario
-     * novo (ver DialogoCenariosTrajeto). A mais recente vem por
+     * novo (ver EcraCenarios / SeletorTrajetoMapa). A mais recente vem por
      * ultimo na lista devolvida.
      */
     fun separaEmViagens(pontosOrdenados: List<PontoTrajeto>): List<List<PontoTrajeto>> {

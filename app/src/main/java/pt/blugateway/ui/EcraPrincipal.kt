@@ -48,6 +48,7 @@ fun EcraPrincipal(vm: GatewayViewModel = viewModel()) {
     var mostraSeletorIdioma by remember { mutableStateOf(false) }
     var mostraCardsVisiveis by remember { mutableStateOf(false) }
     var mostraMapa by remember { mutableStateOf(false) }
+    var mostraCenarios by remember { mutableStateOf(false) }
     var balaoAtivo by remember { mutableStateOf(BalaoAtivo.NENHUM) }
 
     val contextoBase = LocalContext.current
@@ -105,7 +106,8 @@ fun EcraPrincipal(vm: GatewayViewModel = viewModel()) {
                     onAlternaSom = { vm.trocaSom() },
                     onEscolheIdioma = { mostraSeletorIdioma = true },
                     onAbreCardsVisiveis = { mostraCardsVisiveis = true },
-                    onAbreMapa = { mostraMapa = true }
+                    onAbreMapa = { mostraMapa = true },
+                    onAbreCenarios = { mostraCenarios = true }
                 )
 
                 if ("hero" !in cardsDesativados) {
@@ -272,6 +274,25 @@ fun EcraPrincipal(vm: GatewayViewModel = viewModel()) {
                     comandos = comandos,
                     vm = vm,
                     onFecha = { mostraMapa = false }
+                )
+            }
+
+            if (mostraCenarios) {
+                val comandosComHistorico = remember(comandos) {
+                    comandos.mapNotNull { c ->
+                        val pontos = vm.historicoTrajeto(c.mac)
+                        if (pontos.isEmpty()) null else c to pontos
+                    }
+                }
+                val cenariosTrajeto by vm.cenariosTrajeto.collectAsState()
+                EcraCenarios(
+                    comandos = comandos,
+                    comandosComHistorico = comandosComHistorico,
+                    cenarios = cenariosTrajeto,
+                    onCria = { vm.adicionaCenarioTrajeto(it) },
+                    onAtualiza = { vm.atualizaCenarioTrajeto(it) },
+                    onRemove = { vm.removeCenarioTrajeto(it) },
+                    onFecha = { mostraCenarios = false }
                 )
             }
         }
