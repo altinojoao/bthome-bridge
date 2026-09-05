@@ -45,6 +45,7 @@ object ProcessadorClique {
 
         if (comandoExistente != null) {
             repo.atualizaSinal(mac, rssi, trama.bateria)
+            if (rssi != null) GestorAlcance.registaLeituraRssi(mac, rssi)
             RegistoDiagnostico.regista(context, "sinal[$mac]: rssi=$rssi recebido, evento=${trama.evento}")
 
             if (comandoExistente.modoBeaconTrajeto) {
