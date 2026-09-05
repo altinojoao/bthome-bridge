@@ -179,9 +179,9 @@
     <string name="bateria_aviso_marca">%1$s è noto per gestire la batteria in modo più aggressivo rispetto ad Android standard. Potrebbe essere necessario disattivare manualmente l\'ottimizzazione in Impostazioni > App > Batteria, e bloccare l\'app nell\'elenco delle app recenti.</string>
     <string name="mapa_so_ultima_viagem">Mostra solo l\'ultimo viaggio</string>
     <string name="retencao_titulo">Cronologia del percorso</string>
-    <string name="retencao_manter_dias">Mantieni gli ultimi</string>
+    <string name="retencao_manter_dias">Mantieni gli ultimi N giorni</string>
     <string name="retencao_dias">giorni</string>
-    <string name="retencao_manter_pontos">Mantieni gli ultimi</string>
+    <string name="retencao_manter_pontos">Mantieni gli ultimi N punti</string>
     <string name="retencao_pontos">punti</string>
     <string name="retencao_modo_dias">Conservato in giorni</string>
     <string name="acoes_do_cenario">Azioni da attivare</string>
@@ -216,4 +216,5 @@
     <string name="atualizacao_a_descarregar">Download in corso...</string>
     <string name="atualizacao_erro">Impossibile verificare: %1$s</string>
     <string name="atualizacao_falha_download">Impossibile scaricare il file.</string>
+    <string name="ver_diagnostico_trajeto">Vedi diagnostica del percorso</string>
 </resources>

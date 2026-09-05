@@ -179,9 +179,9 @@
     <string name="bateria_aviso_marca">%1$s staat bekend om agressiever batterijbeheer dan standaard Android. Mogelijk moet u ook optimalisatie handmatig uitschakelen via Instellingen > Apps > Batterij, en de app vergrendelen in de lijst met recente apps.</string>
     <string name="mapa_so_ultima_viagem">Alleen de laatste rit tonen</string>
     <string name="retencao_titulo">Trajectgeschiedenis</string>
-    <string name="retencao_manter_dias">Laatste behouden</string>
+    <string name="retencao_manter_dias">Laatste N dagen behouden</string>
     <string name="retencao_dias">dagen</string>
-    <string name="retencao_manter_pontos">Laatste behouden</string>
+    <string name="retencao_manter_pontos">Laatste N punten behouden</string>
     <string name="retencao_pontos">punten</string>
     <string name="retencao_modo_dias">Bewaard in dagen</string>
     <string name="acoes_do_cenario">Acties om te activeren</string>
@@ -216,4 +216,5 @@
     <string name="atualizacao_a_descarregar">Bezig met downloaden...</string>
     <string name="atualizacao_erro">Controleren mislukt: %1$s</string>
     <string name="atualizacao_falha_download">Downloaden van het bestand mislukt.</string>
+    <string name="ver_diagnostico_trajeto">Trajectdiagnose bekijken</string>
 </resources>

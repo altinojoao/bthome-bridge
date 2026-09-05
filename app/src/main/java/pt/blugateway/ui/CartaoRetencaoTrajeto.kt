@@ -66,7 +66,7 @@ fun CartaoRetencaoTrajeto(
             )
             Text(
                 stringResource(pt.blugateway.R.string.retencao_manter_dias),
-                color = cores.tinta,
+                color = if (modoAtual == ModoRetencaoTrajeto.DIAS) cores.tinta else cores.suave,
                 fontSize = 11.5.sp,
                 modifier = Modifier.weight(1f)
             )
@@ -98,7 +98,7 @@ fun CartaoRetencaoTrajeto(
             )
             Text(
                 stringResource(pt.blugateway.R.string.retencao_manter_pontos),
-                color = cores.tinta,
+                color = if (modoAtual == ModoRetencaoTrajeto.QUANTIDADE) cores.tinta else cores.suave,
                 fontSize = 11.5.sp,
                 modifier = Modifier.weight(1f)
             )
@@ -118,6 +118,21 @@ fun CartaoRetencaoTrajeto(
                     )
                 }
             }
+        }
+
+        var mostraDiagnostico by remember { mutableStateOf(false) }
+        androidx.compose.material3.TextButton(
+            onClick = { mostraDiagnostico = true },
+            modifier = Modifier.padding(top = 8.dp)
+        ) {
+            Text(
+                stringResource(pt.blugateway.R.string.ver_diagnostico_trajeto),
+                color = cores.suave,
+                fontSize = 10.sp
+            )
+        }
+        if (mostraDiagnostico) {
+            DialogoDiagnosticoTrajeto(onFecha = { mostraDiagnostico = false })
         }
     }
 }

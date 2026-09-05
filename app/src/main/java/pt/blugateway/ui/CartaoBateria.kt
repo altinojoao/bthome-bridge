@@ -139,13 +139,5 @@ fun CartaoBateria() {
                 )
             }
         }
-
-        var mostraDiagnostico by remember { mutableStateOf(false) }
-        TextButton(onClick = { mostraDiagnostico = true }, modifier = Modifier.padding(top = 4.dp)) {
-            Text("Ver diagnóstico do trajeto (temporário)", color = cores.suave, fontSize = 10.sp)
-        }
-        if (mostraDiagnostico) {
-            DialogoDiagnosticoTrajeto(onFecha = { mostraDiagnostico = false })
-        }
     }
 }
