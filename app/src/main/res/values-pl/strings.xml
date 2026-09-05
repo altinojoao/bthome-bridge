@@ -206,4 +206,14 @@
     <string name="toca_no_mapa_escolher_viagem">Dotknij linii na mapie, aby ją wybrać.</string>
     <string name="tt_cenarios">Scenariusze trasy</string>
     <string name="viagem_selecionada_de">Wybrano podróż z %1$s (%2$d punktów)</string>
+    <string name="atualizacao_titulo">Aktualizacje</string>
+    <string name="atualizacao_versao_atual">Zainstalowana wersja: %1$s</string>
+    <string name="atualizacao_verificar">Sprawdź aktualizacje</string>
+    <string name="atualizacao_a_verificar">Sprawdzanie...</string>
+    <string name="atualizacao_ja_atualizado">Masz już najnowszą wersję.</string>
+    <string name="atualizacao_disponivel">Dostępna nowa wersja: %1$s</string>
+    <string name="atualizacao_descarregar_instalar">Pobierz i zainstaluj</string>
+    <string name="atualizacao_a_descarregar">Pobieranie...</string>
+    <string name="atualizacao_erro">Nie udało się sprawdzić: %1$s</string>
+    <string name="atualizacao_falha_download">Nie udało się pobrać pliku.</string>
 </resources>

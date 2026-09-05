@@ -51,6 +51,12 @@
          continua em segundo plano — esta app nao esta na Play Store,
          por isso essa restricao de revisao nao se aplica aqui. -->
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <!-- Exigida desde o Android 8 (API 26) para apps fora da Play
+         Store poderem lançar o instalador de pacotes diretamente:
+         sem esta, ACTION_INSTALL_PACKAGE e' bloqueado pelo sistema
+         mesmo com o utilizador a tentar instalar manualmente
+         (ver GestorAtualizacao.kt). -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
     <uses-feature android:name="android.hardware.bluetooth_le" android:required="true" />
 
@@ -99,6 +105,20 @@
             android:name=".ble.ServicoGateway"
             android:exported="false"
             android:foregroundServiceType="connectedDevice|location" />
+
+        <!-- Expõe o APK descarregado (em cache privado) ao instalador
+             do sistema via content:// (Android 7+ nao permite passar
+             um file:// Uri diretamente a outra app; ver
+             GestorAtualizacao.kt). -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
 
     </application>
 </manifest>

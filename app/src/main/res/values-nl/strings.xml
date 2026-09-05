@@ -206,4 +206,14 @@
     <string name="toca_no_mapa_escolher_viagem">Tik op een lijn op de kaart om deze te kiezen.</string>
     <string name="tt_cenarios">Trajectscenario\'s</string>
     <string name="viagem_selecionada_de">Rit van %1$s geselecteerd (%2$d punten)</string>
+    <string name="atualizacao_titulo">Updates</string>
+    <string name="atualizacao_versao_atual">Geïnstalleerde versie: %1$s</string>
+    <string name="atualizacao_verificar">Controleren op updates</string>
+    <string name="atualizacao_a_verificar">Bezig met controleren...</string>
+    <string name="atualizacao_ja_atualizado">U heeft al de nieuwste versie.</string>
+    <string name="atualizacao_disponivel">Nieuwe versie beschikbaar: %1$s</string>
+    <string name="atualizacao_descarregar_instalar">Downloaden en installeren</string>
+    <string name="atualizacao_a_descarregar">Bezig met downloaden...</string>
+    <string name="atualizacao_erro">Controleren mislukt: %1$s</string>
+    <string name="atualizacao_falha_download">Downloaden van het bestand mislukt.</string>
 </resources>
