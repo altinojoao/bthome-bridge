@@ -47,6 +47,7 @@ fun CartaoAtualizacao() {
     Column(
         Modifier
             .fillMaxWidth()
+            .padding(horizontal = 12.dp)
             .padding(bottom = 8.dp)
             .clip(RoundedCornerShape(4.dp))
             .background(cores.cartao)
