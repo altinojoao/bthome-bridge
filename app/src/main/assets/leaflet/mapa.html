@@ -181,16 +181,22 @@
     /**
      * Filtra os pontos (ja ordenados cronologicamente, mais antigo
      * primeiro) para so os da "ultima viagem" -- a sequencia mais
-     * recente de pontos desde a ultima vez que o comando ficou
-     * "parado" (todos os pontos dentro de RAIO_PARAGEM_METROS uns dos
-     * outros) durante mais de TEMPO_MIN_PARAGEM_MS seguidos. Uma
+     * recente de pontos entre duas paragens longas (ou desde o
+     * inicio, se so houver uma paragem). Uma "paragem longa" e uma
+     * sequencia de pontos todos dentro de RAIO_PARAGEM_METROS uns dos
+     * outros durante mais de TEMPO_MIN_PARAGEM_MS seguidos. Uma
      * pausa curta (ex: semaforo) nao conta como fim de viagem; so
      * uma permanencia longa na mesma zona conta.
+     *
+     * Caso mais comum: o comando chega ao destino e fica la parado
+     * (a ultima paragem detetada vai ate ao fim da lista). Nesse
+     * caso a "ultima viagem" e o troço que LEVOU ate essa paragem,
+     * nao o que vem depois dela (que nao existe).
      */
     function filtraUltimaViagem(pontos) {
       if (pontos.length < 2) return pontos;
 
-      var inicioViagemAtual = 0;
+      var fronteirasParagem = [];
       var i = 0;
       while (i < pontos.length) {
         var j = i;
@@ -201,14 +207,34 @@
         }
         var duracaoParagem = pontos[j].timestamp - pontos[i].timestamp;
         if (duracaoParagem >= TEMPO_MIN_PARAGEM_MS) {
-          inicioViagemAtual = j + 1;
+          fronteirasParagem.push({ inicio: i, fim: j });
           i = j + 1;
         } else {
           i++;
         }
       }
 
-      return inicioViagemAtual < pontos.length ? pontos.slice(inicioViagemAtual) : [];
+      if (fronteirasParagem.length === 0) {
+        // Nunca parou o suficiente -- e tudo uma viagem so.
+        return pontos;
+      }
+
+      var ultimaParagem = fronteirasParagem[fronteirasParagem.length - 1];
+
+      if (ultimaParagem.fim === pontos.length - 1) {
+        // A ultima paragem vai ate ao fim (comando parado agora).
+        // A ultima viagem e o troço desde o fim da paragem anterior
+        // (ou o inicio, se so houver esta) ate ao INICIO desta.
+        var inicioViagem = fronteirasParagem.length >= 2
+          ? fronteirasParagem[fronteirasParagem.length - 2].fim + 1
+          : 0;
+        return pontos.slice(inicioViagem, ultimaParagem.inicio + 1);
+      }
+
+      // A ultima paragem detetada nao vai ate ao fim -- ha
+      // movimento recente a seguir a ela; a ultima viagem e esse
+      // movimento.
+      return pontos.slice(ultimaParagem.fim + 1);
     }
 
     var mostrarSoUltimaViagem = false;
