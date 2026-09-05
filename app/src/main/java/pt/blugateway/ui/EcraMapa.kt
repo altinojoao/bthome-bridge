@@ -87,9 +87,10 @@ fun EcraMapa(
         if (paginaCarregada) {
             val webView = webViewRef ?: return@LaunchedEffect
             webView.evaluateJavascript("defineMostrarSoUltimaViagem($soUltimaViagem);", null)
-            // jsonTrajetos ja e uma string JSON valida; evaluateJavascript cuida de escapar
-            // as aspas necessarias -- JSONObject.quote() so faria double-quoting.
-            val script = "desenhaTrajetos($jsonTrajetos);"
+            // desenhaTrajetos(jsonTexto) faz JSON.parse(jsonTexto) dentro do JS,
+            // logo tem de receber uma STRING JSON (com aspas), nao o array/objeto
+            // injetado cru como literal JavaScript -- daí o quote() aqui.
+            val script = "desenhaTrajetos(${JSONObject.quote(jsonTrajetos)});"
             webView.evaluateJavascript(script, null)
         }
     }
@@ -294,7 +295,7 @@ private fun construirJsonTrajetos(comandosComHistorico: List<Pair<Comando, List<
         obj.put("nome", comando.nome)
         obj.put("cor", CORES_TRAJETO[indice % CORES_TRAJETO.size])
         val arrPontos = JSONArray()
-        pontos.forEach { p ->
+        pontos.sortedBy { it.timestamp }.forEach { p ->
             arrPontos.put(JSONObject().apply {
                 put("lat", p.latitude)
                 put("lon", p.longitude)
