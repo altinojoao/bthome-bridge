@@ -87,7 +87,9 @@ fun EcraMapa(
         if (paginaCarregada) {
             val webView = webViewRef ?: return@LaunchedEffect
             webView.evaluateJavascript("defineMostrarSoUltimaViagem($soUltimaViagem);", null)
-            val script = "desenhaTrajetos(${JSONObject.quote(jsonTrajetos)});"
+            // jsonTrajetos ja e uma string JSON valida; evaluateJavascript cuida de escapar
+            // as aspas necessarias -- JSONObject.quote() so faria double-quoting.
+            val script = "desenhaTrajetos($jsonTrajetos);"
             webView.evaluateJavascript(script, null)
         }
     }
