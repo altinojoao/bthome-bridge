@@ -217,4 +217,13 @@
     <string name="atualizacao_erro">Prüfung fehlgeschlagen: %1$s</string>
     <string name="atualizacao_falha_download">Datei konnte nicht heruntergeladen werden.</string>
     <string name="ver_diagnostico_trajeto">Streckendiagnose anzeigen</string>
+    <string name="menu_topo_titulo">Menü</string>
+    <string name="menu_topo_desc_config">Konto, Akku, Updates und mehr</string>
+    <string name="menu_topo_desc_comandos_especiais">Befehlskombinationen und -sequenzen</string>
+    <string name="menu_topo_desc_som_ativo">Ein — zum Stummschalten tippen</string>
+    <string name="menu_topo_desc_som_inativo">Stumm — zum Aktivieren tippen</string>
+    <string name="menu_topo_desc_idioma">App-Sprache auswählen</string>
+    <string name="menu_topo_desc_tema_claro">Helles Design — für dunkel tippen</string>
+    <string name="menu_topo_desc_tema_escuro">Dunkles Design — für hell tippen</string>
+    <string name="menu_topo_desc_blocos_visiveis">Auswählen, welche Bereiche angezeigt werden</string>
 </resources>

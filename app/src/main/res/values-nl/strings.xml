@@ -217,4 +217,13 @@
     <string name="atualizacao_erro">Controleren mislukt: %1$s</string>
     <string name="atualizacao_falha_download">Downloaden van het bestand mislukt.</string>
     <string name="ver_diagnostico_trajeto">Trajectdiagnose bekijken</string>
+    <string name="menu_topo_titulo">Menu</string>
+    <string name="menu_topo_desc_config">Account, batterij, updates en meer</string>
+    <string name="menu_topo_desc_comandos_especiais">Combinaties en reeksen van commando\'s</string>
+    <string name="menu_topo_desc_som_ativo">Aan — tik om te dempen</string>
+    <string name="menu_topo_desc_som_inativo">Gedempt — tik om te activeren</string>
+    <string name="menu_topo_desc_idioma">Kies de taal van de app</string>
+    <string name="menu_topo_desc_tema_claro">Licht thema — tik voor donker</string>
+    <string name="menu_topo_desc_tema_escuro">Donker thema — tik voor licht</string>
+    <string name="menu_topo_desc_blocos_visiveis">Kies welke secties op het scherm verschijnen</string>
 </resources>

@@ -6,6 +6,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -18,6 +22,14 @@ import androidx.compose.ui.unit.sp
 import pt.blugateway.R
 import pt.blugateway.ui.theme.LocalCoresGateway
 
+/**
+ * Barra de topo, agora com apenas 3 botoes visiveis (menu, mapa,
+ * cenarios) em vez dos 7 anteriores -- Configuracoes, Comandos
+ * especiais, Som, Idioma, Tema e Blocos visiveis passaram a viver
+ * dentro do menu unico (engrenagem), ver DialogoMenuTopo. Mapa e
+ * Cenarios continuam com botao proprio por serem ecras completos de
+ * uso mais frequente que uma simples alternancia de definicao.
+ */
 @Composable
 fun BarraTopo(
     configAberto: Boolean,
@@ -34,6 +46,8 @@ fun BarraTopo(
     onAbreCenarios: () -> Unit
 ) {
     val cores = LocalCoresGateway.current
+    var mostraMenu by remember { mutableStateOf(false) }
+
     Row(
         Modifier.fillMaxWidth().padding(14.dp, 10.dp, 14.dp, 6.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -43,45 +57,10 @@ fun BarraTopo(
         Text(stringResource(R.string.app_name), color = cores.suave, fontSize = 13.sp, modifier = Modifier.weight(1f))
 
         BotaoTopo(
-            emoji = "\uD83D\uDEE0\uFE0F",
-            ativo = configAberto,
-            descricao = stringResource(R.string.tt_config),
-            onClick = onAlternaConfig
-        )
-        Spacer(Modifier.width(7.dp))
-        BotaoTopo(
-            emoji = "\uD83D\uDD17",
-            ativo = modoEspecialAtivo,
-            descricao = stringResource(R.string.comandos_especiais),
-            onClick = onAlternaModoEspecial
-        )
-        Spacer(Modifier.width(7.dp))
-        BotaoTopo(
-            emoji = if (somAtivo) "\uD83D\uDD0A" else "\uD83D\uDD07",
-            ativo = false,
-            descricao = stringResource(R.string.tt_som),
-            onClick = onAlternaSom
-        )
-        Spacer(Modifier.width(7.dp))
-        BotaoTopo(
-            emoji = "\uD83C\uDF10",
-            ativo = false,
-            descricao = stringResource(R.string.tt_idioma),
-            onClick = onEscolheIdioma
-        )
-        Spacer(Modifier.width(7.dp))
-        BotaoTopo(
-            emoji = if (temaClaro) "\u2600\uFE0F" else "\uD83C\uDF19",
-            ativo = false,
-            descricao = stringResource(R.string.tt_tema),
-            onClick = onAlternaTema
-        )
-        Spacer(Modifier.width(7.dp))
-        BotaoTopo(
-            emoji = "\uD83D\uDCD1",
-            ativo = false,
-            descricao = stringResource(R.string.blocos_visiveis),
-            onClick = onAbreCardsVisiveis
+            emoji = "\u2699\uFE0F",
+            ativo = mostraMenu,
+            descricao = stringResource(R.string.menu_topo_titulo),
+            onClick = { mostraMenu = true }
         )
         Spacer(Modifier.width(7.dp))
         BotaoTopo(
@@ -96,6 +75,22 @@ fun BarraTopo(
             ativo = false,
             descricao = stringResource(R.string.tt_cenarios),
             onClick = onAbreCenarios
+        )
+    }
+
+    if (mostraMenu) {
+        DialogoMenuTopo(
+            configAberto = configAberto,
+            temaClaro = temaClaro,
+            somAtivo = somAtivo,
+            modoEspecialAtivo = modoEspecialAtivo,
+            onAlternaConfig = onAlternaConfig,
+            onAlternaModoEspecial = onAlternaModoEspecial,
+            onAlternaTema = onAlternaTema,
+            onAlternaSom = onAlternaSom,
+            onEscolheIdioma = onEscolheIdioma,
+            onAbreCardsVisiveis = onAbreCardsVisiveis,
+            onFecha = { mostraMenu = false }
         )
     }
 }

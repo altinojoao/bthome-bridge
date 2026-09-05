@@ -217,4 +217,13 @@
     <string name="atualizacao_erro">Nie udało się sprawdzić: %1$s</string>
     <string name="atualizacao_falha_download">Nie udało się pobrać pliku.</string>
     <string name="ver_diagnostico_trajeto">Zobacz diagnostykę trasy</string>
+    <string name="menu_topo_titulo">Menu</string>
+    <string name="menu_topo_desc_config">Konto, bateria, aktualizacje i więcej</string>
+    <string name="menu_topo_desc_comandos_especiais">Kombinacje i sekwencje poleceń</string>
+    <string name="menu_topo_desc_som_ativo">Włączony — dotknij, aby wyciszyć</string>
+    <string name="menu_topo_desc_som_inativo">Wyciszony — dotknij, aby włączyć</string>
+    <string name="menu_topo_desc_idioma">Wybierz język aplikacji</string>
+    <string name="menu_topo_desc_tema_claro">Jasny motyw — dotknij dla ciemnego</string>
+    <string name="menu_topo_desc_tema_escuro">Ciemny motyw — dotknij dla jasnego</string>
+    <string name="menu_topo_desc_blocos_visiveis">Wybierz, które sekcje pojawiają się na ekranie</string>
 </resources>

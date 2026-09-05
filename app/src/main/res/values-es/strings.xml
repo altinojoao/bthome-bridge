@@ -217,4 +217,13 @@
     <string name="atualizacao_erro">No se pudo comprobar: %1$s</string>
     <string name="atualizacao_falha_download">Error al descargar el archivo.</string>
     <string name="ver_diagnostico_trajeto">Ver diagnóstico del trayecto</string>
+    <string name="menu_topo_titulo">Menú</string>
+    <string name="menu_topo_desc_config">Cuenta, batería, actualizaciones y más</string>
+    <string name="menu_topo_desc_comandos_especiais">Combinaciones y secuencias de comandos</string>
+    <string name="menu_topo_desc_som_ativo">Activado — toque para silenciar</string>
+    <string name="menu_topo_desc_som_inativo">Silenciado — toque para activar</string>
+    <string name="menu_topo_desc_idioma">Elegir el idioma de la app</string>
+    <string name="menu_topo_desc_tema_claro">Tema claro — toque para oscuro</string>
+    <string name="menu_topo_desc_tema_escuro">Tema oscuro — toque para claro</string>
+    <string name="menu_topo_desc_blocos_visiveis">Elegir qué secciones aparecen en pantalla</string>
 </resources>

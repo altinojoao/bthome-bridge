@@ -217,4 +217,13 @@
     <string name="atualizacao_erro">Impossible de vérifier : %1$s</string>
     <string name="atualizacao_falha_download">Échec du téléchargement du fichier.</string>
     <string name="ver_diagnostico_trajeto">Voir le diagnostic du trajet</string>
+    <string name="menu_topo_titulo">Menu</string>
+    <string name="menu_topo_desc_config">Compte, batterie, mises à jour et plus</string>
+    <string name="menu_topo_desc_comandos_especiais">Combinaisons et séquences de commandes</string>
+    <string name="menu_topo_desc_som_ativo">Activé — toucher pour couper le son</string>
+    <string name="menu_topo_desc_som_inativo">Coupé — toucher pour activer</string>
+    <string name="menu_topo_desc_idioma">Choisir la langue de l\'application</string>
+    <string name="menu_topo_desc_tema_claro">Thème clair — toucher pour sombre</string>
+    <string name="menu_topo_desc_tema_escuro">Thème sombre — toucher pour clair</string>
+    <string name="menu_topo_desc_blocos_visiveis">Choisir les sections affichées à l\'écran</string>
 </resources>

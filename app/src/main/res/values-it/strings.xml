@@ -217,4 +217,13 @@
     <string name="atualizacao_erro">Impossibile verificare: %1$s</string>
     <string name="atualizacao_falha_download">Impossibile scaricare il file.</string>
     <string name="ver_diagnostico_trajeto">Vedi diagnostica del percorso</string>
+    <string name="menu_topo_titulo">Menu</string>
+    <string name="menu_topo_desc_config">Account, batteria, aggiornamenti e altro</string>
+    <string name="menu_topo_desc_comandos_especiais">Combinazioni e sequenze di comandi</string>
+    <string name="menu_topo_desc_som_ativo">Attivo — tocca per disattivare</string>
+    <string name="menu_topo_desc_som_inativo">Silenziato — tocca per attivare</string>
+    <string name="menu_topo_desc_idioma">Scegli la lingua dell\'app</string>
+    <string name="menu_topo_desc_tema_claro">Tema chiaro — tocca per scuro</string>
+    <string name="menu_topo_desc_tema_escuro">Tema scuro — tocca per chiaro</string>
+    <string name="menu_topo_desc_blocos_visiveis">Scegli quali sezioni appaiono a schermo</string>
 </resources>

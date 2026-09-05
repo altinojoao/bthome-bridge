@@ -217,4 +217,13 @@
     <string name="atualizacao_erro">Could not check for updates: %1$s</string>
     <string name="atualizacao_falha_download">Failed to download the file.</string>
     <string name="ver_diagnostico_trajeto">View trajectory diagnostics</string>
+    <string name="menu_topo_titulo">Menu</string>
+    <string name="menu_topo_desc_config">Account, battery, updates and more</string>
+    <string name="menu_topo_desc_comandos_especiais">Command combinations and sequences</string>
+    <string name="menu_topo_desc_som_ativo">On — tap to mute</string>
+    <string name="menu_topo_desc_som_inativo">Muted — tap to turn on</string>
+    <string name="menu_topo_desc_idioma">Choose the app language</string>
+    <string name="menu_topo_desc_tema_claro">Light theme — tap for dark</string>
+    <string name="menu_topo_desc_tema_escuro">Dark theme — tap for light</string>
+    <string name="menu_topo_desc_blocos_visiveis">Choose which sections appear on screen</string>
 </resources>
