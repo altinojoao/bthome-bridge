@@ -38,11 +38,12 @@ fun CartaoHero(
     Column(
         Modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 8.dp)
+            .padding(horizontal = 12.dp)
+            .padding(bottom = 8.dp)
             .clip(RoundedCornerShape(4.dp))
             .background(cores.cartao)
             .border(1.dp, cores.linha, RoundedCornerShape(4.dp))
-            .padding(10.dp, 10.dp, 12.dp, 10.dp)
+            .padding(10.dp, 12.dp, 12.dp, 12.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
@@ -57,7 +58,7 @@ fun CartaoHero(
             Text(
                 stringResource(R.string.ecra_apagado),
                 color = cores.tinta,
-                fontSize = 13.sp,
+                fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,

@@ -35,7 +35,7 @@ fun BarraTopo(
 ) {
     val cores = LocalCoresGateway.current
     Row(
-        Modifier.fillMaxWidth().padding(14.dp, 10.dp, 14.dp, 2.dp),
+        Modifier.fillMaxWidth().padding(14.dp, 10.dp, 14.dp, 6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         IconeBluetooth(modifier = Modifier.size(16.dp))

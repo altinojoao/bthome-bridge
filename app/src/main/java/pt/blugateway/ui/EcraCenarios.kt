@@ -114,10 +114,8 @@ fun EcraCenarios(
                         }
 
                         if (cenarios.isEmpty()) {
-                            Text(
+                            pt.blugateway.ui.theme.TextoEstadoVazio(
                                 stringResource(R.string.sem_cenarios_nenhum_comando),
-                                color = cores.suave,
-                                fontSize = 11.sp,
                                 modifier = Modifier.padding(top = 8.dp)
                             )
                         }

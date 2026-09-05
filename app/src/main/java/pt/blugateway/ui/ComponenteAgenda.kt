@@ -137,11 +137,7 @@ private fun DetalheDiaAgenda(
             .padding(10.dp)
     ) {
         if (periodos.isEmpty()) {
-            Text(
-                stringResource(R.string.sem_periodos_neste_dia),
-                color = cores.suave,
-                fontSize = 10.5.sp
-            )
+            pt.blugateway.ui.theme.TextoEstadoVazio(stringResource(R.string.sem_periodos_neste_dia))
         } else {
             periodos.forEachIndexed { i, p ->
                 Row(

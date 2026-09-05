@@ -71,10 +71,7 @@ fun CartaoCombinacoes(
 
             Column(Modifier.padding(top = 12.dp)) {
                 if (perfil.combinacoes.isEmpty()) {
-                    Text(
-                        stringResource(R.string.sem_combinacoes),
-                        color = cores.suave, fontSize = 11.5.sp
-                    )
+                    pt.blugateway.ui.theme.TextoEstadoVazio(stringResource(R.string.sem_combinacoes))
                 } else {
                     perfil.combinacoes.forEach { comb ->
                         ItemCombinacao(

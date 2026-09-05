@@ -134,6 +134,7 @@ fun CartaoComandos(
                         color = cores.suave,
                         fontSize = 10.sp,
                         fontFamily = FontFamily.Monospace,
+                        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
                         modifier = Modifier.padding(vertical = 8.dp)
                     )
                 }
