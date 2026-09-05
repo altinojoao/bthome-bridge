@@ -199,9 +199,12 @@
     <string name="ultimo_disparo">Último disparo: %1$s</string>
     <string name="viagem_resumo">%1$s → %2$s (%3$d puntos)</string>
     <string name="cenarios_trajeto_botao">Escenarios</string>
-    <string name="cenarios_trajeto_titulo_geral">Escenarios de trayecto</string>
-    <string name="escolher_comando_origem">Elegir el comando a vigilar</string>
     <string name="template_atual_mantido">Mantiene la plantilla actual (%1$d puntos)</string>
     <string name="editar_cenario">Editar</string>
     <string name="guardar_cenario">Guardar</string>
+    <string name="cenarios_trajeto_titulo">Escenarios de trayecto — %1$s</string>
+    <string name="cenario_vigia_comando">Vigilando el trayecto de %1$s</string>
+    <string name="importar_template_de">Importar la plantilla de trayecto de</string>
+    <string name="origem_proprio_comando">%1$s (un trayecto propio)</string>
+    <string name="template_importado_de">Plantilla importada de %1$s</string>
 </resources>

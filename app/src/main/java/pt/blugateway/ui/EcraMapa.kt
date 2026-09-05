@@ -197,9 +197,9 @@ fun EcraMapa(
         if (comandoAlvo != null) {
             val todosCenarios by vm.cenariosTrajeto.collectAsState()
             DialogoCenariosTrajeto(
-                comandoInicial = comandoAlvo,
+                comandoVigiado = comandoAlvo,
                 comandosComHistorico = comandosComHistorico,
-                cenarios = todosCenarios,
+                cenarios = todosCenarios.filter { it.macComando == mac },
                 onCria = { vm.adicionaCenarioTrajeto(it) },
                 onAtualiza = { vm.atualizaCenarioTrajeto(it) },
                 onRemove = { vm.removeCenarioTrajeto(it) },

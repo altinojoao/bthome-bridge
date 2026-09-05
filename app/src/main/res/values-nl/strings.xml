@@ -199,9 +199,12 @@
     <string name="ultimo_disparo">Laatst geactiveerd: %1$s</string>
     <string name="viagem_resumo">%1$s → %2$s (%3$d punten)</string>
     <string name="cenarios_trajeto_botao">Scenario\'s</string>
-    <string name="cenarios_trajeto_titulo_geral">Trajectscenario\'s</string>
-    <string name="escolher_comando_origem">Kies de te bewaken opdracht</string>
     <string name="template_atual_mantido">Behoudt de huidige sjabloon (%1$d punten)</string>
     <string name="editar_cenario">Bewerken</string>
     <string name="guardar_cenario">Opslaan</string>
+    <string name="cenarios_trajeto_titulo">Trajectscenario\'s — %1$s</string>
+    <string name="cenario_vigia_comando">Bewaakt het traject van %1$s</string>
+    <string name="importar_template_de">Trajectsjabloon importeren van</string>
+    <string name="origem_proprio_comando">%1$s (een eigen rit)</string>
+    <string name="template_importado_de">Sjabloon geïmporteerd van %1$s</string>
 </resources>

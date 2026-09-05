@@ -199,9 +199,12 @@
     <string name="ultimo_disparo">Dernier déclenchement : %1$s</string>
     <string name="viagem_resumo">%1$s → %2$s (%3$d points)</string>
     <string name="cenarios_trajeto_botao">Scénarios</string>
-    <string name="cenarios_trajeto_titulo_geral">Scénarios de trajet</string>
-    <string name="escolher_comando_origem">Choisir la commande à surveiller</string>
     <string name="template_atual_mantido">Conserve le modèle actuel (%1$d points)</string>
     <string name="editar_cenario">Modifier</string>
     <string name="guardar_cenario">Enregistrer</string>
+    <string name="cenarios_trajeto_titulo">Scénarios de trajet — %1$s</string>
+    <string name="cenario_vigia_comando">Surveille le trajet de %1$s</string>
+    <string name="importar_template_de">Importer le modèle de trajet depuis</string>
+    <string name="origem_proprio_comando">%1$s (un de ses propres trajets)</string>
+    <string name="template_importado_de">Modèle importé de %1$s</string>
 </resources>

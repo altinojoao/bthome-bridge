@@ -42,20 +42,25 @@ import java.util.Date
 import java.util.Locale
 import java.util.UUID
 
-/* Ecra de gestao de cenarios de trajeto: lista TODOS os cenarios ja
-   criados (independente de qual comando cada um vigia -- ativar/
-   desativar, editar, apagar), e permite criar um novo escolhendo
-   QUALQUER comando com historico como fonte do trajeto de
-   referencia, nao so o comando a partir do qual o dialogo foi
-   aberto (esse fica so como sugestao pre-selecionada). O modo de
-   desenhar o template a mao no mapa fica para uma iteracao futura.
+/* Ecra de gestao de cenarios de trajeto DE UM COMANDO ESPECIFICO --
+   o comando a partir do qual o dialogo foi aberto e' o comando
+   VIGIADO por todos os cenarios geridos aqui, tal como o alarme de
+   alcance ou o modo trajeto ja pertencem a um comando especifico.
 
-   Editar um cenario existente reutiliza o mesmo formulario da
-   criacao (CriadorOuEditorCenario), pre-preenchido com os valores
-   atuais -- ver cenarioEmEdicao. */
+   O que E configuravel por cenario e' de ONDE IMPORTAR o template:
+   ao criar ou editar, escolhe de qual comando quer usar uma viagem
+   ja gravada como forma de referencia -- pode ser o proprio comando
+   vigiado (uma viagem antiga dele mesmo) ou QUALQUER outro comando
+   com historico. O cenario continua sempre a vigiar e disparar
+   sobre o comando onde foi criado, nunca sobre o comando de onde
+   importou o template (ver CenarioTrajeto.macOrigemTemplate, so
+   informativo).
+
+   O modo de desenhar o template a mao no mapa fica para uma
+   iteracao futura. */
 @Composable
 fun DialogoCenariosTrajeto(
-    comandoInicial: Comando,
+    comandoVigiado: Comando,
     comandosComHistorico: List<Pair<Comando, List<PontoTrajeto>>>,
     cenarios: List<CenarioTrajeto>,
     onCria: (CenarioTrajeto) -> Unit,
@@ -76,7 +81,7 @@ fun DialogoCenariosTrajeto(
         title = {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    stringResource(R.string.cenarios_trajeto_titulo_geral),
+                    stringResource(R.string.cenarios_trajeto_titulo, comandoVigiado.nome),
                     color = cores.tinta,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
@@ -90,7 +95,7 @@ fun DialogoCenariosTrajeto(
         text = {
             if (mostraCriacao || cenarioEmEdicao != null) {
                 CriadorOuEditorCenario(
-                    comandoSugerido = comandoInicial,
+                    comandoVigiado = comandoVigiado,
                     comandosComHistorico = comandosComHistorico,
                     cenarioExistente = cenarioEmEdicao,
                     onGrava = { cenario ->
@@ -119,12 +124,12 @@ fun DialogoCenariosTrajeto(
                     }
 
                     cenarios.forEach { cenario ->
-                        val nomeComando = comandosComHistorico
-                            .firstOrNull { it.first.mac == cenario.macComando }
-                            ?.first?.nome ?: cenario.macComando
+                        val nomeOrigem = cenario.macOrigemTemplate?.let { mac ->
+                            comandosComHistorico.firstOrNull { it.first.mac == mac }?.first?.nome ?: mac
+                        }
                         LinhaCenarioTrajeto(
                             cenario = cenario,
-                            nomeComando = nomeComando,
+                            nomeOrigemTemplate = nomeOrigem,
                             onAlterna = { ativo -> onAtualiza(cenario.copy(ativo = ativo)) },
                             onEditar = { cenarioEmEdicao = cenario },
                             onRemove = { onRemove(cenario.id) }
@@ -139,7 +144,7 @@ fun DialogoCenariosTrajeto(
 @Composable
 private fun LinhaCenarioTrajeto(
     cenario: CenarioTrajeto,
-    nomeComando: String,
+    nomeOrigemTemplate: String?,
     onAlterna: (Boolean) -> Unit,
     onEditar: () -> Unit,
     onRemove: () -> Unit
@@ -156,10 +161,7 @@ private fun LinhaCenarioTrajeto(
             .padding(10.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Text(cenario.nome, color = cores.tinta, fontSize = 12.sp)
-                Text(nomeComando, color = cores.suave, fontSize = 9.5.sp)
-            }
+            Text(cenario.nome, color = cores.tinta, fontSize = 12.sp, modifier = Modifier.weight(1f))
             Box(Modifier.size(width = 38.dp, height = 24.dp), contentAlignment = Alignment.Center) {
                 Switch(checked = cenario.ativo, onCheckedChange = onAlterna, modifier = Modifier.scale(0.7f))
             }
@@ -173,6 +175,13 @@ private fun LinhaCenarioTrajeto(
             fontSize = 10.sp,
             modifier = Modifier.padding(top = 2.dp)
         )
+        if (nomeOrigemTemplate != null) {
+            Text(
+                stringResource(R.string.template_importado_de, nomeOrigemTemplate),
+                color = cores.suave,
+                fontSize = 10.sp
+            )
+        }
         cenario.ultimoDisparoEm?.let { ts ->
             Text(
                 stringResource(R.string.ultimo_disparo, formato.format(Date(ts))),
@@ -187,20 +196,17 @@ private fun LinhaCenarioTrajeto(
 }
 
 /**
- * Formulario partilhado por criacao e edicao. Quando cenarioExistente
- * != null, todos os campos comecam pre-preenchidos com os valores
- * desse cenario -- incluindo o comando de origem, mas o seletor de
- * comando continua ativo e pode ser mudado tambem na edicao (ex: o
- * cenario afinal deveria vigiar outro comando). Mudar de comando ou
- * escolher uma viagem nova substitui o template guardado; manter o
- * comando e nao tocar na escolha de viagem preserva o template
- * original (ver templateOriginalMantido). Gravar chama sempre
- * onGrava com um CenarioTrajeto completo; o chamador decide se e
- * onCria ou onAtualiza.
+ * Formulario partilhado por criacao e edicao. O comando VIGIADO
+ * (comandoVigiado) e' sempre fixo -- e' o comando dentro do qual
+ * este dialogo foi aberto, tal como o alarme de alcance ou o modo
+ * trajeto pertencem a um comando especifico. O que se escolhe aqui
+ * e' de QUAL comando importar a forma do trajeto (o template): pode
+ * ser uma viagem do proprio comandoVigiado, ou de qualquer outro
+ * comando com historico.
  */
 @Composable
 private fun CriadorOuEditorCenario(
-    comandoSugerido: Comando,
+    comandoVigiado: Comando,
     comandosComHistorico: List<Pair<Comando, List<PontoTrajeto>>>,
     cenarioExistente: CenarioTrajeto?,
     onGrava: (CenarioTrajeto) -> Unit,
@@ -209,22 +215,23 @@ private fun CriadorOuEditorCenario(
     val cores = LocalCoresGateway.current
     val formato = remember { SimpleDateFormat("dd/MM HH:mm", Locale.US) }
 
-    // indice do comando escolhido dentro de comandosComHistorico -- por
-    // omissao, o comando a partir do qual o dialogo foi aberto (ou o
-    // comando do cenario existente, se estiver a editar), se ainda
+    // indice do comando de ORIGEM DO TEMPLATE dentro de
+    // comandosComHistorico -- por omissao, o comando de onde o
+    // cenario existente importou o template (se estiver a editar),
+    // ou o proprio comandoVigiado (import "de si mesmo"), se ainda
     // tiver historico; senao o primeiro da lista
-    var indiceComandoEscolhido by remember {
+    var indiceOrigemEscolhido by remember {
         mutableStateOf(
             comandosComHistorico.indexOfFirst {
-                it.first.mac == (cenarioExistente?.macComando ?: comandoSugerido.mac)
+                it.first.mac == (cenarioExistente?.macOrigemTemplate ?: cenarioExistente?.macComando ?: comandoVigiado.mac)
             }.let { if (it >= 0) it else if (comandosComHistorico.isNotEmpty()) 0 else null }
         )
     }
 
-    val historicoEscolhido = indiceComandoEscolhido?.let { comandosComHistorico.getOrNull(it)?.second } ?: emptyList()
-    val viagens = remember(historicoEscolhido) { GestorSemelhancaTrajeto.separaEmViagens(historicoEscolhido).asReversed() }
+    val historicoOrigem = indiceOrigemEscolhido?.let { comandosComHistorico.getOrNull(it)?.second } ?: emptyList()
+    val viagens = remember(historicoOrigem) { GestorSemelhancaTrajeto.separaEmViagens(historicoOrigem).asReversed() }
 
-    var viagemEscolhida by remember(indiceComandoEscolhido) { mutableStateOf<Int?>(if (viagens.isNotEmpty()) 0 else null) }
+    var viagemEscolhida by remember(indiceOrigemEscolhido) { mutableStateOf<Int?>(if (viagens.isNotEmpty()) 0 else null) }
     var nome by remember { mutableStateOf(cenarioExistente?.nome ?: "") }
     var limiarTexto by remember { mutableStateOf((cenarioExistente?.limiarPercentagem ?: 80).toString()) }
     var raioTexto by remember { mutableStateOf((cenarioExistente?.raioMetros ?: 40).toString()) }
@@ -234,7 +241,19 @@ private fun CriadorOuEditorCenario(
     var templateOriginalMantido by remember { mutableStateOf(cenarioExistente != null) }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        Text(stringResource(R.string.escolher_comando_origem), color = cores.tinta, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+        Text(
+            stringResource(R.string.cenario_vigia_comando, comandoVigiado.nome),
+            color = cores.suave,
+            fontSize = 11.sp
+        )
+
+        Text(
+            stringResource(R.string.importar_template_de),
+            color = cores.tinta,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.padding(top = 10.dp)
+        )
 
         if (comandosComHistorico.isEmpty()) {
             Text(
@@ -246,25 +265,31 @@ private fun CriadorOuEditorCenario(
         }
 
         comandosComHistorico.forEachIndexed { indice, par ->
-            val (comandoOpcao, _) = par
+            val (comandoOrigem, _) = par
             Row(
                 Modifier.fillMaxWidth().padding(top = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 RadioButton(
-                    selected = indiceComandoEscolhido == indice,
+                    selected = indiceOrigemEscolhido == indice,
                     onClick = {
                         // so marca o template como "a substituir" se de
-                        // facto mudou de comando -- voltar a tocar no
-                        // mesmo comando ja selecionado nao deve fazer
+                        // facto mudou a origem -- voltar a tocar na
+                        // mesma origem ja selecionada nao deve fazer
                         // perder o template original ao editar
-                        if (indiceComandoEscolhido != indice) {
-                            indiceComandoEscolhido = indice
+                        if (indiceOrigemEscolhido != indice) {
+                            indiceOrigemEscolhido = indice
                             templateOriginalMantido = false
                         }
                     }
                 )
-                Text(comandoOpcao.nome, color = cores.suave, fontSize = 11.5.sp)
+                Text(
+                    if (comandoOrigem.mac == comandoVigiado.mac) {
+                        stringResource(R.string.origem_proprio_comando, comandoOrigem.nome)
+                    } else comandoOrigem.nome,
+                    color = cores.suave,
+                    fontSize = 11.5.sp
+                )
             }
         }
 
@@ -373,8 +398,8 @@ private fun CriadorOuEditorCenario(
                 Text(stringResource(R.string.cancelar), color = cores.suave, fontSize = 12.sp)
             }
             Spacer(Modifier.weight(1f))
-            val macEscolhido = indiceComandoEscolhido?.let { comandosComHistorico.getOrNull(it)?.first?.mac }
-            val podeGravar = macEscolhido != null && nome.isNotBlank() &&
+            val macOrigemEscolhido = indiceOrigemEscolhido?.let { comandosComHistorico.getOrNull(it)?.first?.mac }
+            val podeGravar = macOrigemEscolhido != null && nome.isNotBlank() &&
                 (templateOriginalMantido || viagemEscolhida != null)
             TextButton(
                 enabled = podeGravar,
@@ -386,12 +411,17 @@ private fun CriadorOuEditorCenario(
                     }
                     val limiar = limiarTexto.toIntOrNull()?.coerceIn(1, 100) ?: 80
                     val raio = raioTexto.toIntOrNull()?.coerceAtLeast(1) ?: 40
+                    // macOrigemTemplate so' e' guardado se a origem for
+                    // DIFERENTE do proprio comando vigiado -- importar
+                    // de si mesmo nao e' tecnicamente uma importacao
+                    val origemParaGuardar = if (macOrigemEscolhido == comandoVigiado.mac) null else macOrigemEscolhido
                     onGrava(
                         CenarioTrajeto(
                             id = cenarioExistente?.id ?: UUID.randomUUID().toString(),
                             nome = nome,
-                            macComando = macEscolhido!!,
+                            macComando = comandoVigiado.mac,
                             template = template,
+                            macOrigemTemplate = origemParaGuardar,
                             limiarPercentagem = limiar,
                             raioMetros = raio,
                             ativo = cenarioExistente?.ativo ?: true,
