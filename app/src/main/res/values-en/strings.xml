@@ -199,9 +199,12 @@
     <string name="ultimo_disparo">Last triggered: %1$s</string>
     <string name="viagem_resumo">%1$s → %2$s (%3$d points)</string>
     <string name="cenarios_trajeto_botao">Scenarios</string>
-    <string name="cenarios_trajeto_titulo_geral">Trajectory scenarios</string>
-    <string name="escolher_comando_origem">Choose the command to watch</string>
     <string name="template_atual_mantido">Keeps the current template (%1$d points)</string>
     <string name="editar_cenario">Edit</string>
     <string name="guardar_cenario">Save</string>
+    <string name="cenarios_trajeto_titulo">Trajectory scenarios — %1$s</string>
+    <string name="cenario_vigia_comando">Watching the trajectory of %1$s</string>
+    <string name="importar_template_de">Import the trajectory template from</string>
+    <string name="origem_proprio_comando">%1$s (one of its own trips)</string>
+    <string name="template_importado_de">Template imported from %1$s</string>
 </resources>

@@ -199,9 +199,12 @@
     <string name="ultimo_disparo">Letzte Auslösung: %1$s</string>
     <string name="viagem_resumo">%1$s → %2$s (%3$d Punkte)</string>
     <string name="cenarios_trajeto_botao">Szenarien</string>
-    <string name="cenarios_trajeto_titulo_geral">Streckenszenarien</string>
-    <string name="escolher_comando_origem">Zu überwachenden Befehl wählen</string>
     <string name="template_atual_mantido">Behält die aktuelle Vorlage (%1$d Punkte)</string>
     <string name="editar_cenario">Bearbeiten</string>
     <string name="guardar_cenario">Speichern</string>
+    <string name="cenarios_trajeto_titulo">Streckenszenarien — %1$s</string>
+    <string name="cenario_vigia_comando">Überwacht die Strecke von %1$s</string>
+    <string name="importar_template_de">Streckenvorlage importieren von</string>
+    <string name="origem_proprio_comando">%1$s (eine eigene Fahrt)</string>
+    <string name="template_importado_de">Vorlage importiert von %1$s</string>
 </resources>

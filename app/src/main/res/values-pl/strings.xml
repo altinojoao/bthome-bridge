@@ -199,9 +199,12 @@
     <string name="ultimo_disparo">Ostatnie uruchomienie: %1$s</string>
     <string name="viagem_resumo">%1$s → %2$s (%3$d punktów)</string>
     <string name="cenarios_trajeto_botao">Scenariusze</string>
-    <string name="cenarios_trajeto_titulo_geral">Scenariusze trasy</string>
-    <string name="escolher_comando_origem">Wybierz polecenie do obserwowania</string>
     <string name="template_atual_mantido">Zachowuje bieżący szablon (%1$d punktów)</string>
     <string name="editar_cenario">Edytuj</string>
     <string name="guardar_cenario">Zapisz</string>
+    <string name="cenarios_trajeto_titulo">Scenariusze trasy — %1$s</string>
+    <string name="cenario_vigia_comando">Obserwuje trasę %1$s</string>
+    <string name="importar_template_de">Zaimportuj szablon trasy z</string>
+    <string name="origem_proprio_comando">%1$s (własna podróż)</string>
+    <string name="template_importado_de">Szablon zaimportowany z %1$s</string>
 </resources>

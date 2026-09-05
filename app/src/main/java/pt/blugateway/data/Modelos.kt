@@ -399,6 +399,13 @@ data class CenarioTrajeto(
     var nome: String,
     var macComando: String,
     var template: List<PontoTemplate>,
+    // MAC do comando de onde o template foi IMPORTADO -- so
+    // informativo (mostrado na UI, "template importado de X"), nunca
+    // usado na avaliacao: o cenario compara sempre o historico de
+    // macComando com este template, seja de onde vier. Null se o
+    // template veio de uma viagem do proprio macComando (import "de
+    // si mesmo", tecnicamente nao e importacao nenhuma).
+    var macOrigemTemplate: String? = null,
     // % (0-100) de semelhanca necessaria para disparar
     var limiarPercentagem: Int = 80,
     // raio de correspondencia entre um ponto do trajeto atual e um
@@ -419,6 +426,7 @@ data class CenarioTrajeto(
         put("nome", nome)
         put("macComando", macComando)
         put("template", JSONArray().apply { template.forEach { put(it.paraJson()) } })
+        macOrigemTemplate?.let { put("macOrigemTemplate", it) }
         put("limiarPercentagem", limiarPercentagem)
         put("raioMetros", raioMetros)
         put("ativo", ativo)
@@ -446,6 +454,7 @@ data class CenarioTrajeto(
                 nome = o.optString("nome", "Trajeto"),
                 macComando = mac,
                 template = template,
+                macOrigemTemplate = if (o.has("macOrigemTemplate")) o.optString("macOrigemTemplate") else null,
                 limiarPercentagem = o.optInt("limiarPercentagem", 80),
                 raioMetros = o.optInt("raioMetros", 40),
                 ativo = o.optBoolean("ativo", true),

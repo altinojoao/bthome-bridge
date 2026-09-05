@@ -199,9 +199,12 @@
     <string name="ultimo_disparo">Ultimo attivazione: %1$s</string>
     <string name="viagem_resumo">%1$s → %2$s (%3$d punti)</string>
     <string name="cenarios_trajeto_botao">Scenari</string>
-    <string name="cenarios_trajeto_titulo_geral">Scenari di percorso</string>
-    <string name="escolher_comando_origem">Scegli il comando da monitorare</string>
     <string name="template_atual_mantido">Mantiene il modello attuale (%1$d punti)</string>
     <string name="editar_cenario">Modifica</string>
     <string name="guardar_cenario">Salva</string>
+    <string name="cenarios_trajeto_titulo">Scenari di percorso — %1$s</string>
+    <string name="cenario_vigia_comando">Monitora il percorso di %1$s</string>
+    <string name="importar_template_de">Importa il modello di percorso da</string>
+    <string name="origem_proprio_comando">%1$s (un proprio viaggio)</string>
+    <string name="template_importado_de">Modello importato da %1$s</string>
 </resources>
