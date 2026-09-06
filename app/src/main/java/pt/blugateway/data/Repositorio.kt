@@ -509,6 +509,24 @@ class Repositorio private constructor(context: Context) {
         guardaComandos(lista)
     }
 
+    /** Marca que um clique (qualquer tipo, com ou sem acao
+     *  configurada) acabou de ser recebido neste comando -- usado
+     *  pelo icone de pulsos na grelha visual, que replica o mesmo
+     *  numero/duracao de pulsos que GestorSons.tocaClique() usa para
+     *  o som, mas visualmente (ver PulsosClique em
+     *  CartaoGrelhaComandos.kt). */
+    fun registaClique(mac: String, tipoIndice: Int, disparouAcao: Boolean) {
+        val agora = System.currentTimeMillis()
+        val lista = _comandos.value.map {
+            if (it.mac == mac) it.copy(
+                ultimoCliqueTipo = tipoIndice,
+                ultimoCliqueEm = agora,
+                ultimoCliqueDisparouAcao = disparouAcao
+            ) else it
+        }
+        guardaComandos(lista)
+    }
+
     // --- conta shelly ---
 
     private fun carregaConta(): ContaShelly = ContaShelly(

@@ -72,6 +72,7 @@ object ProcessadorClique {
                         if (combinacaoDisparada != null) {
                             RegistoEventos.adicionaCombinacao(combinacaoDisparada.nome)
                             repo.registaCombinacaoDisparada(mac, combinacaoDisparada.nome)
+                            repo.registaClique(mac, indice, disparouAcao = true)
                             DiagnosticoEstado.atualizaCombinacao(nome, rssi, trama, bytesOriginais, combinacaoDisparada.nome)
                             GestorSons.tocaCombinacao(combinacaoDisparada.sequencia)
 
@@ -88,12 +89,15 @@ object ProcessadorClique {
                                 )
                             }
                         } else {
+                            repo.registaClique(mac, indice, disparouAcao = false)
                             DiagnosticoEstado.atualizaEspera(nome, rssi, trama, bytesOriginais)
                         }
                     } else {
                         RegistoEventos.adiciona(indiceParaNomeEvento(context, indice), rssi)
                         DiagnosticoEstado.atualiza(nome, rssi, trama, bytesOriginais, indice)
                         GestorSons.tocaClique(indice)
+                        val temAcoes = perfil?.eventos?.getOrNull(indice)?.isNotEmpty() == true
+                        repo.registaClique(mac, indice, disparouAcao = temAcoes)
 
                         CoroutineScope(Dispatchers.IO).launch {
                             ExecutorAcoes.executa(

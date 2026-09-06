@@ -26,13 +26,18 @@ import android.os.Looper
  */
 object GestorSons {
 
-    private const val DURACAO_BIP_CURTO_MS = 90
-    private const val DURACAO_BIP_LONGO_MS = 260
-    private const val PAUSA_ENTRE_BIPS_MS = 110L
+    // Duracoes e padrao de pulsos por tipo de clique -- publicos
+    // porque tambem sao reutilizados pelo icone de pulsos visuais na
+    // grelha de comandos (ver PulsosClique em
+    // CartaoGrelhaComandos.kt), para o visual e o som nunca
+    // desalinharem.
+    const val DURACAO_BIP_CURTO_MS = 90
+    const val DURACAO_BIP_LONGO_MS = 260
+    const val PAUSA_ENTRE_BIPS_MS = 110L
     private const val PAUSA_ENTRE_CLIQUES_SEQUENCIA_MS = 320L
 
     // [contagem, ehLongo] por indice de TipoClique (0..6)
-    private val PADRAO_POR_INDICE = arrayOf(
+    val PADRAO_POR_INDICE = arrayOf(
         1 to false, // SIMPLES
         2 to false, // DUPLO
         3 to false, // TRIPLO

@@ -189,6 +189,16 @@ data class Comando(
     // o cartao mostrar destaque temporario (ver Repositorio.TEMPO_DESTAQUE_COMBINACAO_MS)
     var ultimaCombinacao: String? = null,
     var ultimaCombinacaoEm: Long? = null,
+    // preenchidos a CADA clique (qualquer tipo, com ou sem acao
+    // configurada no perfil) -- usado pelo icone de pulsos na
+    // grelha visual (ver CartaoGrelhaComandos/GestorSons.PADRAO_POR_INDICE,
+    // reaproveitado para desenhar o mesmo numero/duracao de pulsos
+    // que o som toca). ultimoCliqueDisparouAcao distingue a cor:
+    // verde se disparou uma acao real, azul se foi um clique "vazio"
+    // (evento sem nenhuma acao configurada nesse perfil).
+    var ultimoCliqueTipo: Int? = null,
+    var ultimoCliqueEm: Long? = null,
+    var ultimoCliqueDisparouAcao: Boolean = false,
     // alarme de "fora de alcance": alerta se este comando ficar
     // tempoLimiteMs sem enviar nenhum sinal (clique ou beacon), OU
     // se o ultimo RSSI recebido for pior que rssiLimite. ultimoSinalEm
@@ -257,6 +267,9 @@ data class Comando(
         rssi?.let { put("rssi", it) }
         ultimaCombinacao?.let { put("ultimaCombinacao", it) }
         ultimaCombinacaoEm?.let { put("ultimaCombinacaoEm", it) }
+        ultimoCliqueTipo?.let { put("ultimoCliqueTipo", it) }
+        ultimoCliqueEm?.let { put("ultimoCliqueEm", it) }
+        put("ultimoCliqueDisparouAcao", ultimoCliqueDisparouAcao)
         put("alertaAlcance", alertaAlcance)
         ultimoSinalEm?.let { put("ultimoSinalEm", it) }
         put("foraDeAlcance", foraDeAlcance)
@@ -287,6 +300,9 @@ data class Comando(
             rssi = if (o.has("rssi")) o.optInt("rssi") else null,
             ultimaCombinacao = if (o.has("ultimaCombinacao")) o.optString("ultimaCombinacao") else null,
             ultimaCombinacaoEm = if (o.has("ultimaCombinacaoEm")) o.optLong("ultimaCombinacaoEm") else null,
+            ultimoCliqueTipo = if (o.has("ultimoCliqueTipo")) o.optInt("ultimoCliqueTipo") else null,
+            ultimoCliqueEm = if (o.has("ultimoCliqueEm")) o.optLong("ultimoCliqueEm") else null,
+            ultimoCliqueDisparouAcao = o.optBoolean("ultimoCliqueDisparouAcao", false),
             alertaAlcance = o.optBoolean("alertaAlcance", false),
             ultimoSinalEm = if (o.has("ultimoSinalEm")) o.optLong("ultimoSinalEm") else null,
             foraDeAlcance = o.optBoolean("foraDeAlcance", false),

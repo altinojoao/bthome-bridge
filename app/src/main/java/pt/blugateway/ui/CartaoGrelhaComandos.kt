@@ -11,6 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -20,6 +21,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
+import kotlinx.coroutines.delay
+import pt.blugateway.ble.GestorSons
 import pt.blugateway.R
 import pt.blugateway.data.Comando
 import pt.blugateway.data.Perfil
@@ -151,6 +154,62 @@ private fun calculaColunas(nComandos: Int): Int = when {
     else -> 4
 }
 
+/**
+ * Anima N pulsos distintos e sequenciais (pontos que acendem e
+ * apagam um a seguir ao outro) sempre que 'cliqueEm' muda para um
+ * valor novo -- replica exatamente o numero de pulsos e a duracao
+ * (curta/longa) que GestorSons usa para o som do mesmo tipo de
+ * clique (ver GestorSons.PADRAO_POR_INDICE), para o feedback visual
+ * e sonoro nunca desalinharem. Cor verde se o clique disparou uma
+ * acao real, azul se foi um clique "vazio" (evento sem nenhuma acao
+ * configurada nesse perfil, ou uma combinacao ainda em espera).
+ *
+ * Nao mostra nada enquanto nao houver nenhum clique registado
+ * (tipoIndice ou cliqueEm nulos) nem depois de a animacao terminar
+ * -- so' fica visivel durante a janela do ultimo clique recebido.
+ * Timing validado isoladamente em Python antes desta integracao.
+ */
+@Composable
+private fun PulsosClique(
+    tipoIndice: Int?,
+    cliqueEm: Long?,
+    disparouAcao: Boolean,
+    modifier: Modifier = Modifier
+) {
+    if (tipoIndice == null || cliqueEm == null) return
+    val (contagem, longo) = GestorSons.PADRAO_POR_INDICE.getOrNull(tipoIndice) ?: return
+    val duracaoPulsoMs = if (longo) GestorSons.DURACAO_BIP_LONGO_MS else GestorSons.DURACAO_BIP_CURTO_MS
+    val cor = if (disparouAcao) Color(0xFF3FB950) else Color(0xFF2BA6E0)
+
+    // um estado de "aceso" por pulso -- cada um liga/desliga na vez
+    // certa, seguindo o timing exato de GestorSons
+    val acesos = remember(cliqueEm) { List(contagem) { mutableStateOf(false) } }
+    var visivel by remember(cliqueEm) { mutableStateOf(true) }
+
+    LaunchedEffect(cliqueEm) {
+        for (i in 0 until contagem) {
+            acesos[i].value = true
+            delay(duracaoPulsoMs.toLong())
+            acesos[i].value = false
+            if (i < contagem - 1) delay(GestorSons.PAUSA_ENTRE_BIPS_MS)
+        }
+        visivel = false
+    }
+
+    if (visivel) {
+        Row(modifier, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+            acesos.forEach { aceso ->
+                Box(
+                    Modifier
+                        .size(7.dp)
+                        .clip(CircleShape)
+                        .background(if (aceso.value) cor else cor.copy(alpha = 0.15f))
+                )
+            }
+        }
+    }
+}
+
 @Composable
 private fun BotaoGrelhaComando(
     comando: Comando,
@@ -203,6 +262,13 @@ private fun BotaoGrelhaComando(
                         .background(cores.avisoTinta)
                 )
             }
+
+            PulsosClique(
+                tipoIndice = comando.ultimoCliqueTipo,
+                cliqueEm = comando.ultimoCliqueEm,
+                disparouAcao = comando.ultimoCliqueDisparouAcao,
+                modifier = Modifier.align(Alignment.BottomStart).padding(4.dp)
+            )
         }
 
         Text(
