@@ -31,7 +31,10 @@ jobs:
 
       - name: Compilar APK de debug
         id: build
-        run: gradle assembleDebug --stacktrace 2>&1 | tee /tmp/build-output.log
+        shell: bash
+        run: |
+          set -o pipefail
+          gradle assembleDebug --stacktrace 2>&1 | tee /tmp/build-output.log
         continue-on-error: true
 
       - name: Diagnostico -- publicar erro como annotation (acessivel via API)
