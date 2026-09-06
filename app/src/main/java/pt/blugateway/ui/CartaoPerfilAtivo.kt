@@ -106,7 +106,7 @@ fun CartaoPerfilAtivo(
 }
 
 @Composable
-private fun BlocoEvento(
+fun BlocoEvento(
     indice: Int,
     acoes: List<Acao>,
     notacaoPontos: Boolean,

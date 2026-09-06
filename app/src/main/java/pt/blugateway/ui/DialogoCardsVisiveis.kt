@@ -24,6 +24,7 @@ import pt.blugateway.ui.theme.LocalCoresGateway
 private val BLOCOS_CONFIGURAVEIS = listOf(
     "hero" to R.string.sec_escuta,
     "diag" to R.string.sec_diag,
+    "grelha" to R.string.grelha_comandos_titulo,
     "comandos" to R.string.sec_comandos,
     "configPainel" to R.string.sec_config,
     "reg" to R.string.sec_registo

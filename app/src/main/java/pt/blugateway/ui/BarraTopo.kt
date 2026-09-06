@@ -43,7 +43,8 @@ fun BarraTopo(
     onEscolheIdioma: () -> Unit,
     onAbreCardsVisiveis: () -> Unit,
     onAbreMapa: () -> Unit,
-    onAbreCenarios: () -> Unit
+    onAbreCenarios: () -> Unit,
+    onAbrePerfis: () -> Unit
 ) {
     val cores = LocalCoresGateway.current
     var mostraMenu by remember { mutableStateOf(false) }
@@ -90,6 +91,7 @@ fun BarraTopo(
             onAlternaSom = onAlternaSom,
             onEscolheIdioma = onEscolheIdioma,
             onAbreCardsVisiveis = onAbreCardsVisiveis,
+            onAbrePerfis = onAbrePerfis,
             onFecha = { mostraMenu = false }
         )
     }

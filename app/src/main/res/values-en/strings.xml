@@ -226,4 +226,14 @@
     <string name="menu_topo_desc_tema_claro">Light theme — tap for dark</string>
     <string name="menu_topo_desc_tema_escuro">Dark theme — tap for light</string>
     <string name="menu_topo_desc_blocos_visiveis">Choose which sections appear on screen</string>
+    <string name="sufixo_copia">(copy)</string>
+    <string name="menu_topo_desc_perfis">Create, edit and organize action profiles</string>
+    <string name="grelha_comandos_titulo">Command grid</string>
+    <string name="ajuda_grelha_comandos">Visual view of associated commands. Tap a command to give it an image.</string>
+    <string name="nenhum_comando_grelha">No commands associated yet.</string>
+    <string name="grelha_editar_imagem_titulo">Image for %1$s</string>
+    <string name="grelha_editar_imagem_dica">Paste a link to an online image to show it here.</string>
+    <string name="grelha_editar_imagem_campo">Image link</string>
+    <string name="grelha_remover_imagem">Remove image</string>
+    <string name="guardar">Save</string>
 </resources>

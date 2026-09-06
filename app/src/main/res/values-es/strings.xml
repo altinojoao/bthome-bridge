@@ -226,4 +226,14 @@
     <string name="menu_topo_desc_tema_claro">Tema claro — toque para oscuro</string>
     <string name="menu_topo_desc_tema_escuro">Tema oscuro — toque para claro</string>
     <string name="menu_topo_desc_blocos_visiveis">Elegir qué secciones aparecen en pantalla</string>
+    <string name="sufixo_copia">(copia)</string>
+    <string name="menu_topo_desc_perfis">Crear, editar y organizar perfiles de acciones</string>
+    <string name="grelha_comandos_titulo">Cuadrícula de comandos</string>
+    <string name="ajuda_grelha_comandos">Vista visual de los comandos asociados. Toque un comando para asignarle una imagen.</string>
+    <string name="nenhum_comando_grelha">Todavía no hay comandos asociados.</string>
+    <string name="grelha_editar_imagem_titulo">Imagen de %1$s</string>
+    <string name="grelha_editar_imagem_dica">Pegue el enlace de una imagen en línea para mostrarla aquí.</string>
+    <string name="grelha_editar_imagem_campo">Enlace de la imagen</string>
+    <string name="grelha_remover_imagem">Quitar imagen</string>
+    <string name="guardar">Guardar</string>
 </resources>

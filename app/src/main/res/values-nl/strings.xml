@@ -226,4 +226,14 @@
     <string name="menu_topo_desc_tema_claro">Licht thema — tik voor donker</string>
     <string name="menu_topo_desc_tema_escuro">Donker thema — tik voor licht</string>
     <string name="menu_topo_desc_blocos_visiveis">Kies welke secties op het scherm verschijnen</string>
+    <string name="sufixo_copia">(kopie)</string>
+    <string name="menu_topo_desc_perfis">Actieprofielen aanmaken, bewerken en ordenen</string>
+    <string name="grelha_comandos_titulo">Commandoraster</string>
+    <string name="ajuda_grelha_comandos">Visueel overzicht van gekoppelde commando\'s. Tik op een commando om er een afbeelding aan toe te wijzen.</string>
+    <string name="nenhum_comando_grelha">Nog geen commando\'s gekoppeld.</string>
+    <string name="grelha_editar_imagem_titulo">Afbeelding van %1$s</string>
+    <string name="grelha_editar_imagem_dica">Plak de link van een online afbeelding om deze hier te tonen.</string>
+    <string name="grelha_editar_imagem_campo">Afbeeldingslink</string>
+    <string name="grelha_remover_imagem">Afbeelding verwijderen</string>
+    <string name="guardar">Opslaan</string>
 </resources>

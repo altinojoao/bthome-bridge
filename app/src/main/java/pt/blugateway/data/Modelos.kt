@@ -241,7 +241,13 @@ data class Comando(
     // independentes (pode ter um sem o outro).
     var modoBeaconTrajeto: Boolean = false,
     var intervaloBeaconMs: Long = 60_000L,
-    var ultimoPontoTrajetoEm: Long? = null
+    var ultimoPontoTrajetoEm: Long? = null,
+    // link de imagem online (http/https) que representa este
+    // comando na grelha visual (ver EcraGrelhaComandos) -- opt-in
+    // por comando, sem imagem por omissao. A app nao descarrega nem
+    // guarda a propria imagem, so o URL; o carregamento e cache sao
+    // geridos pela biblioteca Coil no momento de mostrar.
+    var imagemUrl: String? = null
 ) {
     fun paraJson(): JSONObject = JSONObject().apply {
         put("mac", mac)
@@ -269,6 +275,7 @@ data class Comando(
         put("modoBeaconTrajeto", modoBeaconTrajeto)
         put("intervaloBeaconMs", intervaloBeaconMs)
         ultimoPontoTrajetoEm?.let { put("ultimoPontoTrajetoEm", it) }
+        imagemUrl?.let { put("imagemUrl", it) }
     }
 
     companion object {
@@ -308,7 +315,8 @@ data class Comando(
             incluirLocalizacao = o.optBoolean("incluirLocalizacao", false),
             modoBeaconTrajeto = o.optBoolean("modoBeaconTrajeto", false),
             intervaloBeaconMs = o.optLong("intervaloBeaconMs", 60_000L),
-            ultimoPontoTrajetoEm = if (o.has("ultimoPontoTrajetoEm")) o.optLong("ultimoPontoTrajetoEm") else null
+            ultimoPontoTrajetoEm = if (o.has("ultimoPontoTrajetoEm")) o.optLong("ultimoPontoTrajetoEm") else null,
+            imagemUrl = if (o.has("imagemUrl")) o.optString("imagemUrl") else null
         )
     }
 }

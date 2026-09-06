@@ -162,6 +162,45 @@ class Repositorio private constructor(context: Context) {
         return substituto
     }
 
+    /**
+     * Move o perfil no indice 'de' para o indice 'para', deslocando
+     * os restantes -- usado pelo arrastar-para-reordenar em
+     * EcraPerfis. A ordem da lista e' a unica fonte de verdade da
+     * ordem de apresentacao (nao ha campo 'ordem' explicito no
+     * modelo Perfil).
+     */
+    fun reordenaPerfis(de: Int, para: Int) {
+        val lista = _perfis.value.toMutableList()
+        if (de !in lista.indices || para !in lista.indices) return
+        val item = lista.removeAt(de)
+        lista.add(para, item)
+        guardaPerfis(lista)
+    }
+
+    /**
+     * Cria uma copia completa de um perfil existente -- novo id,
+     * nome com sufixo "(cópia)", mas os mesmos eventos/acoes e
+     * combinacoes copiados profundamente (listas novas, nao
+     * partilhadas com o original, para editar uma copia nunca afetar
+     * a outra). O novo perfil fica logo a seguir ao original na
+     * lista. Devolve o novo perfil criado.
+     */
+    fun duplicaPerfil(id: String, sufixoNome: String): Perfil? {
+        val original = acharPerfil(id) ?: return null
+        val copia = original.copy(
+            id = "p" + System.currentTimeMillis(),
+            nome = "${original.nome} $sufixoNome",
+            eventos = original.eventos.map { it.map { a -> a.copy() }.toMutableList() }.toMutableList(),
+            combinacoes = original.combinacoes.map { it.copy(acoes = it.acoes.map { a -> a.copy() }.toMutableList()) }.toMutableList()
+        )
+        val indiceOriginal = _perfis.value.indexOfFirst { it.id == id }
+        val lista = _perfis.value.toMutableList()
+        val posicaoInsercao = if (indiceOriginal >= 0) indiceOriginal + 1 else lista.size
+        lista.add(posicaoInsercao, copia)
+        guardaPerfis(lista)
+        return copia
+    }
+
     // --- comandos ---
 
     private fun carregaComandos(): List<Comando> {
@@ -429,6 +468,16 @@ class Repositorio private constructor(context: Context) {
     fun defineIncluirLocalizacao(mac: String, incluir: Boolean) {
         val lista = _comandos.value.map {
             if (it.mac == mac) it.copy(incluirLocalizacao = incluir) else it
+        }
+        guardaComandos(lista)
+    }
+
+    /** URL da imagem do comando na grelha visual -- null/vazio remove
+     *  a imagem, voltando ao icone generico. */
+    fun defineImagemUrl(mac: String, url: String?) {
+        val limpo = url?.trim()?.takeIf { it.isNotEmpty() }
+        val lista = _comandos.value.map {
+            if (it.mac == mac) it.copy(imagemUrl = limpo) else it
         }
         guardaComandos(lista)
     }

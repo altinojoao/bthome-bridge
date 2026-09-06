@@ -47,6 +47,7 @@ fun DialogoMenuTopo(
     onAlternaSom: () -> Unit,
     onEscolheIdioma: () -> Unit,
     onAbreCardsVisiveis: () -> Unit,
+    onAbrePerfis: () -> Unit,
     onFecha: () -> Unit
 ) {
     val cores = LocalCoresGateway.current
@@ -79,6 +80,13 @@ fun DialogoMenuTopo(
                     descricao = stringResource(R.string.menu_topo_desc_config),
                     ativo = configAberto,
                     onClick = { onAlternaConfig(); onFecha() }
+                )
+                ItemMenuTopo(
+                    emoji = "\uD83D\uDC64",
+                    nome = stringResource(R.string.sec_perfis),
+                    descricao = stringResource(R.string.menu_topo_desc_perfis),
+                    ativo = false,
+                    onClick = { onAbrePerfis(); onFecha() }
                 )
                 ItemMenuTopo(
                     emoji = "\uD83D\uDD17",

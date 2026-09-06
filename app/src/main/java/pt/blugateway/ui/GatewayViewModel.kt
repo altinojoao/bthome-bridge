@@ -142,6 +142,10 @@ class GatewayViewModel(app: Application) : AndroidViewModel(app) {
         repo.defineIncluirLocalizacao(mac, incluir)
     }
 
+    fun defineImagemUrl(mac: String, url: String?) {
+        repo.defineImagemUrl(mac, url)
+    }
+
     fun alternaModoBeaconTrajeto(mac: String, ativo: Boolean) {
         repo.alternaModoBeaconTrajeto(mac, ativo)
     }
@@ -255,6 +259,16 @@ class GatewayViewModel(app: Application) : AndroidViewModel(app) {
         if (_perfilAtivoId.value == id) {
             _perfilAtivoId.value = substituto
         }
+    }
+
+    fun reordenaPerfis(de: Int, para: Int) {
+        repo.reordenaPerfis(de, para)
+    }
+
+    fun duplicaPerfil(id: String) {
+        val sufixo = getApplication<Application>().getString(R.string.sufixo_copia)
+        val copia = repo.duplicaPerfil(id, sufixo)
+        if (copia != null) abrePerfil(copia.id)
     }
 
     fun trocaNotacao() {

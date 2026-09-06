@@ -17,7 +17,7 @@ import java.util.Locale
 
 /* Identifica qual balao de ajuda esta aberto neste momento -- so um
    de cada vez, tal como na interface HTML (balaoAjudaAberto). */
-private enum class BalaoAtivo { NENHUM, ESCUTA, DIAGNOSTICO, COMANDOS, REGISTO }
+private enum class BalaoAtivo { NENHUM, ESCUTA, DIAGNOSTICO, GRELHA, COMANDOS, REGISTO }
 
 @Composable
 fun EcraPrincipal(vm: GatewayViewModel = viewModel()) {
@@ -49,6 +49,7 @@ fun EcraPrincipal(vm: GatewayViewModel = viewModel()) {
     var mostraCardsVisiveis by remember { mutableStateOf(false) }
     var mostraMapa by remember { mutableStateOf(false) }
     var mostraCenarios by remember { mutableStateOf(false) }
+    var mostraPerfis by remember { mutableStateOf(false) }
     var balaoAtivo by remember { mutableStateOf(BalaoAtivo.NENHUM) }
 
     val contextoBase = LocalContext.current
@@ -107,7 +108,8 @@ fun EcraPrincipal(vm: GatewayViewModel = viewModel()) {
                     onEscolheIdioma = { mostraSeletorIdioma = true },
                     onAbreCardsVisiveis = { mostraCardsVisiveis = true },
                     onAbreMapa = { mostraMapa = true },
-                    onAbreCenarios = { mostraCenarios = true }
+                    onAbreCenarios = { mostraCenarios = true },
+                    onAbrePerfis = { mostraPerfis = true }
                 )
 
                 if ("hero" !in cardsDesativados) {
@@ -129,6 +131,18 @@ fun EcraPrincipal(vm: GatewayViewModel = viewModel()) {
                         onAlternaAjuda = {
                             balaoAtivo = if (balaoAtivo == BalaoAtivo.DIAGNOSTICO) BalaoAtivo.NENHUM else BalaoAtivo.DIAGNOSTICO
                         }
+                    )
+                }
+
+                if ("grelha" !in cardsDesativados) {
+                    CartaoGrelhaComandos(
+                        comandos = comandos,
+                        perfis = perfis,
+                        ajudaAtiva = balaoAtivo == BalaoAtivo.GRELHA,
+                        onAlternaAjuda = {
+                            balaoAtivo = if (balaoAtivo == BalaoAtivo.GRELHA) BalaoAtivo.NENHUM else BalaoAtivo.GRELHA
+                        },
+                        onDefineImagemUrl = vm::defineImagemUrl
                     )
                 }
 
@@ -190,31 +204,7 @@ fun EcraPrincipal(vm: GatewayViewModel = viewModel()) {
                         onDefinePontos = vm::defineQuantidadeRetencaoTrajeto
                     )
 
-                    CartaoPerfis(
-                        perfis = perfis,
-                        comandos = comandos,
-                        perfilAtivoId = perfilAtivoId,
-                        confirmaApagar = confirmaApagarPerfil,
-                        onAbre = vm::abrePerfil,
-                        onRenomeia = vm::renomeiaPerfil,
-                        onPedeApagar = vm::pedeApagarPerfil,
-                        onConfirmaApagar = vm::confirmaApagar,
-                        onNovoPerfil = { vm.novoPerfil("Novo perfil") }
-                    )
-
                     if (perfilAtivo != null) {
-                        CartaoPerfilAtivo(
-                            perfil = perfilAtivo,
-                            notacaoPontos = notacaoPontos,
-                            onTrocaNotacao = vm::trocaNotacao,
-                            onFecha = vm::fechaPerfil,
-                            onAdicionaAcao = { indice -> vm.adicionaAcao(perfilAtivo.id, indice) },
-                            onRemoveAcao = { indice, j -> vm.removeAcao(perfilAtivo.id, indice, j) },
-                            onAtualizaAcao = { indice, j, transformacao ->
-                                vm.atualizaAcao(perfilAtivo.id, indice, j, transformacao)
-                            }
-                        )
-
                         CartaoCombinacoes(
                             perfil = perfilAtivo,
                             notacaoPontos = notacaoPontos,
@@ -295,6 +285,30 @@ fun EcraPrincipal(vm: GatewayViewModel = viewModel()) {
                     onAtualiza = { vm.atualizaCenarioTrajeto(it) },
                     onRemove = { vm.removeCenarioTrajeto(it) },
                     onFecha = { mostraCenarios = false }
+                )
+            }
+
+            if (mostraPerfis) {
+                EcraPerfis(
+                    perfis = perfis,
+                    comandos = comandos,
+                    notacaoPontos = notacaoPontos,
+                    confirmaApagar = confirmaApagarPerfil,
+                    perfilAtivoId = perfilAtivoId,
+                    onFecha = { mostraPerfis = false },
+                    onRenomeia = vm::renomeiaPerfil,
+                    onPedeApagar = vm::pedeApagarPerfil,
+                    onConfirmaApagar = vm::confirmaApagar,
+                    onNovoPerfil = { vm.novoPerfil("Novo perfil") },
+                    onDuplicaPerfil = vm::duplicaPerfil,
+                    onReordena = vm::reordenaPerfis,
+                    onExpande = { id -> if (id != null) vm.abrePerfil(id) else vm.fechaPerfil() },
+                    onTrocaNotacao = vm::trocaNotacao,
+                    onAdicionaAcao = { perfilId, indice -> vm.adicionaAcao(perfilId, indice) },
+                    onRemoveAcao = { perfilId, indice, j -> vm.removeAcao(perfilId, indice, j) },
+                    onAtualizaAcao = { perfilId, indice, j, transformacao ->
+                        vm.atualizaAcao(perfilId, indice, j, transformacao)
+                    }
                 )
             }
         }

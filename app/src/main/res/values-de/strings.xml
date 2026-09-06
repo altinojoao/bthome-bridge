@@ -226,4 +226,14 @@
     <string name="menu_topo_desc_tema_claro">Helles Design — für dunkel tippen</string>
     <string name="menu_topo_desc_tema_escuro">Dunkles Design — für hell tippen</string>
     <string name="menu_topo_desc_blocos_visiveis">Auswählen, welche Bereiche angezeigt werden</string>
+    <string name="sufixo_copia">(Kopie)</string>
+    <string name="menu_topo_desc_perfis">Aktionsprofile erstellen, bearbeiten und organisieren</string>
+    <string name="grelha_comandos_titulo">Befehlsraster</string>
+    <string name="ajuda_grelha_comandos">Visuelle Ansicht der zugeordneten Befehle. Tippen Sie auf einen Befehl, um ihm ein Bild zuzuweisen.</string>
+    <string name="nenhum_comando_grelha">Noch keine Befehle zugeordnet.</string>
+    <string name="grelha_editar_imagem_titulo">Bild für %1$s</string>
+    <string name="grelha_editar_imagem_dica">Fügen Sie den Link zu einem Online-Bild ein, um es hier anzuzeigen.</string>
+    <string name="grelha_editar_imagem_campo">Bildlink</string>
+    <string name="grelha_remover_imagem">Bild entfernen</string>
+    <string name="guardar">Speichern</string>
 </resources>

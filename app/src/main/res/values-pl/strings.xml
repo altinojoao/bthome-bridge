@@ -226,4 +226,14 @@
     <string name="menu_topo_desc_tema_claro">Jasny motyw — dotknij dla ciemnego</string>
     <string name="menu_topo_desc_tema_escuro">Ciemny motyw — dotknij dla jasnego</string>
     <string name="menu_topo_desc_blocos_visiveis">Wybierz, które sekcje pojawiają się na ekranie</string>
+    <string name="sufixo_copia">(kopia)</string>
+    <string name="menu_topo_desc_perfis">Twórz, edytuj i porządkuj profile akcji</string>
+    <string name="grelha_comandos_titulo">Siatka poleceń</string>
+    <string name="ajuda_grelha_comandos">Widok wizualny powiązanych poleceń. Dotknij polecenia, aby przypisać mu obraz.</string>
+    <string name="nenhum_comando_grelha">Nie powiązano jeszcze żadnego polecenia.</string>
+    <string name="grelha_editar_imagem_titulo">Obraz dla %1$s</string>
+    <string name="grelha_editar_imagem_dica">Wklej link do obrazu online, aby wyświetlić go tutaj.</string>
+    <string name="grelha_editar_imagem_campo">Link do obrazu</string>
+    <string name="grelha_remover_imagem">Usuń obraz</string>
+    <string name="guardar">Zapisz</string>
 </resources>
