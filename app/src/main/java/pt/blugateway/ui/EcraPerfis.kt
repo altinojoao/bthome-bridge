@@ -61,6 +61,8 @@ fun EcraPerfis(
     notacaoPontos: Boolean,
     confirmaApagar: String?,
     perfilAtivoId: String?,
+    construtorAberto: Boolean,
+    construtorSequencia: List<Int>,
     onFecha: () -> Unit,
     onRenomeia: (String, String) -> Unit,
     onPedeApagar: (String) -> Unit,
@@ -72,7 +74,19 @@ fun EcraPerfis(
     onTrocaNotacao: () -> Unit,
     onAdicionaAcao: (String, Int) -> Unit,
     onRemoveAcao: (String, Int, Int) -> Unit,
-    onAtualizaAcao: (String, Int, Int, (Acao) -> Acao) -> Unit
+    onAtualizaAcao: (String, Int, Int, (Acao) -> Acao) -> Unit,
+    onAlternaModoCombinacao: (String, Boolean) -> Unit,
+    onAlteraJanelaCombinacao: (String, Float) -> Unit,
+    onAbreConstrutor: () -> Unit,
+    onFechaConstrutor: () -> Unit,
+    onAdicionaAoConstrutor: (Int) -> Unit,
+    onLimpaConstrutor: () -> Unit,
+    onApagaUltimoConstrutor: () -> Unit,
+    onGuardaCombinacao: (String, String) -> Boolean,
+    onApagaCombinacao: (String, String) -> Unit,
+    onAdicionaAcaoCombinacao: (String, String) -> Unit,
+    onRemoveAcaoCombinacao: (String, String, Int) -> Unit,
+    onAtualizaAcaoCombinacao: (String, String, Int, (Acao) -> Acao) -> Unit
 ) {
     val cores = LocalCoresGateway.current
     var expandidoId by remember { mutableStateOf(perfilAtivoId) }
@@ -125,6 +139,8 @@ fun EcraPerfis(
                         notacaoPontos = notacaoPontos,
                         confirmaApagar = confirmaApagar,
                         expandidoId = expandidoId,
+                        construtorAberto = construtorAberto,
+                        construtorSequencia = construtorSequencia,
                         onAlternaExpandido = { id ->
                             val novoExpandido = if (expandidoId == id) null else id
                             expandidoId = novoExpandido
@@ -137,7 +153,19 @@ fun EcraPerfis(
                         onReordena = onReordena,
                         onAdicionaAcao = onAdicionaAcao,
                         onRemoveAcao = onRemoveAcao,
-                        onAtualizaAcao = onAtualizaAcao
+                        onAtualizaAcao = onAtualizaAcao,
+                        onAlternaModoCombinacao = onAlternaModoCombinacao,
+                        onAlteraJanelaCombinacao = onAlteraJanelaCombinacao,
+                        onAbreConstrutor = onAbreConstrutor,
+                        onFechaConstrutor = onFechaConstrutor,
+                        onAdicionaAoConstrutor = onAdicionaAoConstrutor,
+                        onLimpaConstrutor = onLimpaConstrutor,
+                        onApagaUltimoConstrutor = onApagaUltimoConstrutor,
+                        onGuardaCombinacao = onGuardaCombinacao,
+                        onApagaCombinacao = onApagaCombinacao,
+                        onAdicionaAcaoCombinacao = onAdicionaAcaoCombinacao,
+                        onRemoveAcaoCombinacao = onRemoveAcaoCombinacao,
+                        onAtualizaAcaoCombinacao = onAtualizaAcaoCombinacao
                     )
 
                     TextButton(
@@ -167,6 +195,8 @@ private fun ListaPerfisArrastavel(
     notacaoPontos: Boolean,
     confirmaApagar: String?,
     expandidoId: String?,
+    construtorAberto: Boolean,
+    construtorSequencia: List<Int>,
     onAlternaExpandido: (String) -> Unit,
     onRenomeia: (String, String) -> Unit,
     onPedeApagar: (String) -> Unit,
@@ -175,7 +205,19 @@ private fun ListaPerfisArrastavel(
     onReordena: (Int, Int) -> Unit,
     onAdicionaAcao: (String, Int) -> Unit,
     onRemoveAcao: (String, Int, Int) -> Unit,
-    onAtualizaAcao: (String, Int, Int, (Acao) -> Acao) -> Unit
+    onAtualizaAcao: (String, Int, Int, (Acao) -> Acao) -> Unit,
+    onAlternaModoCombinacao: (String, Boolean) -> Unit,
+    onAlteraJanelaCombinacao: (String, Float) -> Unit,
+    onAbreConstrutor: () -> Unit,
+    onFechaConstrutor: () -> Unit,
+    onAdicionaAoConstrutor: (Int) -> Unit,
+    onLimpaConstrutor: () -> Unit,
+    onApagaUltimoConstrutor: () -> Unit,
+    onGuardaCombinacao: (String, String) -> Boolean,
+    onApagaCombinacao: (String, String) -> Unit,
+    onAdicionaAcaoCombinacao: (String, String) -> Unit,
+    onRemoveAcaoCombinacao: (String, String, Int) -> Unit,
+    onAtualizaAcaoCombinacao: (String, String, Int, (Acao) -> Acao) -> Unit
 ) {
     var indiceArrastado by remember { mutableStateOf<Int?>(null) }
     var deslocamentoY by remember { mutableStateOf(0f) }
@@ -208,6 +250,8 @@ private fun ListaPerfisArrastavel(
                     confirmaAtivo = confirmaApagar == perfil.id,
                     notacaoPontos = notacaoPontos,
                     emDestaque = estaArrastando,
+                    construtorAberto = construtorAberto,
+                    construtorSequencia = construtorSequencia,
                     onToca = { onAlternaExpandido(perfil.id) },
                     onRenomeia = { novo -> onRenomeia(perfil.id, novo) },
                     onPedeApagar = { onPedeApagar(perfil.id) },
@@ -216,6 +260,18 @@ private fun ListaPerfisArrastavel(
                     onAdicionaAcao = { i -> onAdicionaAcao(perfil.id, i) },
                     onRemoveAcao = { i, j -> onRemoveAcao(perfil.id, i, j) },
                     onAtualizaAcao = { i, j, t -> onAtualizaAcao(perfil.id, i, j, t) },
+                    onAlternaModoCombinacao = { ligado -> onAlternaModoCombinacao(perfil.id, ligado) },
+                    onAlteraJanelaCombinacao = { seg -> onAlteraJanelaCombinacao(perfil.id, seg) },
+                    onAbreConstrutor = onAbreConstrutor,
+                    onFechaConstrutor = onFechaConstrutor,
+                    onAdicionaAoConstrutor = onAdicionaAoConstrutor,
+                    onLimpaConstrutor = onLimpaConstrutor,
+                    onApagaUltimoConstrutor = onApagaUltimoConstrutor,
+                    onGuardaCombinacao = { nome -> onGuardaCombinacao(perfil.id, nome) },
+                    onApagaCombinacao = { combId -> onApagaCombinacao(perfil.id, combId) },
+                    onAdicionaAcaoCombinacao = { combId -> onAdicionaAcaoCombinacao(perfil.id, combId) },
+                    onRemoveAcaoCombinacao = { combId, j -> onRemoveAcaoCombinacao(perfil.id, combId, j) },
+                    onAtualizaAcaoCombinacao = { combId, j, t -> onAtualizaAcaoCombinacao(perfil.id, combId, j, t) },
                     modifierAlca = Modifier.pointerInput(perfis.size) {
                         detectDragGesturesAfterLongPress(
                             onDragStart = {
@@ -272,6 +328,8 @@ private fun CardPerfilExpansivel(
     confirmaAtivo: Boolean,
     notacaoPontos: Boolean,
     emDestaque: Boolean,
+    construtorAberto: Boolean,
+    construtorSequencia: List<Int>,
     onToca: () -> Unit,
     onRenomeia: (String) -> Unit,
     onPedeApagar: () -> Unit,
@@ -280,6 +338,18 @@ private fun CardPerfilExpansivel(
     onAdicionaAcao: (Int) -> Unit,
     onRemoveAcao: (Int, Int) -> Unit,
     onAtualizaAcao: (Int, Int, (Acao) -> Acao) -> Unit,
+    onAlternaModoCombinacao: (Boolean) -> Unit,
+    onAlteraJanelaCombinacao: (Float) -> Unit,
+    onAbreConstrutor: () -> Unit,
+    onFechaConstrutor: () -> Unit,
+    onAdicionaAoConstrutor: (Int) -> Unit,
+    onLimpaConstrutor: () -> Unit,
+    onApagaUltimoConstrutor: () -> Unit,
+    onGuardaCombinacao: (String) -> Boolean,
+    onApagaCombinacao: (String) -> Unit,
+    onAdicionaAcaoCombinacao: (String) -> Unit,
+    onRemoveAcaoCombinacao: (String, Int) -> Unit,
+    onAtualizaAcaoCombinacao: (String, Int, (Acao) -> Acao) -> Unit,
     modifierAlca: Modifier
 ) {
     val cores = LocalCoresGateway.current
@@ -381,6 +451,25 @@ private fun CardPerfilExpansivel(
                         fontSize = 10.5.sp
                     )
                 }
+
+                CartaoCombinacoes(
+                    perfil = perfil,
+                    notacaoPontos = notacaoPontos,
+                    construtorAberto = construtorAberto,
+                    construtorSequencia = construtorSequencia,
+                    onAlternaModo = onAlternaModoCombinacao,
+                    onAlteraJanela = onAlteraJanelaCombinacao,
+                    onAbreConstrutor = onAbreConstrutor,
+                    onFechaConstrutor = onFechaConstrutor,
+                    onAdicionaAoConstrutor = onAdicionaAoConstrutor,
+                    onLimpaConstrutor = onLimpaConstrutor,
+                    onApagaUltimoConstrutor = onApagaUltimoConstrutor,
+                    onGuardaCombinacao = onGuardaCombinacao,
+                    onApagaCombinacao = onApagaCombinacao,
+                    onAdicionaAcao = onAdicionaAcaoCombinacao,
+                    onRemoveAcao = onRemoveAcaoCombinacao,
+                    onAtualizaAcao = onAtualizaAcaoCombinacao
+                )
             }
         }
     }

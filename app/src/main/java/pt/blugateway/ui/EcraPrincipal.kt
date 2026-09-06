@@ -203,27 +203,6 @@ fun EcraPrincipal(vm: GatewayViewModel = viewModel()) {
                         onDefineDias = vm::defineDiasRetencaoTrajeto,
                         onDefinePontos = vm::defineQuantidadeRetencaoTrajeto
                     )
-
-                    if (perfilAtivo != null) {
-                        CartaoCombinacoes(
-                            perfil = perfilAtivo,
-                            notacaoPontos = notacaoPontos,
-                            construtorAberto = construtorAberto,
-                            construtorSequencia = construtorSequencia,
-                            onAlternaModo = { ligado -> vm.alternaModoCombinacao(perfilAtivo.id, ligado) },
-                            onAlteraJanela = { seg -> vm.defineJanelaCombinacao(perfilAtivo.id, seg) },
-                            onAbreConstrutor = { vm.abreConstrutorCombinacao() },
-                            onFechaConstrutor = { vm.fechaConstrutorCombinacao() },
-                            onAdicionaAoConstrutor = { idx -> vm.adicionaAoConstrutor(idx) },
-                            onLimpaConstrutor = { vm.limpaConstrutor() },
-                            onApagaUltimoConstrutor = { vm.apagaUltimoDoConstrutor() },
-                            onGuardaCombinacao = { nome -> vm.guardaCombinacao(perfilAtivo.id, nome) },
-                            onApagaCombinacao = { id -> vm.apagaCombinacao(perfilAtivo.id, id) },
-                            onAdicionaAcao = { combId -> vm.adicionaAcaoCombinacao(perfilAtivo.id, combId) },
-                            onRemoveAcao = { combId, j -> vm.removeAcaoCombinacao(perfilAtivo.id, combId, j) },
-                            onAtualizaAcao = { combId, j, t -> vm.atualizaAcaoCombinacao(perfilAtivo.id, combId, j, t) }
-                        )
-                    }
                 }
             }
 
@@ -295,6 +274,8 @@ fun EcraPrincipal(vm: GatewayViewModel = viewModel()) {
                     notacaoPontos = notacaoPontos,
                     confirmaApagar = confirmaApagarPerfil,
                     perfilAtivoId = perfilAtivoId,
+                    construtorAberto = construtorAberto,
+                    construtorSequencia = construtorSequencia,
                     onFecha = { mostraPerfis = false },
                     onRenomeia = vm::renomeiaPerfil,
                     onPedeApagar = vm::pedeApagarPerfil,
@@ -308,7 +289,19 @@ fun EcraPrincipal(vm: GatewayViewModel = viewModel()) {
                     onRemoveAcao = { perfilId, indice, j -> vm.removeAcao(perfilId, indice, j) },
                     onAtualizaAcao = { perfilId, indice, j, transformacao ->
                         vm.atualizaAcao(perfilId, indice, j, transformacao)
-                    }
+                    },
+                    onAlternaModoCombinacao = { perfilId, ligado -> vm.alternaModoCombinacao(perfilId, ligado) },
+                    onAlteraJanelaCombinacao = { perfilId, seg -> vm.defineJanelaCombinacao(perfilId, seg) },
+                    onAbreConstrutor = { vm.abreConstrutorCombinacao() },
+                    onFechaConstrutor = { vm.fechaConstrutorCombinacao() },
+                    onAdicionaAoConstrutor = { idx -> vm.adicionaAoConstrutor(idx) },
+                    onLimpaConstrutor = { vm.limpaConstrutor() },
+                    onApagaUltimoConstrutor = { vm.apagaUltimoDoConstrutor() },
+                    onGuardaCombinacao = { perfilId, nome -> vm.guardaCombinacao(perfilId, nome) },
+                    onApagaCombinacao = { perfilId, id -> vm.apagaCombinacao(perfilId, id) },
+                    onAdicionaAcaoCombinacao = { perfilId, combId -> vm.adicionaAcaoCombinacao(perfilId, combId) },
+                    onRemoveAcaoCombinacao = { perfilId, combId, j -> vm.removeAcaoCombinacao(perfilId, combId, j) },
+                    onAtualizaAcaoCombinacao = { perfilId, combId, j, t -> vm.atualizaAcaoCombinacao(perfilId, combId, j, t) }
                 )
             }
         }

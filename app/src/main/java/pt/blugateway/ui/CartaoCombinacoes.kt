@@ -49,12 +49,7 @@ fun CartaoCombinacoes(
     Column(
         Modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp)
-            .padding(bottom = 8.dp)
-            .clip(RoundedCornerShape(4.dp))
-            .background(cores.cartao)
-            .border(1.dp, cores.linha, RoundedCornerShape(4.dp))
-            .padding(13.dp)
+            .padding(top = 4.dp)
     ) {
         LinhaInterruptor(
             titulo = stringResource(R.string.modo_combinacao),
