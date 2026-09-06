@@ -23,12 +23,12 @@ import pt.blugateway.R
 import pt.blugateway.ui.theme.LocalCoresGateway
 
 /**
- * Barra de topo, com 4 botoes visiveis (menu, mapa, cenarios,
- * atualizacoes) -- Configuracoes, Comandos especiais, Som, Idioma,
- * Tema, Blocos visiveis e Perfis vivem dentro do menu unico
- * (engrenagem), ver DialogoMenuTopo. Mapa, Cenarios e Atualizacoes
- * tem botao proprio por serem ecras completos de uso mais frequente
- * que uma simples alternancia de definicao.
+ * Barra de topo, agora com apenas 3 botoes visiveis (menu, mapa,
+ * cenarios) em vez dos 7 anteriores -- Configuracoes, Comandos
+ * especiais, Som, Idioma, Tema e Blocos visiveis passaram a viver
+ * dentro do menu unico (engrenagem), ver DialogoMenuTopo. Mapa e
+ * Cenarios continuam com botao proprio por serem ecras completos de
+ * uso mais frequente que uma simples alternancia de definicao.
  */
 @Composable
 fun BarraTopo(

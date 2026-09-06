@@ -309,7 +309,7 @@ fun EcraPrincipal(vm: GatewayViewModel = viewModel()) {
             }
 
             if (mostraAtualizacoes) {
-                EcraAtualizacoes(onFecha = { mostraAtualizacoes = false })
+                DialogoAtualizacao(onFecha = { mostraAtualizacoes = false })
             }
         }
     }
