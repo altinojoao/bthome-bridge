@@ -236,4 +236,8 @@
     <string name="grelha_editar_imagem_campo">Lien de l\'image</string>
     <string name="grelha_remover_imagem">Supprimer l\'image</string>
     <string name="guardar">Enregistrer</string>
+    <string name="diagnostico_trajeto_titulo">Diagnostic du trajet</string>
+    <string name="copiar_tudo">Tout copier</string>
+    <string name="diagnostico_trajeto_legenda">[L] écran allumé · [D] écran éteint · [P] économiseur de batterie actif</string>
+    <string name="diagnostico_trajeto_sem_registos">Aucun enregistrement pour l\'instant. Activez le mode trajet par balise sur une commande et attendez.</string>
 </resources>

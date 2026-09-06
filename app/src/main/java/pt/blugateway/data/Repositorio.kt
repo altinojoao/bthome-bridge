@@ -482,6 +482,13 @@ class Repositorio private constructor(context: Context) {
         guardaComandos(lista)
     }
 
+    fun defineImagemBloqueada(mac: String, bloqueada: Boolean) {
+        val lista = _comandos.value.map {
+            if (it.mac == mac) it.copy(imagemBloqueada = bloqueada) else it
+        }
+        guardaComandos(lista)
+    }
+
     /** Chamado pelo vigilante de alcance quando um comando passa a
      *  estar/deixar de estar fora de alcance. Devolve true se o
      *  estado realmente mudou (para o chamador so tocar o alarme na

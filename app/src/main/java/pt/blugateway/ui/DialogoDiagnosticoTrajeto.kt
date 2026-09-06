@@ -15,11 +15,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
+import pt.blugateway.R
 import pt.blugateway.ble.RegistoDiagnostico
 import pt.blugateway.ui.theme.LocalCoresGateway
 
@@ -46,14 +48,14 @@ fun DialogoDiagnosticoTrajeto(onFecha: () -> Unit) {
         title = {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    "Diagnóstico do trajeto",
+                    stringResource(R.string.diagnostico_trajeto_titulo),
                     color = cores.tinta,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.weight(1f)
                 )
                 IconButton(onClick = onFecha) {
-                    Icon(Icons.Default.Close, contentDescription = "Fechar", tint = cores.suave)
+                    Icon(Icons.Default.Close, contentDescription = stringResource(R.string.fechar), tint = cores.suave)
                 }
             }
         },
@@ -65,18 +67,18 @@ fun DialogoDiagnosticoTrajeto(onFecha: () -> Unit) {
                             as android.content.ClipboardManager
                         cm.setPrimaryClip(android.content.ClipData.newPlainText("diagnostico", linhas.joinToString("\n")))
                     }) {
-                        Text("Copiar tudo", color = cores.azul, fontSize = 11.sp)
+                        Text(stringResource(R.string.copiar_tudo), color = cores.azul, fontSize = 11.sp)
                     }
                     TextButton(onClick = {
                         RegistoDiagnostico.limpa(contexto)
                         onFecha()
                     }) {
-                        Text("Limpar", color = cores.avisoTinta, fontSize = 11.sp)
+                        Text(stringResource(R.string.limpar), color = cores.avisoTinta, fontSize = 11.sp)
                     }
                 }
 
                 Text(
-                    "[L] ecrã ligado · [D] ecrã desligado · [P] poupança de bateria ativa",
+                    stringResource(R.string.diagnostico_trajeto_legenda),
                     color = cores.suave,
                     fontSize = 9.sp,
                     modifier = Modifier.padding(top = 2.dp)
@@ -84,7 +86,7 @@ fun DialogoDiagnosticoTrajeto(onFecha: () -> Unit) {
 
                 if (linhas.isEmpty()) {
                     Text(
-                        "Sem registos ainda. Ative o modo trajeto por beacon num comando e aguarde.",
+                        stringResource(R.string.diagnostico_trajeto_sem_registos),
                         color = cores.suave,
                         fontSize = 11.sp,
                         modifier = Modifier.padding(top = 12.dp)

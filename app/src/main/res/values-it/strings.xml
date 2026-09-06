@@ -236,4 +236,8 @@
     <string name="grelha_editar_imagem_campo">Link dell\'immagine</string>
     <string name="grelha_remover_imagem">Rimuovi immagine</string>
     <string name="guardar">Salva</string>
+    <string name="diagnostico_trajeto_titulo">Diagnostica del percorso</string>
+    <string name="copiar_tudo">Copia tutto</string>
+    <string name="diagnostico_trajeto_legenda">[L] schermo acceso · [D] schermo spento · [P] risparmio energetico attivo</string>
+    <string name="diagnostico_trajeto_sem_registos">Ancora nessun registro. Attiva la modalità percorso via beacon su un comando e attendi.</string>
 </resources>

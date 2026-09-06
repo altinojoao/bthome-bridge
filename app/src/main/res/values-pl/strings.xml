@@ -236,4 +236,8 @@
     <string name="grelha_editar_imagem_campo">Link do obrazu</string>
     <string name="grelha_remover_imagem">Usuń obraz</string>
     <string name="guardar">Zapisz</string>
+    <string name="diagnostico_trajeto_titulo">Diagnostyka trasy</string>
+    <string name="copiar_tudo">Kopiuj wszystko</string>
+    <string name="diagnostico_trajeto_legenda">[L] ekran włączony · [D] ekran wyłączony · [P] oszczędzanie baterii aktywne</string>
+    <string name="diagnostico_trajeto_sem_registos">Brak jeszcze zapisów. Włącz tryb trasy przez beacon w poleceniu i poczekaj.</string>
 </resources>

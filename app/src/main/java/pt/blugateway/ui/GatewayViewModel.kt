@@ -146,6 +146,10 @@ class GatewayViewModel(app: Application) : AndroidViewModel(app) {
         repo.defineImagemUrl(mac, url)
     }
 
+    fun defineImagemBloqueada(mac: String, bloqueada: Boolean) {
+        repo.defineImagemBloqueada(mac, bloqueada)
+    }
+
     fun alternaModoBeaconTrajeto(mac: String, ativo: Boolean) {
         repo.alternaModoBeaconTrajeto(mac, ativo)
     }

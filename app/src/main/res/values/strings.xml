@@ -237,4 +237,8 @@
     <string name="grelha_editar_imagem_campo">Link da imagem</string>
     <string name="grelha_remover_imagem">Remover imagem</string>
     <string name="guardar">Guardar</string>
+    <string name="diagnostico_trajeto_titulo">Diagnóstico do trajeto</string>
+    <string name="copiar_tudo">Copiar tudo</string>
+    <string name="diagnostico_trajeto_legenda">[L] ecrã ligado · [D] ecrã desligado · [P] poupança de bateria ativa</string>
+    <string name="diagnostico_trajeto_sem_registos">Sem registos ainda. Ative o modo trajeto por beacon num comando e aguarde.</string>
 </resources>

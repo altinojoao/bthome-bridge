@@ -45,7 +45,8 @@ fun CartaoGrelhaComandos(
     perfis: List<Perfil>,
     ajudaAtiva: Boolean,
     onAlternaAjuda: () -> Unit,
-    onDefineImagemUrl: (String, String?) -> Unit
+    onDefineImagemUrl: (String, String?) -> Unit,
+    onAlternaBloqueioImagem: (String, Boolean) -> Unit
 ) {
     val cores = LocalCoresGateway.current
     var aberto by remember { mutableStateOf(true) }
@@ -112,7 +113,8 @@ fun CartaoGrelhaComandos(
                                     BotaoGrelhaComando(
                                         comando = c,
                                         nomePerfil = perfilAtual?.nome,
-                                        onEditarImagem = { comandoEditandoImagem = c }
+                                        onEditarImagem = { comandoEditandoImagem = c },
+                                        onAlternaBloqueio = { onAlternaBloqueioImagem(c.mac, !c.imagemBloqueada) }
                                     )
                                 }
                             }
@@ -214,18 +216,25 @@ private fun PulsosClique(
 private fun BotaoGrelhaComando(
     comando: Comando,
     nomePerfil: String?,
-    onEditarImagem: () -> Unit
+    onEditarImagem: () -> Unit,
+    onAlternaBloqueio: () -> Unit
 ) {
     val cores = LocalCoresGateway.current
 
     val fundo = if (comando.foraDeAlcance) cores.avisoFundo else cores.elevado
+    val temImagem = comando.imagemUrl != null
+    // so' bloqueia de facto o toque quando ha imagem E esta marcada
+    // como bloqueada -- sem imagem definida, tocar continua sempre a
+    // abrir o editor, mesmo que o campo imagemBloqueada tenha ficado
+    // true de uma imagem anterior removida
+    val tocarAbreEditor = !temImagem || !comando.imagemBloqueada
 
     Column(
         Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
             .background(fundo)
-            .clickable(onClick = onEditarImagem)
+            .then(if (tocarAbreEditor) Modifier.clickable(onClick = onEditarImagem) else Modifier)
             .padding(8.dp)
     ) {
         Box(
@@ -261,6 +270,33 @@ private fun BotaoGrelhaComando(
                         .clip(CircleShape)
                         .background(cores.avisoTinta)
                 )
+            }
+
+            // Cadeado -- so' aparece quando ha imagem definida (nao
+            // faz sentido bloquear/desbloquear "nada"). Tocar nele
+            // alterna o bloqueio sem abrir o editor -- tem o seu
+            // proprio clickable, que intercepta o toque antes deste
+            // chegar ao Column pai.
+            if (temImagem) {
+                Box(
+                    Modifier
+                        .align(Alignment.TopStart)
+                        .padding(4.dp)
+                        .size(22.dp)
+                        .clip(CircleShape)
+                        .background(androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.45f))
+                        .clickable(
+                            indication = null,
+                            interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                            onClick = onAlternaBloqueio
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        if (comando.imagemBloqueada) "\uD83D\uDD12" else "\uD83D\uDD13",
+                        fontSize = 11.sp
+                    )
+                }
             }
 
             PulsosClique(

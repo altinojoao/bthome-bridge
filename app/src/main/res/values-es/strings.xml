@@ -236,4 +236,8 @@
     <string name="grelha_editar_imagem_campo">Enlace de la imagen</string>
     <string name="grelha_remover_imagem">Quitar imagen</string>
     <string name="guardar">Guardar</string>
+    <string name="diagnostico_trajeto_titulo">Diagnóstico del trayecto</string>
+    <string name="copiar_tudo">Copiar todo</string>
+    <string name="diagnostico_trajeto_legenda">[L] pantalla encendida · [D] pantalla apagada · [P] ahorro de batería activo</string>
+    <string name="diagnostico_trajeto_sem_registos">Todavía no hay registros. Active el modo trayecto por beacon en un comando y espere.</string>
 </resources>

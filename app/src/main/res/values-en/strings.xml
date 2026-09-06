@@ -236,4 +236,8 @@
     <string name="grelha_editar_imagem_campo">Image link</string>
     <string name="grelha_remover_imagem">Remove image</string>
     <string name="guardar">Save</string>
+    <string name="diagnostico_trajeto_titulo">Trajectory diagnostics</string>
+    <string name="copiar_tudo">Copy all</string>
+    <string name="diagnostico_trajeto_legenda">[L] screen on · [D] screen off · [P] battery saver active</string>
+    <string name="diagnostico_trajeto_sem_registos">No records yet. Enable beacon trajectory mode on a command and wait.</string>
 </resources>

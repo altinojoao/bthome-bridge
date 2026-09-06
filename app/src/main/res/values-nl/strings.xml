@@ -236,4 +236,8 @@
     <string name="grelha_editar_imagem_campo">Afbeeldingslink</string>
     <string name="grelha_remover_imagem">Afbeelding verwijderen</string>
     <string name="guardar">Opslaan</string>
+    <string name="diagnostico_trajeto_titulo">Trajectdiagnose</string>
+    <string name="copiar_tudo">Alles kopiëren</string>
+    <string name="diagnostico_trajeto_legenda">[L] scherm aan · [D] scherm uit · [P] batterijbesparing actief</string>
+    <string name="diagnostico_trajeto_sem_registos">Nog geen registraties. Schakel de beacon-trajectmodus in bij een commando en wacht.</string>
 </resources>

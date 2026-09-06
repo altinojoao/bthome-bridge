@@ -257,7 +257,13 @@ data class Comando(
     // por comando, sem imagem por omissao. A app nao descarrega nem
     // guarda a propria imagem, so o URL; o carregamento e cache sao
     // geridos pela biblioteca Coil no momento de mostrar.
-    var imagemUrl: String? = null
+    var imagemUrl: String? = null,
+    // quando true, tocar no card na grelha visual NAO reabre o
+    // editor de imagem -- protege uma imagem ja definida de ser
+    // trocada por engano com um toque acidental. So' tem efeito
+    // pratico quando imagemUrl != null; sem imagem definida, tocar
+    // sempre abre o editor independentemente deste valor.
+    var imagemBloqueada: Boolean = false
 ) {
     fun paraJson(): JSONObject = JSONObject().apply {
         put("mac", mac)
@@ -289,6 +295,7 @@ data class Comando(
         put("intervaloBeaconMs", intervaloBeaconMs)
         ultimoPontoTrajetoEm?.let { put("ultimoPontoTrajetoEm", it) }
         imagemUrl?.let { put("imagemUrl", it) }
+        put("imagemBloqueada", imagemBloqueada)
     }
 
     companion object {
@@ -332,7 +339,8 @@ data class Comando(
             modoBeaconTrajeto = o.optBoolean("modoBeaconTrajeto", false),
             intervaloBeaconMs = o.optLong("intervaloBeaconMs", 60_000L),
             ultimoPontoTrajetoEm = if (o.has("ultimoPontoTrajetoEm")) o.optLong("ultimoPontoTrajetoEm") else null,
-            imagemUrl = if (o.has("imagemUrl")) o.optString("imagemUrl") else null
+            imagemUrl = if (o.has("imagemUrl")) o.optString("imagemUrl") else null,
+            imagemBloqueada = o.optBoolean("imagemBloqueada", false)
         )
     }
 }

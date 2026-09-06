@@ -236,4 +236,8 @@
     <string name="grelha_editar_imagem_campo">Bildlink</string>
     <string name="grelha_remover_imagem">Bild entfernen</string>
     <string name="guardar">Speichern</string>
+    <string name="diagnostico_trajeto_titulo">Streckendiagnose</string>
+    <string name="copiar_tudo">Alles kopieren</string>
+    <string name="diagnostico_trajeto_legenda">[L] Bildschirm an · [D] Bildschirm aus · [P] Akkusparmodus aktiv</string>
+    <string name="diagnostico_trajeto_sem_registos">Noch keine Einträge. Aktivieren Sie den Beacon-Streckenmodus bei einem Befehl und warten Sie.</string>
 </resources>

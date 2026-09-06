@@ -142,7 +142,8 @@ fun EcraPrincipal(vm: GatewayViewModel = viewModel()) {
                         onAlternaAjuda = {
                             balaoAtivo = if (balaoAtivo == BalaoAtivo.GRELHA) BalaoAtivo.NENHUM else BalaoAtivo.GRELHA
                         },
-                        onDefineImagemUrl = vm::defineImagemUrl
+                        onDefineImagemUrl = vm::defineImagemUrl,
+                        onAlternaBloqueioImagem = vm::defineImagemBloqueada
                     )
                 }
 
