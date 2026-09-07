@@ -34,7 +34,24 @@ object GestorTrajeto {
     // concorrentemente com a UI.
     private val pedidosEmCurso = java.util.concurrent.ConcurrentHashMap.newKeySet<String>()
 
+    /**
+     * Enquanto true, nenhum ponto novo e' gravado (nem por clique nem
+     * por beacon), independentemente do que os comandos tenham
+     * configurado -- usado pelo ecra de escolher/desenhar o template
+     * de um cenario de trajeto (ver SeletorTrajetoMapa), para a
+     * gravacao em fundo nao misturar pontos novos com a escolha que
+     * o utilizador esta a fazer nesse momento. @Volatile porque e'
+     * lido a partir de Dispatchers.IO (registaPontoDeBeaconSeNecessario)
+     * e escrito a partir da UI (efeito de entrar/sair do ecra).
+     */
+    @Volatile
+    var pausado: Boolean = false
+
     fun registaPontoDeClique(context: Context, mac: String, latitude: Double, longitude: Double) {
+        if (pausado) {
+            RegistoDiagnostico.regista(context, "trajeto[$mac]: gravacao pausada (a escolher/desenhar cenario), clique ignorado")
+            return
+        }
         val repo = Repositorio(context)
         repo.adicionaPontoTrajeto(
             mac, PontoTrajeto(latitude, longitude, System.currentTimeMillis(), OrigemPonto.CLIQUE)
@@ -50,6 +67,10 @@ object GestorTrajeto {
      * realmente guardado, nao da ultima tentativa.
      */
     suspend fun registaPontoDeBeaconSeNecessario(context: Context, comando: Comando) {
+        if (pausado) {
+            RegistoDiagnostico.regista(context, "trajeto[${comando.mac}]: gravacao pausada (a escolher/desenhar cenario), ignorado")
+            return
+        }
         if (!comando.modoBeaconTrajeto) {
             RegistoDiagnostico.regista(context, "trajeto[${comando.mac}]: modoBeaconTrajeto desligado, ignorado")
             return

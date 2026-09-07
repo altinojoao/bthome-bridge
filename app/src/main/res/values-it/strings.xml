@@ -240,4 +240,19 @@
     <string name="copiar_tudo">Copia tutto</string>
     <string name="diagnostico_trajeto_legenda">[L] schermo acceso · [D] schermo spento · [P] risparmio energetico attivo</string>
     <string name="diagnostico_trajeto_sem_registos">Ancora nessun registro. Attiva la modalità percorso via beacon su un comando e attendi.</string>
+    <string name="modo_viagem_gravada">Viaggio registrato</string>
+    <string name="modo_desenhar">Disegna</string>
+    <string name="modo_rota">Percorso</string>
+    <string name="filtro_origem_todas">Tutte</string>
+    <string name="filtro_origem_beacon">Beacon</string>
+    <string name="filtro_origem_clique">Clic</string>
+    <string name="desenho_modo_navegar">Disegno (tocca per navigare)</string>
+    <string name="desenho_modo_desenhar">Navigazione (tocca per disegnare)</string>
+    <string name="desenho_pontos_capturados">%1$d punti disegnati</string>
+    <string name="rota_toca_origem">Tocca la mappa per segnare l\'origine</string>
+    <string name="rota_toca_destino">Tocca la mappa per segnare la destinazione</string>
+    <string name="rota_a_calcular">Calcolo dei percorsi...</string>
+    <string name="rota_toca_alternativa">%1$d alternative trovate. Toccane una per sceglierla.</string>
+    <string name="rota_sem_resultado">Non è stato trovato alcun percorso tra questi punti.</string>
+    <string name="rota_erro">Impossibile calcolare il percorso: %1$s</string>
 </resources>

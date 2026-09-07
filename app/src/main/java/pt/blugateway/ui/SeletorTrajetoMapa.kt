@@ -16,6 +16,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import pt.blugateway.ble.GestorSemelhancaTrajeto
 import pt.blugateway.data.Comando
+import pt.blugateway.data.OrigemPonto
 import pt.blugateway.data.PontoTrajeto
 import pt.blugateway.ui.theme.LocalCoresGateway
 
@@ -30,7 +31,26 @@ data class ViagemSelecionavel(
     val id: String,
     val comandoOrigem: Comando,
     val pontos: List<PontoTrajeto>
-)
+) {
+    /**
+     * Origem predominante da viagem (para efeitos do filtro
+     * Beacon/Clique/Todos) -- conta quantos pontos sao de cada
+     * origem e devolve a maioria; em empate prefere BEACON. Uma
+     * viagem raramente e' 100% pura (o ultimo ponto de uma viagem
+     * por beacon pode ter sido um clique manual, por exemplo), por
+     * isso o filtro classifica pela origem que domina, nao exige
+     * pureza total. Logica validada isoladamente antes de integrar.
+     */
+    val origemPredominante: OrigemPonto by lazy {
+        val nBeacon = pontos.count { it.origem == OrigemPonto.BEACON }
+        val nClique = pontos.count { it.origem == OrigemPonto.CLIQUE }
+        if (nBeacon >= nClique) OrigemPonto.BEACON else OrigemPonto.CLIQUE
+    }
+}
+
+/** Filtro de viagens por origem, aplicado no seletor de template de
+ *  cenario -- TODAS nao filtra nada. */
+enum class FiltroOrigemViagem { TODAS, BEACON, CLIQUE }
 
 /**
  * Mapa com TODAS as viagens de TODOS os comandos com historico,
@@ -53,6 +73,7 @@ fun SeletorTrajetoMapa(
     modifier: Modifier = Modifier,
     comandosComHistorico: List<Pair<Comando, List<PontoTrajeto>>>,
     viagemSelecionadaId: String?,
+    filtroOrigem: FiltroOrigemViagem = FiltroOrigemViagem.TODAS,
     onSelecionaViagem: (ViagemSelecionavel) -> Unit,
     onErro: (String) -> Unit = {}
 ) {
@@ -60,7 +81,7 @@ fun SeletorTrajetoMapa(
     var paginaCarregada by remember { mutableStateOf(false) }
     var webViewRef by remember { mutableStateOf<WebView?>(null) }
 
-    val viagens = remember(comandosComHistorico) {
+    val todasAsViagens = remember(comandosComHistorico) {
         comandosComHistorico.flatMap { (comando, historico) ->
             GestorSemelhancaTrajeto.separaEmViagens(historico).map { pontos ->
                 ViagemSelecionavel(
@@ -69,6 +90,14 @@ fun SeletorTrajetoMapa(
                     pontos = pontos
                 )
             }
+        }
+    }
+
+    val viagens = remember(todasAsViagens, filtroOrigem) {
+        when (filtroOrigem) {
+            FiltroOrigemViagem.TODAS -> todasAsViagens
+            FiltroOrigemViagem.BEACON -> todasAsViagens.filter { it.origemPredominante == OrigemPonto.BEACON }
+            FiltroOrigemViagem.CLIQUE -> todasAsViagens.filter { it.origemPredominante == OrigemPonto.CLIQUE }
         }
     }
 

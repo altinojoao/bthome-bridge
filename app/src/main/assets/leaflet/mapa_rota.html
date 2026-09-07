@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <link rel="stylesheet" href="leaflet.css" />
+  <style>
+    html, body { height: 100%; margin: 0; padding: 0; }
+    #mapa { height: 100%; background: #0D1117; }
+    .leaflet-control-attribution { font-size: 9px; }
+  </style>
+</head>
+<body>
+  <div id="mapa"></div>
+  <script src="leaflet.js"></script>
+  <script>
+    /**
+     * Mapa de origem/destino -- toca uma vez para marcar a origem,
+     * toca outra vez para marcar o destino. Depois de ambos
+     * marcados, o Kotlin pede as rotas ao OSRM e chama
+     * desenhaAlternativas() com o resultado; tocar numa alternativa
+     * desenhada seleciona-a. O pan do mapa fica sempre ativo aqui
+     * (ao contrario do mapa de desenho livre) -- marcar um ponto e'
+     * um toque simples, nao um arrasto, por isso nao ha conflito de
+     * gestos com navegar o mapa.
+     */
+    var mapa = L.map('mapa', { zoomControl: true }).setView([0, 0], 2);
+
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap'
+    }).addTo(mapa);
+
+    setTimeout(function () { mapa.invalidateSize(); }, 100);
+
+    var marcadorOrigem = null;
+    var marcadorDestino = null;
+    var camadasAlternativas = [];
+    var alternativaSelecionadaIndice = null;
+
+    var ICONE_ORIGEM = L.divIcon({
+      html: '<div style="width:16px;height:16px;border-radius:50%;background:#3FB950;border:2px solid white;"></div>',
+      className: '', iconSize: [16, 16], iconAnchor: [8, 8]
+    });
+    var ICONE_DESTINO = L.divIcon({
+      html: '<div style="width:16px;height:16px;border-radius:50%;background:#E0522B;border:2px solid white;"></div>',
+      className: '', iconSize: [16, 16], iconAnchor: [8, 8]
+    });
+
+    function limpaPontos() {
+      if (marcadorOrigem) { mapa.removeLayer(marcadorOrigem); marcadorOrigem = null; }
+      if (marcadorDestino) { mapa.removeLayer(marcadorDestino); marcadorDestino = null; }
+      limpaAlternativas();
+    }
+
+    function limpaAlternativas() {
+      camadasAlternativas.forEach(function (c) { mapa.removeLayer(c); });
+      camadasAlternativas = [];
+      alternativaSelecionadaIndice = null;
+    }
+
+    /**
+     * Cada toque no mapa marca a origem (se ainda nao houver) ou o
+     * destino (se ja houver origem mas nao destino) -- um terceiro
+     * toque reinicia tudo, para o utilizador poder corrigir sem
+     * precisar de um botao "limpar" separado.
+     */
+    mapa.on('click', function (e) {
+      if (!marcadorOrigem) {
+        marcadorOrigem = L.marker(e.latlng, { icon: ICONE_ORIGEM }).addTo(mapa);
+        notificaPontosAlterados();
+      } else if (!marcadorDestino) {
+        marcadorDestino = L.marker(e.latlng, { icon: ICONE_DESTINO }).addTo(mapa);
+        notificaPontosAlterados();
+      } else {
+        limpaPontos();
+        marcadorOrigem = L.marker(e.latlng, { icon: ICONE_ORIGEM }).addTo(mapa);
+        notificaPontosAlterados();
+      }
+    });
+
+    function notificaPontosAlterados() {
+      var payload = {
+        origem: marcadorOrigem ? { lat: marcadorOrigem.getLatLng().lat, lon: marcadorOrigem.getLatLng().lng } : null,
+        destino: marcadorDestino ? { lat: marcadorDestino.getLatLng().lat, lon: marcadorDestino.getLatLng().lng } : null
+      };
+      window.location.href = 'blugateway-rota://pontos?dados=' + encodeURIComponent(JSON.stringify(payload));
+    }
+
+    var CORES_ALTERNATIVA = ['#2BA6E0', '#9C6ADE', '#E0A62B'];
+
+    /**
+     * Recebe as alternativas de rota calculadas pelo OSRM (ja
+     * convertidas para lat/lon pelo Kotlin) e desenha cada uma como
+     * uma linha clicavel -- tocar numa linha marca-a como
+     * selecionada (destaque visual) e notifica o Kotlin.
+     */
+    function desenhaAlternativas(jsonTexto) {
+      limpaAlternativas();
+      var alternativas;
+      try {
+        alternativas = JSON.parse(jsonTexto);
+      } catch (e) {
+        return;
+      }
+
+      var todosPontos = [];
+      alternativas.forEach(function (alt, indice) {
+        var latLngs = alt.pontos.map(function (p) { return [p.lat, p.lon]; });
+        todosPontos = todosPontos.concat(latLngs);
+        var selecionada = indice === alternativaSelecionadaIndice;
+        var linha = L.polyline(latLngs, {
+          color: CORES_ALTERNATIVA[indice % CORES_ALTERNATIVA.length],
+          weight: selecionada ? 7 : 4,
+          opacity: selecionada ? 1.0 : 0.55
+        }).addTo(mapa);
+        linha.on('click', function () {
+          window.location.href = 'blugateway-rota://escolhe?indice=' + indice;
+        });
+        camadasAlternativas.push(linha);
+      });
+
+      if (todosPontos.length > 0) {
+        mapa.fitBounds(todosPontos, { padding: [40, 40] });
+      }
+    }
+
+    function marcaAlternativaSelecionada(indice) {
+      alternativaSelecionadaIndice = indice;
+    }
+  </script>
+</body>
+</html>

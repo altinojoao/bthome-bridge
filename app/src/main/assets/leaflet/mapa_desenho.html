@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <link rel="stylesheet" href="leaflet.css" />
+  <style>
+    html, body { height: 100%; margin: 0; padding: 0; overscroll-behavior: none; }
+    #mapa { height: 100%; background: #0D1117; touch-action: none; }
+    .leaflet-control-attribution { font-size: 9px; }
+  </style>
+</head>
+<body>
+  <div id="mapa"></div>
+  <script src="leaflet.js"></script>
+  <script>
+    /**
+     * Mapa de desenho livre -- o utilizador arrasta o dedo sobre o
+     * mapa e cada ponto tocado vai sendo acrescentado a uma
+     * polyline, desenhada em tempo real. Ao contrario dos outros
+     * mapas deste projeto (so leitura/selecao), este permite
+     * ARRASTAR PARA DESENHAR em vez de arrastar para navegar o
+     * mapa -- por isso o pan do proprio Leaflet e' desativado
+     * enquanto o "modo desenho" esta ativo (ver alternaModoDesenho),
+     * devolvido ao utilizador so quando ele quer reposicionar o
+     * mapa antes de comecar a desenhar.
+     */
+    var mapa = L.map('mapa', { zoomControl: true, dragging: false }).setView([0, 0], 2);
+
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap'
+    }).addTo(mapa);
+
+    setTimeout(function () { mapa.invalidateSize(); }, 100);
+
+    var pontosDesenhados = [];
+    var linhaDesenho = null;
+    var aDesenhar = false;
+
+    /**
+     * Alterna entre "modo desenho" (arrastar o dedo desenha uma
+     * linha) e "modo navegar" (arrastar move/faz pan do mapa,
+     * comportamento normal) -- chamado pelo Kotlin a partir de um
+     * botao na UI, ja que os dois gestos (desenhar vs navegar) usam
+     * o mesmo toque de arrastar e nao podem estar ativos ao mesmo
+     * tempo sem confundir o utilizador.
+     */
+    function alternaModoDesenho(ativo) {
+      aDesenhar = !!ativo;
+      if (aDesenhar) {
+        mapa.dragging.disable();
+      } else {
+        mapa.dragging.enable();
+      }
+    }
+
+    function limpaDesenho() {
+      pontosDesenhados = [];
+      if (linhaDesenho) {
+        mapa.removeLayer(linhaDesenho);
+        linhaDesenho = null;
+      }
+    }
+
+    function centraNaLocalizacao(lat, lon, zoom) {
+      mapa.setView([lat, lon], zoom || 15);
+    }
+
+    function adicionaPontoDesenho(latlng) {
+      pontosDesenhados.push(latlng);
+      if (!linhaDesenho) {
+        linhaDesenho = L.polyline(pontosDesenhados, { color: '#2BA6E0', weight: 5 }).addTo(mapa);
+      } else {
+        linhaDesenho.setLatLngs(pontosDesenhados);
+      }
+    }
+
+    /**
+     * Envia o desenho completo de volta ao Kotlin -- disparado
+     * quando o dedo se levanta do ecra (fim de um traco), nao a
+     * cada ponto individual, para nao inundar o canal de
+     * comunicacao com um pedido por pixel arrastado.
+     */
+    function notificaDesenhoAtualizado() {
+      var json = JSON.stringify(pontosDesenhados.map(function (p) {
+        return { lat: p.lat, lon: p.lng };
+      }));
+      window.location.href = 'blugateway-desenho://atualizado?pontos=' + encodeURIComponent(json);
+    }
+
+    mapa.on('mousedown touchstart', function (e) {
+      if (!aDesenhar) return;
+      adicionaPontoDesenho(e.latlng);
+    });
+    mapa.on('mousemove touchmove', function (e) {
+      if (!aDesenhar) return;
+      if (e.originalEvent && (e.originalEvent.buttons === 1 || e.originalEvent.touches)) {
+        adicionaPontoDesenho(e.latlng);
+      }
+    });
+    mapa.on('mouseup touchend', function () {
+      if (!aDesenhar || pontosDesenhados.length === 0) return;
+      notificaDesenhoAtualizado();
+    });
+  </script>
+</body>
+</html>

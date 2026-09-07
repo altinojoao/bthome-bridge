@@ -240,4 +240,19 @@
     <string name="copiar_tudo">Copiar todo</string>
     <string name="diagnostico_trajeto_legenda">[L] pantalla encendida · [D] pantalla apagada · [P] ahorro de batería activo</string>
     <string name="diagnostico_trajeto_sem_registos">Todavía no hay registros. Active el modo trayecto por beacon en un comando y espere.</string>
+    <string name="modo_viagem_gravada">Viaje grabado</string>
+    <string name="modo_desenhar">Dibujar</string>
+    <string name="modo_rota">Ruta</string>
+    <string name="filtro_origem_todas">Todas</string>
+    <string name="filtro_origem_beacon">Beacon</string>
+    <string name="filtro_origem_clique">Clic</string>
+    <string name="desenho_modo_navegar">Dibujando (toque para navegar)</string>
+    <string name="desenho_modo_desenhar">Navegando (toque para dibujar)</string>
+    <string name="desenho_pontos_capturados">%1$d puntos dibujados</string>
+    <string name="rota_toca_origem">Toque el mapa para marcar el origen</string>
+    <string name="rota_toca_destino">Toque el mapa para marcar el destino</string>
+    <string name="rota_a_calcular">Calculando rutas...</string>
+    <string name="rota_toca_alternativa">%1$d alternativas encontradas. Toque una para elegirla.</string>
+    <string name="rota_sem_resultado">No se encontró ninguna ruta entre esos puntos.</string>
+    <string name="rota_erro">No se pudo calcular la ruta: %1$s</string>
 </resources>

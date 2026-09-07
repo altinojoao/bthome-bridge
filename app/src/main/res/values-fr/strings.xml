@@ -240,4 +240,19 @@
     <string name="copiar_tudo">Tout copier</string>
     <string name="diagnostico_trajeto_legenda">[L] écran allumé · [D] écran éteint · [P] économiseur de batterie actif</string>
     <string name="diagnostico_trajeto_sem_registos">Aucun enregistrement pour l\'instant. Activez le mode trajet par balise sur une commande et attendez.</string>
+    <string name="modo_viagem_gravada">Trajet enregistré</string>
+    <string name="modo_desenhar">Dessiner</string>
+    <string name="modo_rota">Itinéraire</string>
+    <string name="filtro_origem_todas">Toutes</string>
+    <string name="filtro_origem_beacon">Balise</string>
+    <string name="filtro_origem_clique">Clic</string>
+    <string name="desenho_modo_navegar">Dessin (touchez pour naviguer)</string>
+    <string name="desenho_modo_desenhar">Navigation (touchez pour dessiner)</string>
+    <string name="desenho_pontos_capturados">%1$d points dessinés</string>
+    <string name="rota_toca_origem">Touchez la carte pour marquer l\'origine</string>
+    <string name="rota_toca_destino">Touchez la carte pour marquer la destination</string>
+    <string name="rota_a_calcular">Calcul des itinéraires...</string>
+    <string name="rota_toca_alternativa">%1$d alternatives trouvées. Touchez-en une pour la choisir.</string>
+    <string name="rota_sem_resultado">Aucun itinéraire trouvé entre ces points.</string>
+    <string name="rota_erro">Impossible de calculer l\'itinéraire : %1$s</string>
 </resources>

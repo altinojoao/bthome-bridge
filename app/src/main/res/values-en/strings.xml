@@ -240,4 +240,19 @@
     <string name="copiar_tudo">Copy all</string>
     <string name="diagnostico_trajeto_legenda">[L] screen on · [D] screen off · [P] battery saver active</string>
     <string name="diagnostico_trajeto_sem_registos">No records yet. Enable beacon trajectory mode on a command and wait.</string>
+    <string name="modo_viagem_gravada">Recorded trip</string>
+    <string name="modo_desenhar">Draw</string>
+    <string name="modo_rota">Route</string>
+    <string name="filtro_origem_todas">All</string>
+    <string name="filtro_origem_beacon">Beacon</string>
+    <string name="filtro_origem_clique">Click</string>
+    <string name="desenho_modo_navegar">Drawing (tap to navigate)</string>
+    <string name="desenho_modo_desenhar">Navigating (tap to draw)</string>
+    <string name="desenho_pontos_capturados">%1$d points drawn</string>
+    <string name="rota_toca_origem">Tap the map to mark the origin</string>
+    <string name="rota_toca_destino">Tap the map to mark the destination</string>
+    <string name="rota_a_calcular">Calculating routes...</string>
+    <string name="rota_toca_alternativa">%1$d alternatives found. Tap one to choose it.</string>
+    <string name="rota_sem_resultado">No route was found between those points.</string>
+    <string name="rota_erro">Could not calculate the route: %1$s</string>
 </resources>

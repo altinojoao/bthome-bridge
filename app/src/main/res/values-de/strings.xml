@@ -240,4 +240,19 @@
     <string name="copiar_tudo">Alles kopieren</string>
     <string name="diagnostico_trajeto_legenda">[L] Bildschirm an · [D] Bildschirm aus · [P] Akkusparmodus aktiv</string>
     <string name="diagnostico_trajeto_sem_registos">Noch keine Einträge. Aktivieren Sie den Beacon-Streckenmodus bei einem Befehl und warten Sie.</string>
+    <string name="modo_viagem_gravada">Aufgezeichnete Fahrt</string>
+    <string name="modo_desenhar">Zeichnen</string>
+    <string name="modo_rota">Route</string>
+    <string name="filtro_origem_todas">Alle</string>
+    <string name="filtro_origem_beacon">Beacon</string>
+    <string name="filtro_origem_clique">Klick</string>
+    <string name="desenho_modo_navegar">Zeichnen (zum Navigieren tippen)</string>
+    <string name="desenho_modo_desenhar">Navigieren (zum Zeichnen tippen)</string>
+    <string name="desenho_pontos_capturados">%1$d Punkte gezeichnet</string>
+    <string name="rota_toca_origem">Tippen Sie auf die Karte, um den Start zu markieren</string>
+    <string name="rota_toca_destino">Tippen Sie auf die Karte, um das Ziel zu markieren</string>
+    <string name="rota_a_calcular">Routen werden berechnet...</string>
+    <string name="rota_toca_alternativa">%1$d Alternativen gefunden. Tippen Sie eine an, um sie auszuwählen.</string>
+    <string name="rota_sem_resultado">Zwischen diesen Punkten wurde keine Route gefunden.</string>
+    <string name="rota_erro">Route konnte nicht berechnet werden: %1$s</string>
 </resources>
