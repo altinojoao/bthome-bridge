@@ -183,17 +183,24 @@ object GestorSemelhancaTrajeto {
         if (cenarios.isEmpty()) return
 
         val historico = repo.historicoTrajeto(mac)
+        RegistoDiagnostico.regista(context, "[D-cenarios] mac=$mac historico=${historico.size}pts")
         if (historico.isEmpty()) return
 
-        val inicioViagem = inicioViagemAtual(historico) ?: return
-        val trajetoViagemAtual = historico.filter { it.timestamp >= inicioViagem }
+        val inicioViagem = inicioViagemAtual(historico)
+        RegistoDiagnostico.regista(context, "[D-cenarios] inicioViagem=$inicioViagem (null=sem viagem ativa)")
+        val inicio = inicioViagem ?: return
+        val trajetoViagemAtual = historico.filter { it.timestamp >= inicio }
+        RegistoDiagnostico.regista(context, "[D-cenarios] trajetoAtual=${trajetoViagemAtual.size}pts")
 
         for (cenario in cenarios) {
-            if (repo.jaDisparadoNestaViagem(cenario.id, inicioViagem)) continue
+            val jaDisparado = repo.jaDisparadoNestaViagem(cenario.id, inicio)
+            RegistoDiagnostico.regista(context, "[D-cenarios] cenario='${cenario.nome}' template=${cenario.template.size}pts jaDisparado=$jaDisparado limiar=${cenario.limiarPercentagem}%")
+            if (jaDisparado) continue
 
             val semelhanca = calculaSemelhanca(trajetoViagemAtual, cenario.template, cenario.raioMetros)
+            RegistoDiagnostico.regista(context, "[D-cenarios] semelhanca=${(semelhanca*100).toInt()}% (precisa>=${cenario.limiarPercentagem}%)")
             if (semelhanca * 100 >= cenario.limiarPercentagem) {
-                repo.marcaDisparado(cenario.id, inicioViagem)
+                repo.marcaDisparado(cenario.id, inicio)
                 repo.atualizaUltimoDisparoCenario(cenario.id, System.currentTimeMillis())
                 // evento/codigo identificam a origem como um cenario de
                 // trajeto (nao um clique real) nos marcadores {evento}/

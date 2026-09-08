@@ -137,16 +137,23 @@
      */
     function defineTrajetoExistente(jsonTexto) {
       limpaAlternativas();
+      if (marcadorOrigem) { mapa.removeLayer(marcadorOrigem); marcadorOrigem = null; }
+      if (marcadorDestino) { mapa.removeLayer(marcadorDestino); marcadorDestino = null; }
       var pontos;
       try {
         pontos = JSON.parse(jsonTexto);
       } catch (e) {
         return;
       }
-      if (!pontos || pontos.length === 0) return;
+      if (!pontos || pontos.length < 2) return;
       var latLngs = pontos.map(function (p) { return [p.lat, p.lon]; });
-      var linha = L.polyline(latLngs, { color: '#2BA6E0', weight: 5, opacity: 0.8 }).addTo(mapa);
+      var linha = L.polyline(latLngs, { color: '#2BA6E0', weight: 5, opacity: 0.9 }).addTo(mapa);
       camadasAlternativas.push(linha);
+      // restaurar marcadores de origem e destino nos extremos da rota
+      var primeiro = L.latLng(pontos[0].lat, pontos[0].lon);
+      var ultimo = L.latLng(pontos[pontos.length - 1].lat, pontos[pontos.length - 1].lon);
+      marcadorOrigem = L.marker(primeiro, { icon: ICONE_ORIGEM }).addTo(mapa);
+      marcadorDestino = L.marker(ultimo, { icon: ICONE_DESTINO }).addTo(mapa);
       mapa.fitBounds(latLngs, { padding: [30, 30], maxZoom: 16 });
     }
 
