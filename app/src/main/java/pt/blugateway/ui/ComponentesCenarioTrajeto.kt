@@ -136,7 +136,19 @@ fun CriadorOuEditorCenario(
     // id) porque e' dele que se retira o template a gravar.
     var viagemEscolhida by remember { mutableStateOf<ViagemSelecionavel?>(null) }
     var templateOriginalMantido by remember { mutableStateOf(cenarioExistente != null) }
-    var modoTemplate by remember { mutableStateOf(ModoTemplateCenario.VIAGEM_GRAVADA) }
+    // Ao EDITAR, arranca no mesmo modo com que o cenario foi criado
+    // (guardado em CenarioTrajeto.modoTemplate) -- senao reabrir um
+    // cenario feito por rota/desenho mostrava sempre a aba "Viagem
+    // gravada", como se a escolha original se tivesse perdido.
+    var modoTemplate by remember {
+        mutableStateOf(
+            when (cenarioExistente?.modoTemplate) {
+                "desenho" -> ModoTemplateCenario.DESENHAR
+                "rota" -> ModoTemplateCenario.ROTA
+                else -> ModoTemplateCenario.VIAGEM_GRAVADA
+            }
+        )
+    }
     var filtroOrigem by remember { mutableStateOf(FiltroOrigemViagem.TODAS) }
     // template escolhido nos modos DESENHAR/ROTA -- lista de pontos
     // lat/lon pura, sem PontoTrajeto (nao vem de nenhum comando).
@@ -435,6 +447,14 @@ fun CriadorOuEditorCenario(
                             raioMetros = raio,
                             ativo = cenarioExistente?.ativo ?: true,
                             acoes = acoes.toMutableList(),
+                            modoTemplate = when {
+                                // se manteve o template original, mantem
+                                // tambem o modo com que foi criado
+                                templateOriginalMantido && cenarioExistente != null -> cenarioExistente.modoTemplate
+                                modoTemplate == ModoTemplateCenario.DESENHAR -> "desenho"
+                                modoTemplate == ModoTemplateCenario.ROTA -> "rota"
+                                else -> "gravada"
+                            },
                             ultimoDisparoEm = cenarioExistente?.ultimoDisparoEm
                         )
                     )

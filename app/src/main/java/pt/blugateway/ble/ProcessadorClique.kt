@@ -51,13 +51,19 @@ object ProcessadorClique {
             if (comandoExistente.modoBeaconTrajeto) {
                 CoroutineScope(Dispatchers.IO).launch {
                     GestorTrajeto.registaPontoDeBeaconSeNecessario(context, comandoExistente)
-                    // so faz sentido verificar semelhanca com os cenarios de
-                    // trajeto depois de ter tentado gravar um ponto novo --
-                    // GestorSemelhancaTrajeto.verificaCenarios ja verifica
-                    // por si so se ha cenarios definidos para este comando,
-                    // sai cedo (sem trabalho extra) se nao houver nenhum
-                    GestorSemelhancaTrajeto.verificaCenarios(context, comandoExistente.mac)
                 }
+            }
+
+            // Verificar os cenarios de trajeto NAO pode ficar
+            // dependente de modoBeaconTrajeto: um cenario pode ter
+            // sido definido para um comando cujo historico foi
+            // gravado por CLIQUE (ou importado/desenhado), sem o modo
+            // beacon alguma vez ter estado ligado -- e nesse caso
+            // nunca chegava a ser avaliado. A propria funcao sai cedo,
+            // sem trabalho extra, se nao houver cenarios definidos
+            // para este comando ou se nao houver historico.
+            CoroutineScope(Dispatchers.IO).launch {
+                GestorSemelhancaTrajeto.verificaCenarios(context, comandoExistente.mac)
             }
 
             if (novoPacote && trama.evento != null) {

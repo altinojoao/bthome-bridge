@@ -454,6 +454,14 @@ data class CenarioTrajeto(
     var raioMetros: Int = 40,
     var ativo: Boolean = true,
     var acoes: MutableList<Acao> = mutableListOf(),
+    // Como o template deste cenario foi definido -- "gravada"
+    // (escolhida uma viagem ja registada), "desenho" (desenhado a
+    // dedo no mapa) ou "rota" (calculado entre origem/destino).
+    // Guardado para que reabrir o cenario para editar mostre o mesmo
+    // modo com que foi criado, em vez de voltar sempre ao primeiro.
+    // Cenarios criados antes deste campo existir ficam com
+    // "gravada", que era o unico modo possivel na altura.
+    var modoTemplate: String = "gravada",
     // timestamp da ultima vez que este cenario disparou -- usado so
     // para mostrar na UI quando foi a ultima vez, nao para logica de
     // bloqueio (essa fica no Repositorio, associada ao MAC + inicio
@@ -470,6 +478,7 @@ data class CenarioTrajeto(
         put("raioMetros", raioMetros)
         put("ativo", ativo)
         put("acoes", JSONArray().apply { acoes.forEach { put(it.paraJson()) } })
+        put("modoTemplate", modoTemplate)
         ultimoDisparoEm?.let { put("ultimoDisparoEm", it) }
     }
 
@@ -498,6 +507,7 @@ data class CenarioTrajeto(
                 raioMetros = o.optInt("raioMetros", 40),
                 ativo = o.optBoolean("ativo", true),
                 acoes = acoes,
+                modoTemplate = o.optString("modoTemplate", "gravada"),
                 ultimoDisparoEm = if (o.has("ultimoDisparoEm")) o.optLong("ultimoDisparoEm") else null
             )
         }

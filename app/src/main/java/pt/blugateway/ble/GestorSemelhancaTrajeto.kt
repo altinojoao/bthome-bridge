@@ -51,7 +51,8 @@ object GestorSemelhancaTrajeto {
         if (pontosOrdenados.isEmpty()) return null
         if (pontosOrdenados.size == 1) return pontosOrdenados[0].timestamp
 
-        var inicioViagemAtual = 0
+        // fronteiras de todas as paragens longas encontradas
+        val fronteiras = mutableListOf<Pair<Int, Int>>()
         var i = 0
         while (i < pontosOrdenados.size) {
             var j = i
@@ -65,16 +66,31 @@ object GestorSemelhancaTrajeto {
             }
             val duracaoParagem = pontosOrdenados[j].timestamp - pontosOrdenados[i].timestamp
             if (duracaoParagem >= TEMPO_MIN_PARAGEM_MS) {
-                inicioViagemAtual = j + 1
+                fronteiras.add(i to j)
                 i = j + 1
             } else {
                 i++
             }
         }
 
-        return if (inicioViagemAtual < pontosOrdenados.size) {
-            pontosOrdenados[inicioViagemAtual].timestamp
-        } else null
+        if (fronteiras.isEmpty()) return pontosOrdenados[0].timestamp
+
+        val (ultimoInicio, ultimoFim) = fronteiras.last()
+
+        // Se a ultima paragem vai ate ao fim, o comando esta parado
+        // AGORA -- tipicamente porque acabou de chegar ao destino. A
+        // viagem relevante para avaliar cenarios e' a que LEVOU ate
+        // essa paragem, nao "nenhuma": devolver null aqui fazia
+        // verificaCenarios sair sem avaliar nada, e um cenario do
+        // tipo "a chegar a casa" nunca disparava.
+        if (ultimoFim == pontosOrdenados.size - 1) {
+            val inicio = if (fronteiras.size >= 2) fronteiras[fronteiras.size - 2].second + 1 else 0
+            return if (inicio <= ultimoInicio) pontosOrdenados[inicio].timestamp else null
+        }
+
+        // Ha movimento depois da ultima paragem -- a viagem atual e'
+        // esse movimento.
+        return pontosOrdenados[ultimoFim + 1].timestamp
     }
 
     /**
