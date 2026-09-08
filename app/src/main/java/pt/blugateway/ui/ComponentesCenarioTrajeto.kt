@@ -126,9 +126,9 @@ fun CriadorOuEditorCenario(
     // gravados durante a escolha do template se misturem com o
     // historico que o utilizador esta a rever nesse momento.
     DisposableEffect(Unit) {
-        pt.blugateway.ble.GestorTrajeto.pausado = true
+        pt.blugateway.ble.GestorTrajeto.pausaGravacao()
         onDispose {
-            pt.blugateway.ble.GestorTrajeto.pausado = false
+            pt.blugateway.ble.GestorTrajeto.retomaGravacao()
         }
     }
 
@@ -139,8 +139,13 @@ fun CriadorOuEditorCenario(
     var modoTemplate by remember { mutableStateOf(ModoTemplateCenario.VIAGEM_GRAVADA) }
     var filtroOrigem by remember { mutableStateOf(FiltroOrigemViagem.TODAS) }
     // template escolhido nos modos DESENHAR/ROTA -- lista de pontos
-    // lat/lon pura, sem PontoTrajeto (nao vem de nenhum comando)
-    var templateDesenhado by remember { mutableStateOf<List<PontoTemplate>?>(null) }
+    // lat/lon pura, sem PontoTrajeto (nao vem de nenhum comando).
+    // Inicializado com o template ja gravado quando se esta a EDITAR
+    // um cenario, para o mapa mostrar o que estava definido em vez
+    // de abrir vazio.
+    var templateDesenhado by remember {
+        mutableStateOf<List<PontoTemplate>?>(cenarioExistente?.template?.toList())
+    }
 
     // Comando VIGIADO -- por omissao o da edicao existente, ou o
     // indicado ao abrir o formulario (ex: a partir do card de um
@@ -297,7 +302,7 @@ fun CriadorOuEditorCenario(
                         .height(260.dp)
                         .padding(top = 8.dp)
                         .clip(RoundedCornerShape(9.dp)),
-                    rotaSelecionada = null,
+                    templateExistente = templateDesenhado ?: emptyList(),
                     onRotaEscolhida = { rota ->
                         templateDesenhado = rota.pontos
                         templateOriginalMantido = false

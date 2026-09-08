@@ -89,19 +89,75 @@
       window.location.href = 'blugateway-desenho://atualizado?pontos=' + encodeURIComponent(json);
     }
 
-    mapa.on('mousedown touchstart', function (e) {
-      if (!aDesenhar) return;
-      adicionaPontoDesenho(e.latlng);
-    });
-    mapa.on('mousemove touchmove', function (e) {
-      if (!aDesenhar) return;
-      if (e.originalEvent && (e.originalEvent.buttons === 1 || e.originalEvent.touches)) {
-        adicionaPontoDesenho(e.latlng);
+    /**
+     * Desenha um trajeto ja existente (ao editar um cenario que ja
+     * tinha template gravado) -- para o utilizador ver o que ja
+     * estava definido em vez de um mapa em branco.
+     */
+    function defineTrajetoExistente(jsonTexto) {
+      limpaDesenho();
+      var pontos;
+      try {
+        pontos = JSON.parse(jsonTexto);
+      } catch (e) {
+        return;
       }
-    });
-    mapa.on('mouseup touchend', function () {
+      if (!pontos || pontos.length === 0) return;
+      pontosDesenhados = pontos.map(function (p) { return L.latLng(p.lat, p.lon); });
+      linhaDesenho = L.polyline(pontosDesenhados, { color: '#2BA6E0', weight: 5 }).addTo(mapa);
+      mapa.fitBounds(linhaDesenho.getBounds(), { padding: [30, 30], maxZoom: 16 });
+    }
+
+    /* IMPORTANTE: o Leaflet NAO emite eventos touchstart/touchmove/
+       touchend no objeto do mapa -- so mousedown/mousemove/mouseup, e
+       esses nao chegam de forma fiavel a partir de toques em Android.
+       Por isso os gestos de desenho sao capturados com listeners
+       nativos no proprio elemento DOM do container, convertendo as
+       coordenadas de ecra para geograficas com
+       containerPointToLatLng(). */
+    var container = mapa.getContainer();
+
+    function coordenadaDoEvento(evento) {
+      var rect = container.getBoundingClientRect();
+      var toque = evento.touches && evento.touches.length > 0 ? evento.touches[0] : evento;
+      var x = toque.clientX - rect.left;
+      var y = toque.clientY - rect.top;
+      return mapa.containerPointToLatLng(L.point(x, y));
+    }
+
+    container.addEventListener('touchstart', function (e) {
+      if (!aDesenhar) return;
+      e.preventDefault();
+      adicionaPontoDesenho(coordenadaDoEvento(e));
+    }, { passive: false });
+
+    container.addEventListener('touchmove', function (e) {
+      if (!aDesenhar) return;
+      e.preventDefault();
+      adicionaPontoDesenho(coordenadaDoEvento(e));
+    }, { passive: false });
+
+    container.addEventListener('touchend', function (e) {
       if (!aDesenhar || pontosDesenhados.length === 0) return;
+      e.preventDefault();
       notificaDesenhoAtualizado();
+    }, { passive: false });
+
+    // rato (util em emulador/desktop, e inofensivo em telemovel)
+    var ratoPremido = false;
+    container.addEventListener('mousedown', function (e) {
+      if (!aDesenhar) return;
+      ratoPremido = true;
+      adicionaPontoDesenho(coordenadaDoEvento(e));
+    });
+    container.addEventListener('mousemove', function (e) {
+      if (!aDesenhar || !ratoPremido) return;
+      adicionaPontoDesenho(coordenadaDoEvento(e));
+    });
+    container.addEventListener('mouseup', function () {
+      if (!aDesenhar || !ratoPremido) return;
+      ratoPremido = false;
+      if (pontosDesenhados.length > 0) notificaDesenhoAtualizado();
     });
   </script>
 </body>

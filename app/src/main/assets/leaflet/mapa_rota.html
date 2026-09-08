@@ -125,6 +125,31 @@
       }
     }
 
+    function centraNaLocalizacao(lat, lon, zoom) {
+      mapa.setView([lat, lon], zoom || 14);
+    }
+
+    /**
+     * Desenha uma rota ja existente (ao editar um cenario que ja
+     * tinha template gravado) -- so para visualizacao do que estava
+     * definido; escolher uma rota nova exige marcar origem/destino
+     * de novo.
+     */
+    function defineTrajetoExistente(jsonTexto) {
+      limpaAlternativas();
+      var pontos;
+      try {
+        pontos = JSON.parse(jsonTexto);
+      } catch (e) {
+        return;
+      }
+      if (!pontos || pontos.length === 0) return;
+      var latLngs = pontos.map(function (p) { return [p.lat, p.lon]; });
+      var linha = L.polyline(latLngs, { color: '#2BA6E0', weight: 5, opacity: 0.8 }).addTo(mapa);
+      camadasAlternativas.push(linha);
+      mapa.fitBounds(latLngs, { padding: [30, 30], maxZoom: 16 });
+    }
+
     function marcaAlternativaSelecionada(indice) {
       alternativaSelecionadaIndice = indice;
     }

@@ -35,17 +35,45 @@ object GestorTrajeto {
     private val pedidosEmCurso = java.util.concurrent.ConcurrentHashMap.newKeySet<String>()
 
     /**
-     * Enquanto true, nenhum ponto novo e' gravado (nem por clique nem
-     * por beacon), independentemente do que os comandos tenham
-     * configurado -- usado pelo ecra de escolher/desenhar o template
-     * de um cenario de trajeto (ver SeletorTrajetoMapa), para a
+     * Instante (millis) ate ao qual a gravacao esta pausada -- 0
+     * significa "nao pausada". Enquanto pausada, nenhum ponto novo
+     * e' gravado (nem por clique nem por beacon), independentemente
+     * do que os comandos tenham configurado; usado pelo ecra de
+     * escolher/desenhar o template de um cenario de trajeto, para a
      * gravacao em fundo nao misturar pontos novos com a escolha que
-     * o utilizador esta a fazer nesse momento. @Volatile porque e'
-     * lido a partir de Dispatchers.IO (registaPontoDeBeaconSeNecessario)
-     * e escrito a partir da UI (efeito de entrar/sair do ecra).
+     * o utilizador esta a fazer nesse momento.
+     *
+     * E' um INSTANTE LIMITE e nao um simples booleano de proposito:
+     * se a UI for destruida pelo sistema sem o onDispose chegar a
+     * correr (acontece em Android quando o processo e' morto com o
+     * ecra aberto), um booleano ficaria preso em true e a gravacao
+     * nunca mais retomava -- e nenhum cenario voltaria a disparar,
+     * por falta de pontos novos. Com um limite temporal, o pior caso
+     * e' perder alguns minutos de gravacao, nao a funcionalidade
+     * toda.
+     *
+     * @Volatile porque e' lido a partir de Dispatchers.IO
+     * (registaPontoDeBeaconSeNecessario) e escrito a partir da UI.
      */
     @Volatile
-    var pausado: Boolean = false
+    private var pausadoAte: Long = 0L
+
+    /** Duracao maxima de uma pausa antes de a gravacao retomar
+     *  sozinha -- generosa o suficiente para desenhar/escolher um
+     *  trajeto com calma, curta o suficiente para nao inutilizar a
+     *  app se algo correr mal. */
+    private const val DURACAO_MAXIMA_PAUSA_MS = 15 * 60 * 1000L
+
+    val pausado: Boolean
+        get() = System.currentTimeMillis() < pausadoAte
+
+    fun pausaGravacao() {
+        pausadoAte = System.currentTimeMillis() + DURACAO_MAXIMA_PAUSA_MS
+    }
+
+    fun retomaGravacao() {
+        pausadoAte = 0L
+    }
 
     fun registaPontoDeClique(context: Context, mac: String, latitude: Double, longitude: Double) {
         if (pausado) {

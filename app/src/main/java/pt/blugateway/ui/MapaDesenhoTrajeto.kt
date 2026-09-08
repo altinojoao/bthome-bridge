@@ -47,13 +47,47 @@ fun MapaDesenhoTrajeto(
     onErro: (String) -> Unit = {}
 ) {
     val cores = LocalCoresGateway.current
+    val contexto = androidx.compose.ui.platform.LocalContext.current
     var paginaCarregada by remember { mutableStateOf(false) }
     var webViewRef by remember { mutableStateOf<WebView?>(null) }
     var modoDesenhoAtivo by remember { mutableStateOf(true) }
+    // garante que o template existente so' e' enviado uma vez ao JS
+    // -- reenviar a cada recomposicao apagaria o que o utilizador
+    // estivesse a desenhar por cima
+    var existenteEnviado by remember { mutableStateOf(false) }
 
     LaunchedEffect(paginaCarregada, modoDesenhoAtivo) {
         if (paginaCarregada) {
             webViewRef?.evaluateJavascript("alternaModoDesenho($modoDesenhoAtivo);", null)
+        }
+    }
+
+    // Ao abrir: centra na localizacao atual (senao o mapa abre no
+    // meio do oceano, em [0,0]) e, se ja houver um template gravado
+    // (edicao de um cenario existente), desenha-o para o utilizador
+    // ver o que estava definido.
+    LaunchedEffect(paginaCarregada) {
+        if (!paginaCarregada) return@LaunchedEffect
+        val webView = webViewRef ?: return@LaunchedEffect
+
+        if (pontos.isNotEmpty() && !existenteEnviado) {
+            existenteEnviado = true
+            val json = org.json.JSONArray().apply {
+                pontos.forEach { p ->
+                    put(org.json.JSONObject().apply {
+                        put("lat", p.lat)
+                        put("lon", p.lon)
+                    })
+                }
+            }.toString()
+            webView.evaluateJavascript(
+                "defineTrajetoExistente(${org.json.JSONObject.quote(json)});",
+                null
+            )
+        } else {
+            pt.blugateway.net.GestorLocalizacao.obtemLocalizacaoAtual(contexto)?.let { (lat, lon) ->
+                webView.evaluateJavascript("centraNaLocalizacao($lat, $lon, 15);", null)
+            }
         }
     }
 

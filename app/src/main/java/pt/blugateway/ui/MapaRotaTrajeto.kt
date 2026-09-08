@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -48,16 +49,47 @@ private sealed class EstadoRota {
 @Composable
 fun MapaRotaTrajeto(
     modifier: Modifier = Modifier,
-    rotaSelecionada: RotaCalculada?,
+    templateExistente: List<PontoTemplate> = emptyList(),
     onRotaEscolhida: (RotaCalculada) -> Unit,
     onErro: (String) -> Unit = {}
 ) {
     val cores = LocalCoresGateway.current
+    val contexto = androidx.compose.ui.platform.LocalContext.current
     val escopo = rememberCoroutineScope()
     var webViewRef by remember { mutableStateOf<WebView?>(null) }
+    var paginaCarregada by remember { mutableStateOf(false) }
     var estado by remember { mutableStateOf<EstadoRota>(EstadoRota.AEscolherPontos) }
     var origemAtual by remember { mutableStateOf<PontoTemplate?>(null) }
     var destinoAtual by remember { mutableStateOf<PontoTemplate?>(null) }
+    var existenteEnviado by remember { mutableStateOf(false) }
+
+    // Ao abrir: centra na localizacao atual (senao o mapa abre no
+    // meio do oceano, em [0,0]) e, se ja houver um template gravado
+    // (edicao de um cenario existente), desenha-o.
+    LaunchedEffect(paginaCarregada) {
+        if (!paginaCarregada) return@LaunchedEffect
+        val webView = webViewRef ?: return@LaunchedEffect
+
+        if (templateExistente.isNotEmpty() && !existenteEnviado) {
+            existenteEnviado = true
+            val json = JSONArray().apply {
+                templateExistente.forEach { p ->
+                    put(JSONObject().apply {
+                        put("lat", p.lat)
+                        put("lon", p.lon)
+                    })
+                }
+            }.toString()
+            webView.evaluateJavascript(
+                "defineTrajetoExistente(${JSONObject.quote(json)});",
+                null
+            )
+        } else {
+            pt.blugateway.net.GestorLocalizacao.obtemLocalizacaoAtual(contexto)?.let { (lat, lon) ->
+                webView.evaluateJavascript("centraNaLocalizacao($lat, $lon, 14);", null)
+            }
+        }
+    }
 
     Column(modifier) {
         val estadoAtual = estado
@@ -115,6 +147,7 @@ fun MapaRotaTrajeto(
                         override fun onPageFinished(view: WebView, url: String?) {
                             super.onPageFinished(view, url)
                             webViewRef = view
+                            paginaCarregada = true
                         }
 
                         override fun onReceivedError(
