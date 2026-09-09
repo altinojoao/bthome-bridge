@@ -255,4 +255,6 @@
     <string name="rota_toca_alternativa">Znaleziono %1$d alternatyw. Dotknij jednej, aby ją wybrać.</string>
     <string name="rota_sem_resultado">Nie znaleziono trasy między tymi punktami.</string>
     <string name="rota_erro">Nie można obliczyć trasy: %1$s</string>
+    <string name="beacons_adicionais">Dodatkowe beacony</string>
+    <string name="beacons_adicionais_dica">Dostarczają punkty GPS do tego scenariusza, czyniąc wykrywanie bardziej niezawodnym.</string>
 </resources>

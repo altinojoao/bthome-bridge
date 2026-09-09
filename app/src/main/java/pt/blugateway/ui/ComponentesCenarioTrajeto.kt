@@ -6,6 +6,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -165,6 +166,11 @@ fun CriadorOuEditorCenario(
     var limiarTexto by remember { mutableStateOf((cenarioExistente?.limiarPercentagem ?: 80).toString()) }
     var raioTexto by remember { mutableStateOf((cenarioExistente?.raioMetros ?: 40).toString()) }
     var acoes by remember { mutableStateOf(cenarioExistente?.acoes?.toList() ?: listOf(Acao())) }
+    // MACs adicionais selecionados (checkboxes) -- qualquer beacon
+    // aqui tambem contribui com pontos GPS para o historio do cenario
+    var macsAdicionais by remember {
+        mutableStateOf(cenarioExistente?.macsAdicionais?.toSet() ?: emptySet<String>())
+    }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         MapaRotaTrajeto(
@@ -197,9 +203,49 @@ fun CriadorOuEditorCenario(
             ) {
                 RadioButton(
                     selected = comandoVigiadoEscolhido?.mac == comando.mac,
-                    onClick = { comandoVigiadoEscolhido = comando }
+                    onClick = {
+                        // ao mudar o principal, remove-o dos adicionais
+                        // (um beacon nao pode ser principal e adicional)
+                        macsAdicionais = macsAdicionais - comando.mac
+                        comandoVigiadoEscolhido = comando
+                    }
                 )
                 Text(comando.nome, color = cores.suave, fontSize = 11.5.sp)
+            }
+        }
+
+        // Beacons adicionais -- todos os beacons exceto o principal
+        // podem ser adicionados como fontes extra de pontos GPS
+        val beaconsDisponiveis = comandos.filter { it.mac != comandoVigiadoEscolhido?.mac }
+        if (beaconsDisponiveis.isNotEmpty()) {
+            Text(
+                stringResource(R.string.beacons_adicionais),
+                color = cores.tinta,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.padding(top = 12.dp)
+            )
+            Text(
+                stringResource(R.string.beacons_adicionais_dica),
+                color = cores.suave,
+                fontSize = 10.sp,
+                modifier = Modifier.padding(top = 2.dp, bottom = 4.dp)
+            )
+            beaconsDisponiveis.forEach { beacon ->
+                val selecionado = beacon.mac in macsAdicionais
+                Row(
+                    Modifier.fillMaxWidth().padding(top = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Checkbox(
+                        checked = selecionado,
+                        onCheckedChange = { ativo ->
+                            macsAdicionais = if (ativo) macsAdicionais + beacon.mac
+                            else macsAdicionais - beacon.mac
+                        }
+                    )
+                    Text(beacon.nome, color = cores.suave, fontSize = 11.5.sp)
+                }
             }
         }
 
@@ -281,6 +327,7 @@ fun CriadorOuEditorCenario(
                             id = cenarioExistente?.id ?: UUID.randomUUID().toString(),
                             nome = nome,
                             macComando = comandoVigiadoFinal!!.mac,
+                            macsAdicionais = macsAdicionais.filter { it != comandoVigiadoFinal.mac },
                             template = template,
                             macOrigemTemplate = origemParaGuardar,
                             limiarPercentagem = limiar,

@@ -437,6 +437,13 @@ data class CenarioTrajeto(
     var id: String,
     var nome: String,
     var macComando: String,
+    // MACs adicionais que tambem contribuem com pontos GPS para este
+    // cenario -- qualquer beacon da lista (macComando + macsAdicionais)
+    // pode gravar pontos e disparar as acoes quando o limiar e'
+    // atingido. Permite usar varios beacons como pontos de controlo
+    // ao longo do percurso, tornando a detecao mais robusta.
+    // Lista vazia em cenarios criados antes deste campo existir.
+    var macsAdicionais: List<String> = emptyList(),
     var template: List<PontoTemplate>,
     // MAC do comando de onde o template foi IMPORTADO -- so
     // informativo (mostrado na UI, "template importado de X"), nunca
@@ -482,6 +489,9 @@ data class CenarioTrajeto(
         put("id", id)
         put("nome", nome)
         put("macComando", macComando)
+        if (macsAdicionais.isNotEmpty()) {
+            put("macsAdicionais", JSONArray().apply { macsAdicionais.forEach { put(it) } })
+        }
         put("template", JSONArray().apply { template.forEach { put(it.paraJson()) } })
         macOrigemTemplate?.let { put("macOrigemTemplate", it) }
         put("limiarPercentagem", limiarPercentagem)
@@ -515,6 +525,11 @@ data class CenarioTrajeto(
                 id = id,
                 nome = o.optString("nome", "Trajeto"),
                 macComando = mac,
+                macsAdicionais = run {
+                    val arr = o.optJSONArray("macsAdicionais")
+                    if (arr != null) (0 until arr.length()).map { arr.getString(it) }
+                    else emptyList()
+                },
                 template = template,
                 macOrigemTemplate = if (o.has("macOrigemTemplate")) o.optString("macOrigemTemplate") else null,
                 limiarPercentagem = o.optInt("limiarPercentagem", 80),

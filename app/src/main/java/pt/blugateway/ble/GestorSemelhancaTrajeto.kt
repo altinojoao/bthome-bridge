@@ -197,18 +197,46 @@ object GestorSemelhancaTrajeto {
             RegistoDiagnostico.regista(context, "[D-cenarios] cenario='${cenario.nome}' template=${cenario.template.size}pts jaDisparado=$jaDisparado limiar=${cenario.limiarPercentagem}%")
             if (jaDisparado) continue
 
+            // Agregar historico de todos os MACs do cenario -- o MAC
+            // que acionou esta verificacao ja foi calculado acima;
+            // os MACs adicionais sao acrescentados, o conjunto e'
+            // ordenado por timestamp e duplicados proximos eliminados
+            val todosMacs = (listOf(cenario.macComando) + cenario.macsAdicionais).distinct()
+            val trajetoCombinado = if (todosMacs.size <= 1) {
+                trajetoViagemAtual
+            } else {
+                val pontosAdicionais = todosMacs
+                    .filter { it != mac }
+                    .flatMap { outroMac ->
+                        val hist = repo.historicoTrajeto(outroMac)
+                        val inicioOutro = inicioViagemAtual(hist) ?: return@flatMap emptyList()
+                        hist.filter { it.timestamp >= inicioOutro }
+                    }
+                (trajetoViagemAtual + pontosAdicionais)
+                    .sortedBy { it.timestamp }
+                    .let { ordenados ->
+                        // eliminar pontos gravados < 2s de distancia
+                        // temporal uns dos outros (beacon a beacon)
+                        val filtrado = mutableListOf<PontoTrajeto>()
+                        for (pt in ordenados) {
+                            if (filtrado.isEmpty() || pt.timestamp - filtrado.last().timestamp > 2000) {
+                                filtrado.add(pt)
+                            }
+                        }
+                        filtrado
+                    }
+            }
+            RegistoDiagnostico.regista(context, "[D-cenarios] trajetoCombinado=${trajetoCombinado.size}pts (${todosMacs.size} beacons)")
+
             // Log das coordenadas reais dos primeiros pontos, para
             // confirmar se o template e o trajeto estao na mesma zona
             if (cenario.template.isNotEmpty()) {
                 val t0 = cenario.template.first()
                 RegistoDiagnostico.regista(context, "[D-cenarios] template[0]=(${t0.lat.toBigDecimal().toPlainString().take(10)},${t0.lon.toBigDecimal().toPlainString().take(10)})")
             }
-            if (trajetoViagemAtual.isNotEmpty()) {
-                val p0 = trajetoViagemAtual.first()
+            if (trajetoCombinado.isNotEmpty()) {
+                val p0 = trajetoCombinado.first()
                 RegistoDiagnostico.regista(context, "[D-cenarios] trajeto[0]=(${p0.latitude.toBigDecimal().toPlainString().take(10)},${p0.longitude.toBigDecimal().toPlainString().take(10)})")
-                // distancia do primeiro ponto do trajeto ao primeiro
-                // ponto do template -- se for > 100km, as coordenadas
-                // estao definitivamente em zonas diferentes
                 if (cenario.template.isNotEmpty()) {
                     val t0 = cenario.template.first()
                     val dist = distanciaMetros(p0.latitude, p0.longitude, t0.lat, t0.lon)
@@ -216,7 +244,7 @@ object GestorSemelhancaTrajeto {
                 }
             }
 
-            val semelhanca = calculaSemelhanca(trajetoViagemAtual, cenario.template, cenario.raioMetros)
+            val semelhanca = calculaSemelhanca(trajetoCombinado, cenario.template, cenario.raioMetros)
             RegistoDiagnostico.regista(context, "[D-cenarios] semelhanca=${(semelhanca*100).toInt()}% (precisa>=${cenario.limiarPercentagem}%)")
             if (semelhanca * 100 >= cenario.limiarPercentagem) {
                 repo.marcaDisparado(cenario.id, inicio)

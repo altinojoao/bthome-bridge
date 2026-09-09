@@ -256,4 +256,6 @@
     <string name="rota_toca_alternativa">%1$d alternativas encontradas. Toque numa para a escolher.</string>
     <string name="rota_sem_resultado">Não foi encontrada nenhuma rota entre esses pontos.</string>
     <string name="rota_erro">Não foi possível calcular a rota: %1$s</string>
+    <string name="beacons_adicionais">Beacons adicionais</string>
+    <string name="beacons_adicionais_dica">Contribuem com pontos GPS para este cenário, tornando a deteção mais robusta.</string>
 </resources>

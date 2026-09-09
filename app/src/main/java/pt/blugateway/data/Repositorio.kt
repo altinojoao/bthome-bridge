@@ -241,8 +241,11 @@ class Repositorio private constructor(context: Context) {
         _cenariosTrajeto.value = lista
     }
 
+    /** Devolve todos os cenarios onde este MAC e' beacon principal
+     *  OU beacon adicional -- usado para verificar semelhanca sempre
+     *  que qualquer beacon da lista e' detetado. */
     fun cenariosTrajetoPara(mac: String): List<CenarioTrajeto> =
-        _cenariosTrajeto.value.filter { it.macComando == mac }
+        _cenariosTrajeto.value.filter { it.macComando == mac || mac in it.macsAdicionais }
 
     fun adicionaCenarioTrajeto(cenario: CenarioTrajeto) {
         guardaCenariosTrajeto(_cenariosTrajeto.value + cenario)
