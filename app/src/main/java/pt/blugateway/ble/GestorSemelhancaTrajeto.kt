@@ -197,6 +197,25 @@ object GestorSemelhancaTrajeto {
             RegistoDiagnostico.regista(context, "[D-cenarios] cenario='${cenario.nome}' template=${cenario.template.size}pts jaDisparado=$jaDisparado limiar=${cenario.limiarPercentagem}%")
             if (jaDisparado) continue
 
+            // Log das coordenadas reais dos primeiros pontos, para
+            // confirmar se o template e o trajeto estao na mesma zona
+            if (cenario.template.isNotEmpty()) {
+                val t0 = cenario.template.first()
+                RegistoDiagnostico.regista(context, "[D-cenarios] template[0]=(${t0.lat.toBigDecimal().toPlainString().take(10)},${t0.lon.toBigDecimal().toPlainString().take(10)})")
+            }
+            if (trajetoViagemAtual.isNotEmpty()) {
+                val p0 = trajetoViagemAtual.first()
+                RegistoDiagnostico.regista(context, "[D-cenarios] trajeto[0]=(${p0.latitude.toBigDecimal().toPlainString().take(10)},${p0.longitude.toBigDecimal().toPlainString().take(10)})")
+                // distancia do primeiro ponto do trajeto ao primeiro
+                // ponto do template -- se for > 100km, as coordenadas
+                // estao definitivamente em zonas diferentes
+                if (cenario.template.isNotEmpty()) {
+                    val t0 = cenario.template.first()
+                    val dist = distanciaMetros(p0.latitude, p0.longitude, t0.lat, t0.lon)
+                    RegistoDiagnostico.regista(context, "[D-cenarios] dist_inicio=${dist.toInt()}m (>5000m = zonas diferentes)")
+                }
+            }
+
             val semelhanca = calculaSemelhanca(trajetoViagemAtual, cenario.template, cenario.raioMetros)
             RegistoDiagnostico.regista(context, "[D-cenarios] semelhanca=${(semelhanca*100).toInt()}% (precisa>=${cenario.limiarPercentagem}%)")
             if (semelhanca * 100 >= cenario.limiarPercentagem) {
