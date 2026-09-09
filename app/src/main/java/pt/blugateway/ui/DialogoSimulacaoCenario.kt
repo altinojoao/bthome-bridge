@@ -3,28 +3,17 @@ package pt.blugateway.ui
 import android.annotation.SuppressLint
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -33,8 +22,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import androidx.compose.foundation.shape.RoundedCornerShape
 import kotlinx.coroutines.delay
 import org.json.JSONArray
 import org.json.JSONObject
@@ -43,17 +32,15 @@ import pt.blugateway.data.CenarioTrajeto
 import pt.blugateway.ui.theme.LocalCoresGateway
 
 /**
- * Diálogo de simulação -- reproduz o template do cenario ponto a
- * ponto, calculando a semelhanca incrementalmente (mesmo algoritmo
- * do GestorSemelhancaTrajeto.calculaSemelhanca) e mostrando:
- * - linha verde a crescer no mapa conforme o cursor avanca
- * - percentagem atual no painel sobrepostos no mapa
- * - marcador laranja no ponto onde o limiar seria atingido
- * - botoes de iniciar/pausar/reiniciar
+ * Simulador de cenario de trajeto -- reproduz o template ponto a
+ * ponto (mesmo algoritmo LCSS), mostrando em tempo real:
+ *   - linha azul tracejada: template completo
+ *   - linha verde: parte ja "percorrida" (cursor a avançar)
+ *   - marcador laranja: onde o limiar seria atingido
+ *   - percentagem actual sobreposta no mapa
  *
- * Util para confirmar se o template esta correto, qual a
- * percentagem esperada ao final do percurso, e onde a acao
- * dispararia -- sem precisar de fazer o percurso real.
+ * Util para confirmar se o template esta correcto antes de fazer o
+ * percurso real, e para diagnosticar porque os cenarios nao disparam.
  */
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
@@ -68,77 +55,79 @@ fun DialogoSimulacaoCenario(
     var emExecucao by remember { mutableStateOf(false) }
     var pct by remember { mutableIntStateOf(0) }
     var limiarAtingido by remember { mutableStateOf(false) }
-    var indiceAtual by remember { mutableIntStateOf(0) }
     var concluido by remember { mutableStateOf(false) }
 
-    // Velocidade: ms por ponto de template -- 150ms da uma animacao
-    // fluida e rapida o suficiente para ver o trajeto todo em poucos
-    // segundos mesmo com 500 pontos OSRM
-    val msPorPonto = 150L
-
-    // Enviar o template ao JS logo que a pagina carregue
+    // Enviar template ao JS assim que a pagina carregue
     LaunchedEffect(paginaCarregada) {
         if (!paginaCarregada || templateEnviado) return@LaunchedEffect
-        val webView = webViewRef ?: return@LaunchedEffect
+        val wv = webViewRef ?: return@LaunchedEffect
         if (cenario.template.isEmpty()) return@LaunchedEffect
         templateEnviado = true
-
-        val jsonTemplate = JSONArray().apply {
+        val json = JSONArray().apply {
             cenario.template.forEach { p ->
-                put(JSONObject().apply {
-                    put("lat", p.lat)
-                    put("lon", p.lon)
-                })
+                put(JSONObject().apply { put("lat", p.lat); put("lon", p.lon) })
             }
         }.toString()
-
-        webView.evaluateJavascript(
-            "inicializaSimulacao(${JSONObject.quote(jsonTemplate)}, ${cenario.raioMetros}, ${cenario.limiarPercentagem});",
+        wv.evaluateJavascript(
+            "inicializaSimulacao(${JSONObject.quote(json)}, ${cenario.raioMetros}, ${cenario.limiarPercentagem});",
             null
         )
     }
 
-    // Loop de simulacao -- avanca um passo de cada vez
+    // Loop de simulacao
     LaunchedEffect(emExecucao) {
         while (emExecucao && !concluido) {
-            delay(msPorPonto)
+            delay(150L)
             webViewRef?.evaluateJavascript("passaSimulacao();", null)
         }
     }
 
-    AlertDialog(
+    Dialog(
         onDismissRequest = onFecha,
-        confirmButton = {},
-        containerColor = cores.cartao,
-        modifier = Modifier.fillMaxWidth(0.97f),
-        properties = DialogProperties(usePlatformDefaultWidth = false),
-        title = {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text(
-                        stringResource(R.string.sim_titulo),
-                        color = cores.tinta,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        stringResource(R.string.sim_subtitulo, cenario.nome, cenario.template.size, cenario.limiarPercentagem),
-                        color = cores.suave,
-                        fontSize = 10.sp
-                    )
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth(0.97f)
+                .fillMaxHeight(0.90f),
+            shape = RoundedCornerShape(16.dp),
+            color = cores.cartao
+        ) {
+            Column(
+                Modifier
+                    .fillMaxSize()
+                    .padding(16.dp)
+            ) {
+                // Cabecalho
+                Row(
+                    Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            stringResource(R.string.sim_titulo),
+                            color = cores.tinta,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            stringResource(R.string.sim_subtitulo, cenario.nome, cenario.template.size, cenario.limiarPercentagem),
+                            color = cores.suave,
+                            fontSize = 10.sp
+                        )
+                    }
+                    IconButton(onClick = onFecha) {
+                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.fechar), tint = cores.suave)
+                    }
                 }
-                IconButton(onClick = onFecha) {
-                    Icon(Icons.Default.Close, contentDescription = stringResource(R.string.fechar), tint = cores.suave)
-                }
-            }
-        },
-        text = {
-            Column(Modifier.fillMaxWidth()) {
+
+                // Mapa -- ocupa a maior parte do espaco disponivel
                 AndroidView(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(320.dp)
-                        .clip(RoundedCornerShape(9.dp)),
+                        .weight(1f)
+                        .padding(top = 10.dp)
+                        .clip(RoundedCornerShape(10.dp)),
                     factory = { ctx ->
                         WebView(ctx).apply {
                             settings.javaScriptEnabled = true
@@ -157,11 +146,8 @@ fun DialogoSimulacaoCenario(
                                     when (url.host) {
                                         "progresso" -> {
                                             pct = url.getQueryParameter("pct")?.toIntOrNull() ?: pct
-                                            indiceAtual = url.getQueryParameter("i")?.toIntOrNull() ?: indiceAtual
                                         }
-                                        "limiar" -> {
-                                            limiarAtingido = true
-                                        }
+                                        "limiar" -> { limiarAtingido = true }
                                         "concluido" -> {
                                             emExecucao = false
                                             concluido = true
@@ -175,9 +161,11 @@ fun DialogoSimulacaoCenario(
                     }
                 )
 
+                // Barra de controlo
                 Row(
-                    Modifier.fillMaxWidth().padding(top = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     if (!concluido) {
@@ -186,7 +174,8 @@ fun DialogoSimulacaoCenario(
                                 if (emExecucao) stringResource(R.string.sim_pausar)
                                 else stringResource(R.string.sim_iniciar),
                                 color = cores.azul,
-                                fontSize = 12.sp
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Medium
                             )
                         }
                     }
@@ -194,30 +183,38 @@ fun DialogoSimulacaoCenario(
                         emExecucao = false
                         concluido = false
                         pct = 0
-                        indiceAtual = 0
                         limiarAtingido = false
                         webViewRef?.evaluateJavascript("reiniciaSimulacao();", null)
                     }) {
                         Text(stringResource(R.string.sim_reiniciar), color = cores.suave, fontSize = 12.sp)
                     }
 
+                    Spacer(Modifier.weight(1f))
+
+                    // Estado: percentagem ou resultado final
                     if (limiarAtingido) {
                         Text(
                             stringResource(R.string.sim_limiar_atingido, cenario.limiarPercentagem),
                             color = cores.ok,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Medium
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
                         )
-                    }
-                    if (concluido && !limiarAtingido) {
+                    } else if (concluido) {
                         Text(
                             stringResource(R.string.sim_nao_atingiu, pct, cenario.limiarPercentagem),
                             color = cores.avisoTinta,
-                            fontSize = 11.sp
+                            fontSize = 12.sp
+                        )
+                    } else if (pct > 0) {
+                        Text(
+                            "$pct%",
+                            color = cores.tinta,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold
                         )
                     }
                 }
             }
         }
-    )
+    }
 }
