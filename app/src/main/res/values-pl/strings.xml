@@ -265,4 +265,5 @@
     <string name="sim_reiniciar">↺ Uruchom ponownie</string>
     <string name="sim_limiar_atingido">✓ Próg %1$d%% osiągnięty!</string>
     <string name="sim_nao_atingiu">Końcowe podobieństwo %1$d%% (próg wynosi %2$d%%)</string>
+    <string name="sim_escolher">Symuluj scenariusz:</string>
 </resources>

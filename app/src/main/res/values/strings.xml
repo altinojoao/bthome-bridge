@@ -266,4 +266,5 @@
     <string name="sim_reiniciar">↺ Reiniciar</string>
     <string name="sim_limiar_atingido">✓ Limiar %1$d%% atingido!</string>
     <string name="sim_nao_atingiu">Semelhança final %1$d%% (limiar é %2$d%%)</string>
+    <string name="sim_escolher">Simular cenário:</string>
 </resources>

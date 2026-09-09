@@ -329,6 +329,95 @@
         mapa.fitBounds(todosPontos, { padding: [30, 30], maxZoom: 16 });
       }
     }
+
+    // ---------------------------------------------------------------
+    // SIMULACAO DE CENARIO -- sobreposicao no mesmo mapa
+    // ---------------------------------------------------------------
+    var simTemplate = [];
+    var simRaio = 40;
+    var simCursor = 0;
+    var simIndice = 0;
+    var simCamadasExtra = [];
+    var simLinhaTemplate = null;
+    var simLinhaPercorrida = null;
+    var simMarcadorPos = null;
+    var simMarcadorLimiar = null;
+    var simLimiarIndice = -1;
+
+    var ICONE_SIM_POS = L.divIcon({
+      html: '<div style="width:14px;height:14px;border-radius:50%;background:#2BA6E0;border:2px solid white;box-shadow:0 1px 5px rgba(0,0,0,.6)"></div>',
+      className: '', iconSize: [14,14], iconAnchor: [7,7]
+    });
+    var ICONE_SIM_LIMIAR = L.divIcon({
+      html: '<div style="width:16px;height:16px;border-radius:50%;background:#F0A500;border:2px solid white;box-shadow:0 1px 5px rgba(0,0,0,.6)"></div>',
+      className: '', iconSize: [16,16], iconAnchor: [8,8]
+    });
+
+    function distSim(la1,lo1,la2,lo2){
+      var R=6371000,r=Math.PI/180;
+      var a=Math.sin((la2-la1)*r/2)**2+Math.cos(la1*r)*Math.cos(la2*r)*Math.sin((lo2-lo1)*r/2)**2;
+      return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+    }
+
+    function iniciaSimulacao(jsonTemplate, raio, limiar) {
+      simTemplate = JSON.parse(jsonTemplate);
+      simRaio = raio; simCursor = 0; simIndice = 0; simLimiarIndice = -1;
+      simCamadasExtra.forEach(function(c){ mapa.removeLayer(c); });
+      simCamadasExtra = [];
+      if(simLinhaTemplate){ mapa.removeLayer(simLinhaTemplate); }
+      if(simLinhaPercorrida){ mapa.removeLayer(simLinhaPercorrida); }
+      if(simMarcadorPos){ mapa.removeLayer(simMarcadorPos); }
+      if(simMarcadorLimiar){ mapa.removeLayer(simMarcadorLimiar); }
+      simMarcadorLimiar = null;
+      if(simTemplate.length < 2) return;
+      var latLngs = simTemplate.map(function(p){ return [p.lat, p.lon]; });
+      simLinhaTemplate = L.polyline(latLngs,{color:'#1A6BC4',weight:4,opacity:0.4,dashArray:'6,5'}).addTo(mapa);
+      simLinhaPercorrida = L.polyline([],{color:'#3FB950',weight:6,opacity:0.9}).addTo(mapa);
+      simMarcadorPos = L.marker(latLngs[0],{icon:ICONE_SIM_POS}).addTo(mapa);
+      mapa.fitBounds(latLngs,{padding:[30,30]});
+    }
+
+    function passoSimulacao(limiar) {
+      if(simIndice >= simTemplate.length) {
+        window.location.href='blugateway-sim://concluido?pct='+Math.round(simCursor/simTemplate.length*100);
+        return;
+      }
+      var pt = simTemplate[simIndice];
+      var salto = Math.max(1,Math.floor(simTemplate.length*0.15));
+      var lim = Math.min(simCursor+salto, simTemplate.length);
+      for(var i=simCursor;i<lim;i++){
+        if(distSim(pt.lat,pt.lon,simTemplate[i].lat,simTemplate[i].lon)<=simRaio){
+          simCursor=i+1; break;
+        }
+      }
+      var pct = Math.round(simCursor/simTemplate.length*100);
+      simMarcadorPos.setLatLng([pt.lat,pt.lon]);
+      var perc = simTemplate.slice(0,simCursor).map(function(p){ return [p.lat,p.lon]; });
+      simLinhaPercorrida.setLatLngs(perc);
+      if(pct>=limiar && simLimiarIndice<0){
+        simLimiarIndice=simIndice;
+        simMarcadorLimiar=L.marker([pt.lat,pt.lon],{icon:ICONE_SIM_LIMIAR}).addTo(mapa);
+        simMarcadorLimiar.bindPopup('⚡ '+limiar+'% aqui!').openPopup();
+        window.location.href='blugateway-sim://limiar?pct='+pct+'&i='+simIndice;
+      }
+      simIndice++;
+      window.location.href='blugateway-sim://pct?v='+pct;
+    }
+
+    function reiniciaSimulacao() {
+      simCursor=0; simIndice=0; simLimiarIndice=-1;
+      if(simLinhaPercorrida) simLinhaPercorrida.setLatLngs([]);
+      if(simMarcadorPos && simTemplate.length>0) simMarcadorPos.setLatLng([simTemplate[0].lat,simTemplate[0].lon]);
+      if(simMarcadorLimiar){ mapa.removeLayer(simMarcadorLimiar); simMarcadorLimiar=null; }
+    }
+
+    function limpaSim() {
+      simCursor=0; simIndice=0; simLimiarIndice=-1;
+      if(simLinhaTemplate){ mapa.removeLayer(simLinhaTemplate); simLinhaTemplate=null; }
+      if(simLinhaPercorrida){ mapa.removeLayer(simLinhaPercorrida); simLinhaPercorrida=null; }
+      if(simMarcadorPos){ mapa.removeLayer(simMarcadorPos); simMarcadorPos=null; }
+      if(simMarcadorLimiar){ mapa.removeLayer(simMarcadorLimiar); simMarcadorLimiar=null; }
+    }
   </script>
 </body>
 </html>

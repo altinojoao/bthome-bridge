@@ -265,4 +265,5 @@
     <string name="sim_reiniciar">↺ Herstarten</string>
     <string name="sim_limiar_atingido">✓ Drempel %1$d%% bereikt!</string>
     <string name="sim_nao_atingiu">Eindgelijkenis %1$d%% (drempel is %2$d%%)</string>
+    <string name="sim_escolher">Simuleer scenario:</string>
 </resources>

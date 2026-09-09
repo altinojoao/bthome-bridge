@@ -265,4 +265,5 @@
     <string name="sim_reiniciar">↺ Ricomincia</string>
     <string name="sim_limiar_atingido">✓ Soglia %1$d%% raggiunta!</string>
     <string name="sim_nao_atingiu">Somiglianza finale %1$d%% (soglia è %2$d%%)</string>
+    <string name="sim_escolher">Simula scenario:</string>
 </resources>

@@ -265,4 +265,5 @@
     <string name="sim_reiniciar">↺ Reiniciar</string>
     <string name="sim_limiar_atingido">✓ ¡Umbral %1$d%% alcanzado!</string>
     <string name="sim_nao_atingiu">Similitud final %1$d%% (umbral es %2$d%%)</string>
+    <string name="sim_escolher">Simular escenario:</string>
 </resources>

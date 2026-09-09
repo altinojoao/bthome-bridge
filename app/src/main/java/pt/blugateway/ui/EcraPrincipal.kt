@@ -244,8 +244,10 @@ fun EcraPrincipal(vm: GatewayViewModel = viewModel()) {
             }
 
             if (mostraMapa) {
+                val cenariosTrajeto by vm.cenariosTrajeto.collectAsState()
                 EcraMapa(
                     comandos = comandos,
+                    cenarios = cenariosTrajeto,
                     vm = vm,
                     onFecha = { mostraMapa = false }
                 )

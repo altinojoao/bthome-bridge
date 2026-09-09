@@ -17,7 +17,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -61,6 +63,7 @@ private val CORES_TRAJETO = listOf(
 @Composable
 fun EcraMapa(
     comandos: List<Comando>,
+    cenarios: List<pt.blugateway.data.CenarioTrajeto>,
     vm: GatewayViewModel,
     onFecha: () -> Unit
 ) {
@@ -70,6 +73,22 @@ fun EcraMapa(
     var webViewRef by remember { mutableStateOf<WebView?>(null) }
     var erroMapa by remember { mutableStateOf<String?>(null) }
     var soUltimaViagem by remember { mutableStateOf(false) }
+
+    // Estado da simulacao integrada
+    var cenarioSimulado by remember { mutableStateOf<pt.blugateway.data.CenarioTrajeto?>(null) }
+    var simEmExecucao by remember { mutableStateOf(false) }
+    var simPct by remember { mutableStateOf(0) }
+    var simLimiarAtingido by remember { mutableStateOf(false) }
+    var simConcluido by remember { mutableStateOf(false) }
+
+    // Loop de simulacao -- avanca um passo de cada vez no JS do mapa
+    LaunchedEffect(simEmExecucao) {
+        val c = cenarioSimulado ?: return@LaunchedEffect
+        while (simEmExecucao && !simConcluido) {
+            kotlinx.coroutines.delay(150L)
+            webViewRef?.evaluateJavascript("passoSimulacao(${c.limiarPercentagem});", null)
+        }
+    }
 
     val comandosComHistorico = remember(comandos) {
         comandos.mapNotNull { c ->
@@ -147,6 +166,13 @@ fun EcraMapa(
                     },
                     onErro = { msg ->
                         if (erroMapa == null) erroMapa = msg
+                    },
+                    onUrlSimulacao = { host, url ->
+                        when (host) {
+                            "pct" -> simPct = url.getQueryParameter("v")?.toIntOrNull() ?: simPct
+                            "limiar" -> simLimiarAtingido = true
+                            "concluido" -> { simEmExecucao = false; simConcluido = true }
+                        }
                     }
                 )
 
@@ -157,6 +183,120 @@ fun EcraMapa(
                         fontSize = 9.sp,
                         modifier = Modifier.fillMaxWidth().padding(top = 4.dp)
                     )
+                }
+
+                // Painel de simulacao -- aparece so quando um cenario
+                // esta selecionado para simular
+                val sim = cenarioSimulado
+                if (sim != null) {
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(top = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Nome do cenario a simular
+                        Text(
+                            "\u25B6 ${sim.nome}",
+                            color = cores.azul,
+                            fontSize = 11.sp,
+                            modifier = Modifier.weight(1f)
+                        )
+                        // Percentagem em tempo real
+                        if (simPct > 0 && !simConcluido) {
+                            Text(
+                                "$simPct%",
+                                color = if (simLimiarAtingido) cores.ok else cores.tinta,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(end = 8.dp)
+                            )
+                        }
+                        if (simLimiarAtingido) {
+                            Text(
+                                "✓ ${sim.limiarPercentagem}%",
+                                color = cores.ok,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(end = 8.dp)
+                            )
+                        }
+                        if (simConcluido && !simLimiarAtingido) {
+                            Text(
+                                "✗ $simPct%/${sim.limiarPercentagem}%",
+                                color = cores.avisoTinta,
+                                fontSize = 11.sp,
+                                modifier = Modifier.padding(end = 8.dp)
+                            )
+                        }
+                        if (!simConcluido) {
+                            TextButton(onClick = { simEmExecucao = !simEmExecucao }) {
+                                Text(
+                                    if (simEmExecucao) stringResource(R.string.sim_pausar)
+                                    else stringResource(R.string.sim_iniciar),
+                                    color = cores.azul, fontSize = 11.sp
+                                )
+                            }
+                        }
+                        TextButton(onClick = {
+                            simEmExecucao = false; simPct = 0
+                            simLimiarAtingido = false; simConcluido = false
+                            webViewRef?.evaluateJavascript("reiniciaSimulacao();", null)
+                        }) {
+                            Text(stringResource(R.string.sim_reiniciar), color = cores.suave, fontSize = 11.sp)
+                        }
+                        // Fechar simulacao
+                        IconButton(onClick = {
+                            simEmExecucao = false
+                            cenarioSimulado = null
+                            simPct = 0; simLimiarAtingido = false; simConcluido = false
+                            webViewRef?.evaluateJavascript("limpaSim();", null)
+                        }, modifier = Modifier.size(28.dp)) {
+                            Text("×", color = cores.suave, fontSize = 16.sp)
+                        }
+                    }
+                } else {
+                    // Lista de cenarios ativos para simular
+                    val cenariosAtivos = cenarios.filter {
+                        it.ativo && it.template.size >= 2 &&
+                            comandos.any { c -> c.mac == it.macComando }
+                    }
+                    if (cenariosAtivos.isNotEmpty()) {
+                        Row(
+                            Modifier.fillMaxWidth().padding(top = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                stringResource(R.string.sim_escolher),
+                                color = cores.suave,
+                                fontSize = 10.sp,
+                                modifier = Modifier.weight(1f)
+                            )
+                            cenariosAtivos.forEach { c ->
+                                TextButton(onClick = {
+                                    cenarioSimulado = c; simPct = 0
+                                    simLimiarAtingido = false; simConcluido = false
+                                    simEmExecucao = false
+                                    // Enviar template ao JS mal a pagina estiver pronta
+                                    if (paginaCarregada) {
+                                        val json = org.json.JSONArray().apply {
+                                            c.template.forEach { p ->
+                                                put(org.json.JSONObject().apply {
+                                                    put("lat", p.lat); put("lon", p.lon)
+                                                })
+                                            }
+                                        }.toString()
+                                        webViewRef?.evaluateJavascript(
+                                            "iniciaSimulacao(${org.json.JSONObject.quote(json)}, ${c.raioMetros}, ${c.limiarPercentagem});",
+                                            null
+                                        )
+                                    }
+                                }) {
+                                    Text("\u25B6 ${c.nome}", color = cores.azul, fontSize = 10.sp)
+                                }
+                            }
+                        }
+                    }
                 }
 
                 comandosComHistorico.forEach { (c, _) ->
@@ -197,7 +337,8 @@ fun EcraMapa(
 private fun MapaWebView(
     modifier: Modifier = Modifier,
     onPaginaCarregada: (WebView) -> Unit,
-    onErro: (String) -> Unit
+    onErro: (String) -> Unit,
+    onUrlSimulacao: (host: String, url: android.net.Uri) -> Unit = { _, _ -> }
 ) {
     AndroidView(
         modifier = modifier,
@@ -238,6 +379,10 @@ private fun MapaWebView(
                         request: android.webkit.WebResourceRequest?
                     ): Boolean {
                         val url = request?.url ?: return false
+                        if (url.scheme == "blugateway-sim") {
+                            onUrlSimulacao(url.host ?: "", url)
+                            return true
+                        }
                         if (url.scheme == "http" || url.scheme == "https") return false
                         return try {
                             val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, url)
