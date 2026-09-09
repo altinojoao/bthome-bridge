@@ -100,18 +100,9 @@ fun LinhaCenarioTrajeto(
  * escolhe-se a viagem certa tocando na linha, e so DEPOIS se
  * escolhe qual comando vai ser vigiado por este cenario.
  */
-/**
- * Os 3 modos possiveis de definir o template de um cenario --
- * escolher uma viagem ja gravada (com filtro por origem), desenhar
- * a dedo no mapa, ou pedir uma rota calculada entre dois pontos via
- * OSRM (com alternativas, como no Waze).
- */
-private enum class ModoTemplateCenario { VIAGEM_GRAVADA, DESENHAR, ROTA }
-
 @Composable
 fun CriadorOuEditorCenario(
     comandos: List<Comando>,
-    comandosComHistorico: List<Pair<Comando, List<PontoTrajeto>>>,
     cenarioExistente: CenarioTrajeto?,
     comandoVigiadoInicial: Comando?,
     onGrava: (CenarioTrajeto) -> Unit,
@@ -132,25 +123,8 @@ fun CriadorOuEditorCenario(
         }
     }
 
-    // Viagem escolhida no mapa -- guarda o objeto completo (nao so o
-    // id) porque e' dele que se retira o template a gravar.
-    var viagemEscolhida by remember { mutableStateOf<ViagemSelecionavel?>(null) }
     var templateOriginalMantido by remember { mutableStateOf(cenarioExistente != null) }
-    // Ao EDITAR, arranca no mesmo modo com que o cenario foi criado
-    // (guardado em CenarioTrajeto.modoTemplate) -- senao reabrir um
-    // cenario feito por rota/desenho mostrava sempre a aba "Viagem
-    // gravada", como se a escolha original se tivesse perdido.
-    var modoTemplate by remember {
-        mutableStateOf(
-            when (cenarioExistente?.modoTemplate) {
-                "desenho" -> ModoTemplateCenario.DESENHAR
-                "rota" -> ModoTemplateCenario.ROTA
-                else -> ModoTemplateCenario.VIAGEM_GRAVADA
-            }
-        )
-    }
-    var filtroOrigem by remember { mutableStateOf(FiltroOrigemViagem.TODAS) }
-    // template escolhido nos modos DESENHAR/ROTA -- lista de pontos
+    // template -- lista de pontos
     // lat/lon pura, sem PontoTrajeto (nao vem de nenhum comando).
     // Inicializado com o template ja gravado quando se esta a EDITAR
     // um cenario, para o mapa mostrar o que estava definido em vez
@@ -193,157 +167,21 @@ fun CriadorOuEditorCenario(
     var acoes by remember { mutableStateOf(cenarioExistente?.acoes?.toList() ?: listOf(Acao())) }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        Text(
-            stringResource(R.string.escolher_viagem_no_mapa),
-            color = cores.tinta,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Medium
+        MapaRotaTrajeto(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(300.dp)
+                .clip(RoundedCornerShape(9.dp)),
+            templateExistente = templateDesenhado ?: emptyList(),
+            origemExistente = origemRotaExata,
+            destinoExistente = destinoRotaExato,
+            onRotaEscolhida = { rota ->
+                templateDesenhado = rota.pontos
+                origemRotaExata = rota.origemExata
+                destinoRotaExato = rota.destinoExato
+                templateOriginalMantido = false
+            }
         )
-
-        if (templateOriginalMantido && cenarioExistente != null) {
-            Text(
-                stringResource(R.string.template_atual_mantido, cenarioExistente.template.size),
-                color = cores.suave,
-                fontSize = 11.sp,
-                modifier = Modifier.padding(top = 4.dp)
-            )
-        }
-
-        // 3 abas: escolher uma viagem ja gravada, desenhar a dedo,
-        // ou pedir uma rota calculada entre origem/destino (OSRM,
-        // com alternativas). Trocar de aba nao apaga a escolha ja
-        // feita nas outras -- so muda qual delas esta visivel; a
-        // que vale no fim e' sempre a da aba em que o utilizador
-        // ficou ao gravar.
-        Row(Modifier.fillMaxWidth().padding(top = 8.dp)) {
-            ModoTemplateCenario.values().forEach { modo ->
-                val selecionado = modoTemplate == modo
-                TextButton(onClick = { modoTemplate = modo }) {
-                    Text(
-                        stringResource(
-                            when (modo) {
-                                ModoTemplateCenario.VIAGEM_GRAVADA -> R.string.modo_viagem_gravada
-                                ModoTemplateCenario.DESENHAR -> R.string.modo_desenhar
-                                ModoTemplateCenario.ROTA -> R.string.modo_rota
-                            }
-                        ),
-                        color = if (selecionado) cores.azul else cores.suave,
-                        fontSize = 11.sp,
-                        fontWeight = if (selecionado) FontWeight.Bold else FontWeight.Normal
-                    )
-                }
-            }
-        }
-
-        when (modoTemplate) {
-            ModoTemplateCenario.VIAGEM_GRAVADA -> {
-                Row(Modifier.fillMaxWidth().padding(top = 4.dp)) {
-                    FiltroOrigemViagem.values().forEach { filtro ->
-                        val ativo = filtroOrigem == filtro
-                        TextButton(onClick = { filtroOrigem = filtro }) {
-                            Text(
-                                stringResource(
-                                    when (filtro) {
-                                        FiltroOrigemViagem.TODAS -> R.string.filtro_origem_todas
-                                        FiltroOrigemViagem.BEACON -> R.string.filtro_origem_beacon
-                                        FiltroOrigemViagem.CLIQUE -> R.string.filtro_origem_clique
-                                    }
-                                ),
-                                color = if (ativo) cores.tinta else cores.suave,
-                                fontSize = 10.sp,
-                                fontWeight = if (ativo) FontWeight.Medium else FontWeight.Normal
-                            )
-                        }
-                    }
-                }
-
-                if (comandosComHistorico.isEmpty()) {
-                    pt.blugateway.ui.theme.TextoEstadoVazio(
-                        stringResource(R.string.sem_viagens_gravadas_geral),
-                        modifier = Modifier.padding(top = 6.dp)
-                    )
-                } else {
-                    SeletorTrajetoMapa(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(260.dp)
-                            .padding(top = 8.dp)
-                            .clip(RoundedCornerShape(9.dp)),
-                        comandosComHistorico = comandosComHistorico,
-                        viagemSelecionadaId = viagemEscolhida?.id,
-                        filtroOrigem = filtroOrigem,
-                        onSelecionaViagem = { viagem ->
-                            viagemEscolhida = viagem
-                            templateOriginalMantido = false
-                        }
-                    )
-
-                    val viagemAtual = viagemEscolhida
-                    if (viagemAtual != null) {
-                        Text(
-                            stringResource(
-                                R.string.viagem_selecionada_de,
-                                viagemAtual.comandoOrigem.nome,
-                                viagemAtual.pontos.size
-                            ),
-                            color = cores.suave,
-                            fontSize = 11.sp,
-                            modifier = Modifier.padding(top = 6.dp)
-                        )
-                    } else if (!templateOriginalMantido) {
-                        Text(
-                            stringResource(R.string.toca_no_mapa_escolher_viagem),
-                            color = cores.suave,
-                            fontSize = 11.sp,
-                            modifier = Modifier.padding(top = 6.dp)
-                        )
-                    }
-                }
-            }
-
-            ModoTemplateCenario.DESENHAR -> {
-                MapaDesenhoTrajeto(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(260.dp)
-                        .padding(top = 8.dp)
-                        .clip(RoundedCornerShape(9.dp)),
-                    pontos = templateDesenhado ?: emptyList(),
-                    onPontosAlterados = { novosPontos ->
-                        templateDesenhado = novosPontos
-                        templateOriginalMantido = false
-                    }
-                )
-                val nDesenhados = templateDesenhado?.size ?: 0
-                if (nDesenhados > 0) {
-                    Text(
-                        stringResource(R.string.desenho_pontos_capturados, nDesenhados),
-                        color = cores.suave,
-                        fontSize = 11.sp,
-                        modifier = Modifier.padding(top = 6.dp)
-                    )
-                }
-            }
-
-            ModoTemplateCenario.ROTA -> {
-                MapaRotaTrajeto(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(260.dp)
-                        .padding(top = 8.dp)
-                        .clip(RoundedCornerShape(9.dp)),
-                    templateExistente = templateDesenhado ?: emptyList(),
-                    origemExistente = origemRotaExata,
-                    destinoExistente = destinoRotaExato,
-                    onRotaEscolhida = { rota ->
-                        templateDesenhado = rota.pontos
-                        origemRotaExata = rota.origemExata
-                        destinoRotaExato = rota.destinoExato
-                        templateOriginalMantido = false
-                    }
-                )
-            }
-        }
 
         Text(
             stringResource(R.string.escolher_comando_vigiado),
@@ -425,39 +263,19 @@ fun CriadorOuEditorCenario(
             // modos desenhar/rota) ha pelo menos 2 pontos capturados
             // -- um trajeto de 1 ponto nao tem forma nenhuma para
             // comparar semelhanca.
-            val temTemplatePronto = templateOriginalMantido ||
-                (modoTemplate == ModoTemplateCenario.VIAGEM_GRAVADA && viagemEscolhida != null) ||
-                (modoTemplate != ModoTemplateCenario.VIAGEM_GRAVADA && (templateDesenhado?.size ?: 0) >= 2)
+            val temTemplatePronto = templateOriginalMantido || (templateDesenhado?.size ?: 0) >= 2
             val podeGravar = comandoVigiadoFinal != null && nome.isNotBlank() && temTemplatePronto
             TextButton(
                 enabled = podeGravar,
                 onClick = {
-                    val viagem = viagemEscolhida
-                    val template = when {
-                        templateOriginalMantido && cenarioExistente != null -> cenarioExistente.template
-                        modoTemplate == ModoTemplateCenario.VIAGEM_GRAVADA ->
-                            viagem!!.pontos.sortedBy { it.timestamp }.map { PontoTemplate(it.latitude, it.longitude) }
-                        // DESENHAR/ROTA: templateDesenhado ja esta no
-                        // formato certo (PontoTemplate), sem
-                        // necessidade de ordenar por timestamp (nao
-                        // tem timestamp, e' um desenho/rota, nao um
-                        // historico gravado)
-                        else -> templateDesenhado!!
+                    val template = if (templateOriginalMantido && cenarioExistente != null) {
+                        cenarioExistente.template
+                    } else {
+                        templateDesenhado!!
                     }
                     val limiar = limiarTexto.toIntOrNull()?.coerceIn(1, 100) ?: 80
                     val raio = raioTexto.toIntOrNull()?.coerceAtLeast(1) ?: 40
-                    // macOrigemTemplate so' faz sentido no modo
-                    // VIAGEM_GRAVADA (importado de outro comando); nos
-                    // modos DESENHAR/ROTA nao ha nenhum comando de
-                    // origem, o template nao veio de nenhum historico
-                    val macOrigem = if (modoTemplate == ModoTemplateCenario.VIAGEM_GRAVADA) {
-                        viagem?.comandoOrigem?.mac
-                            ?: cenarioExistente?.macOrigemTemplate
-                            ?: cenarioExistente?.macComando
-                    } else {
-                        null
-                    }
-                    val origemParaGuardar = if (macOrigem == comandoVigiadoFinal!!.mac) null else macOrigem
+                    val origemParaGuardar: String? = null
                     onGrava(
                         CenarioTrajeto(
                             id = cenarioExistente?.id ?: UUID.randomUUID().toString(),
@@ -469,14 +287,7 @@ fun CriadorOuEditorCenario(
                             raioMetros = raio,
                             ativo = cenarioExistente?.ativo ?: true,
                             acoes = acoes.toMutableList(),
-                            modoTemplate = when {
-                                // se manteve o template original, mantem
-                                // tambem o modo com que foi criado
-                                templateOriginalMantido && cenarioExistente != null -> cenarioExistente.modoTemplate
-                                modoTemplate == ModoTemplateCenario.DESENHAR -> "desenho"
-                                modoTemplate == ModoTemplateCenario.ROTA -> "rota"
-                                else -> "gravada"
-                            },
+                            modoTemplate = "rota",
                             origemExataLat = origemRotaExata?.lat ?: cenarioExistente?.origemExataLat,
                             origemExataLon = origemRotaExata?.lon ?: cenarioExistente?.origemExataLon,
                             destinoExatoLat = destinoRotaExato?.lat ?: cenarioExistente?.destinoExatoLat,

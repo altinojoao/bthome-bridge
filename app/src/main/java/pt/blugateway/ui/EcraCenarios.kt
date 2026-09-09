@@ -89,7 +89,6 @@ fun EcraCenarios(
                     val cenario = cenarioEmEdicao
                     CriadorOuEditorCenario(
                         comandos = comandos,
-                        comandosComHistorico = comandosComHistorico,
                         cenarioExistente = cenario,
                         comandoVigiadoInicial = cenario?.let { c -> comandos.firstOrNull { it.mac == c.macComando } },
                         onGrava = { novoCenario ->
