@@ -3,7 +3,6 @@ package pt.blugateway.ui
 import android.annotation.SuppressLint
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -33,14 +32,11 @@ import pt.blugateway.ui.theme.LocalCoresGateway
 
 /**
  * Simulador de cenario de trajeto -- reproduz o template ponto a
- * ponto (mesmo algoritmo LCSS), mostrando em tempo real:
+ * ponto (mesmo algoritmo LCSS), mostrando em tempo real no mapa:
  *   - linha azul tracejada: template completo
- *   - linha verde: parte ja "percorrida" (cursor a avançar)
- *   - marcador laranja: onde o limiar seria atingido
- *   - percentagem actual sobreposta no mapa
- *
- * Util para confirmar se o template esta correcto antes de fazer o
- * percurso real, e para diagnosticar porque os cenarios nao disparam.
+ *   - linha verde: percurso ja simulado
+ *   - marcador laranja: ponto onde o limiar seria atingido
+ *   - percentagem actual no painel HTML sobrepostos no mapa
  */
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
@@ -57,7 +53,6 @@ fun DialogoSimulacaoCenario(
     var limiarAtingido by remember { mutableStateOf(false) }
     var concluido by remember { mutableStateOf(false) }
 
-    // Enviar template ao JS assim que a pagina carregue
     LaunchedEffect(paginaCarregada) {
         if (!paginaCarregada || templateEnviado) return@LaunchedEffect
         val wv = webViewRef ?: return@LaunchedEffect
@@ -74,7 +69,6 @@ fun DialogoSimulacaoCenario(
         )
     }
 
-    // Loop de simulacao
     LaunchedEffect(emExecucao) {
         while (emExecucao && !concluido) {
             delay(150L)
@@ -89,47 +83,47 @@ fun DialogoSimulacaoCenario(
         Surface(
             modifier = Modifier
                 .fillMaxWidth(0.97f)
-                .fillMaxHeight(0.90f),
+                .fillMaxHeight(0.92f),
             shape = RoundedCornerShape(16.dp),
             color = cores.cartao
         ) {
-            Column(
-                Modifier
-                    .fillMaxSize()
-                    .padding(16.dp)
-            ) {
+            Column(Modifier.fillMaxSize().padding(16.dp)) {
+
                 // Cabecalho
-                Row(
-                    Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
                         Text(
                             stringResource(R.string.sim_titulo),
-                            color = cores.tinta,
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold
+                            color = cores.tinta, fontSize = 15.sp, fontWeight = FontWeight.Bold
                         )
                         Text(
                             stringResource(R.string.sim_subtitulo, cenario.nome, cenario.template.size, cenario.limiarPercentagem),
-                            color = cores.suave,
-                            fontSize = 10.sp
+                            color = cores.suave, fontSize = 10.sp
                         )
                     }
-                    IconButton(onClick = onFecha) {
+                    IconButton(onClick = {
+                        emExecucao = false
+                        onFecha()
+                    }) {
                         Icon(Icons.Default.Close, contentDescription = stringResource(R.string.fechar), tint = cores.suave)
                     }
                 }
 
-                // Mapa -- ocupa a maior parte do espaco disponivel
+                // Mapa -- MATCH_PARENT no WebView garante que preenche
+                // o seu container nativo, independentemente de como o
+                // Compose propaga as restricoes de tamanho
                 AndroidView(
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f)
-                        .padding(top = 10.dp)
+                        .padding(top = 8.dp)
                         .clip(RoundedCornerShape(10.dp)),
                     factory = { ctx ->
                         WebView(ctx).apply {
+                            layoutParams = android.view.ViewGroup.LayoutParams(
+                                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                                android.view.ViewGroup.LayoutParams.MATCH_PARENT
+                            )
                             settings.javaScriptEnabled = true
                             webViewClient = object : WebViewClient() {
                                 override fun onPageFinished(view: WebView, url: String?) {
@@ -144,14 +138,9 @@ fun DialogoSimulacaoCenario(
                                     val url = request?.url ?: return false
                                     if (url.scheme != "blugateway-sim") return false
                                     when (url.host) {
-                                        "progresso" -> {
-                                            pct = url.getQueryParameter("pct")?.toIntOrNull() ?: pct
-                                        }
-                                        "limiar" -> { limiarAtingido = true }
-                                        "concluido" -> {
-                                            emExecucao = false
-                                            concluido = true
-                                        }
+                                        "progresso" -> pct = url.getQueryParameter("pct")?.toIntOrNull() ?: pct
+                                        "limiar" -> limiarAtingido = true
+                                        "concluido" -> { emExecucao = false; concluido = true }
                                     }
                                     return true
                                 }
@@ -161,11 +150,9 @@ fun DialogoSimulacaoCenario(
                     }
                 )
 
-                // Barra de controlo
+                // Controlos
                 Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp),
+                    Modifier.fillMaxWidth().padding(top = 6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     if (!concluido) {
@@ -173,44 +160,28 @@ fun DialogoSimulacaoCenario(
                             Text(
                                 if (emExecucao) stringResource(R.string.sim_pausar)
                                 else stringResource(R.string.sim_iniciar),
-                                color = cores.azul,
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Medium
+                                color = cores.azul, fontSize = 13.sp, fontWeight = FontWeight.Medium
                             )
                         }
                     }
                     TextButton(onClick = {
-                        emExecucao = false
-                        concluido = false
-                        pct = 0
-                        limiarAtingido = false
+                        emExecucao = false; concluido = false; pct = 0; limiarAtingido = false
                         webViewRef?.evaluateJavascript("reiniciaSimulacao();", null)
                     }) {
                         Text(stringResource(R.string.sim_reiniciar), color = cores.suave, fontSize = 12.sp)
                     }
-
                     Spacer(Modifier.weight(1f))
-
-                    // Estado: percentagem ou resultado final
-                    if (limiarAtingido) {
-                        Text(
+                    when {
+                        limiarAtingido -> Text(
                             stringResource(R.string.sim_limiar_atingido, cenario.limiarPercentagem),
-                            color = cores.ok,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold
+                            color = cores.ok, fontSize = 12.sp, fontWeight = FontWeight.Bold
                         )
-                    } else if (concluido) {
-                        Text(
+                        concluido -> Text(
                             stringResource(R.string.sim_nao_atingiu, pct, cenario.limiarPercentagem),
-                            color = cores.avisoTinta,
-                            fontSize = 12.sp
+                            color = cores.avisoTinta, fontSize = 12.sp
                         )
-                    } else if (pct > 0) {
-                        Text(
-                            "$pct%",
-                            color = cores.tinta,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold
+                        pct > 0 -> Text(
+                            "$pct%", color = cores.tinta, fontSize = 18.sp, fontWeight = FontWeight.Bold
                         )
                     }
                 }
