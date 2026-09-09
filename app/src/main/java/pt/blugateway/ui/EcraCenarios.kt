@@ -62,6 +62,7 @@ fun EcraCenarios(
     val cores = LocalCoresGateway.current
     var mostraCriacao by remember { mutableStateOf(false) }
     var cenarioEmEdicao by remember { mutableStateOf<CenarioTrajeto?>(null) }
+    var cenarioASimular by remember { mutableStateOf<CenarioTrajeto?>(null) }
 
     Dialog(
         onDismissRequest = onFecha,
@@ -100,6 +101,14 @@ fun EcraCenarios(
                             mostraCriacao = false
                             cenarioEmEdicao = null
                         }
+                    )
+                }
+
+                val simCenario = cenarioASimular
+                if (simCenario != null) {
+                    DialogoSimulacaoCenario(
+                        cenario = simCenario,
+                        onFecha = { cenarioASimular = null }
                     )
                 } else {
                     Column(
@@ -143,6 +152,7 @@ fun EcraCenarios(
                                     cenario = cenario,
                                     nomeOrigemTemplate = nomeOrigem,
                                     onAlterna = { ativo -> onAtualiza(cenario.copy(ativo = ativo)) },
+                                    onSimular = { cenarioASimular = cenario },
                                     onEditar = { cenarioEmEdicao = cenario },
                                     onRemove = { onRemove(cenario.id) }
                                 )

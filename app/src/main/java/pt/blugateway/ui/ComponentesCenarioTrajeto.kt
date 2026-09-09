@@ -42,6 +42,7 @@ fun LinhaCenarioTrajeto(
     cenario: CenarioTrajeto,
     nomeOrigemTemplate: String?,
     onAlterna: (Boolean) -> Unit,
+    onSimular: () -> Unit,
     onEditar: () -> Unit,
     onRemove: () -> Unit
 ) {
@@ -58,6 +59,10 @@ fun LinhaCenarioTrajeto(
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(cenario.nome, color = cores.tinta, fontSize = 12.sp, modifier = Modifier.weight(1f))
+            // Botao simular -- abre DialogoSimulacaoCenario
+            TextButton(onClick = onSimular, modifier = Modifier.padding(end = 2.dp)) {
+                Text("\u25B6 " + stringResource(R.string.sim_botao), color = cores.azul, fontSize = 10.sp)
+            }
             Box(Modifier.size(width = 38.dp, height = 24.dp), contentAlignment = Alignment.Center) {
                 Switch(checked = cenario.ativo, onCheckedChange = onAlterna, modifier = Modifier.scale(0.7f))
             }

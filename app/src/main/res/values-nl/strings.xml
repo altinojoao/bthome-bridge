@@ -257,4 +257,12 @@
     <string name="rota_erro">Kon de route niet berekenen: %1$s</string>
     <string name="beacons_adicionais">Aanvullende beacons</string>
     <string name="beacons_adicionais_dica">Ze leveren GPS-punten voor dit scenario en maken de detectie betrouwbaarder.</string>
+    <string name="sim_botao">Simuleer</string>
+    <string name="sim_titulo">Trajectsimulatie</string>
+    <string name="sim_subtitulo">%1$s  •  %2$d punten  •  drempel %3$d%%</string>
+    <string name="sim_iniciar">▶ Starten</string>
+    <string name="sim_pausar">⏸ Pauzeren</string>
+    <string name="sim_reiniciar">↺ Herstarten</string>
+    <string name="sim_limiar_atingido">✓ Drempel %1$d%% bereikt!</string>
+    <string name="sim_nao_atingiu">Eindgelijkenis %1$d%% (drempel is %2$d%%)</string>
 </resources>

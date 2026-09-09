@@ -257,4 +257,12 @@
     <string name="rota_erro">Impossibile calcolare il percorso: %1$s</string>
     <string name="beacons_adicionais">Beacon aggiuntivi</string>
     <string name="beacons_adicionais_dica">Contribuiscono con punti GPS a questo scenario, rendendo il rilevamento più affidabile.</string>
+    <string name="sim_botao">Simula</string>
+    <string name="sim_titulo">Simulazione percorso</string>
+    <string name="sim_subtitulo">%1$s  •  %2$d punti  •  soglia %3$d%%</string>
+    <string name="sim_iniciar">▶ Avvia</string>
+    <string name="sim_pausar">⏸ Pausa</string>
+    <string name="sim_reiniciar">↺ Ricomincia</string>
+    <string name="sim_limiar_atingido">✓ Soglia %1$d%% raggiunta!</string>
+    <string name="sim_nao_atingiu">Somiglianza finale %1$d%% (soglia è %2$d%%)</string>
 </resources>

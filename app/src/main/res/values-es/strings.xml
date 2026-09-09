@@ -257,4 +257,12 @@
     <string name="rota_erro">No se pudo calcular la ruta: %1$s</string>
     <string name="beacons_adicionais">Beacons adicionales</string>
     <string name="beacons_adicionais_dica">Contribuyen con puntos GPS a este escenario, haciendo la detección más robusta.</string>
+    <string name="sim_botao">Simular</string>
+    <string name="sim_titulo">Simulación de trayecto</string>
+    <string name="sim_subtitulo">%1$s  •  %2$d puntos  •  umbral %3$d%%</string>
+    <string name="sim_iniciar">▶ Iniciar</string>
+    <string name="sim_pausar">⏸ Pausar</string>
+    <string name="sim_reiniciar">↺ Reiniciar</string>
+    <string name="sim_limiar_atingido">✓ ¡Umbral %1$d%% alcanzado!</string>
+    <string name="sim_nao_atingiu">Similitud final %1$d%% (umbral es %2$d%%)</string>
 </resources>

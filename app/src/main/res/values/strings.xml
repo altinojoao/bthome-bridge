@@ -258,4 +258,12 @@
     <string name="rota_erro">Não foi possível calcular a rota: %1$s</string>
     <string name="beacons_adicionais">Beacons adicionais</string>
     <string name="beacons_adicionais_dica">Contribuem com pontos GPS para este cenário, tornando a deteção mais robusta.</string>
+    <string name="sim_botao">Simular</string>
+    <string name="sim_titulo">Simulação de trajeto</string>
+    <string name="sim_subtitulo">%1$s  •  %2$d pontos  •  limiar %3$d%%</string>
+    <string name="sim_iniciar">▶ Iniciar</string>
+    <string name="sim_pausar">⏸ Pausar</string>
+    <string name="sim_reiniciar">↺ Reiniciar</string>
+    <string name="sim_limiar_atingido">✓ Limiar %1$d%% atingido!</string>
+    <string name="sim_nao_atingiu">Semelhança final %1$d%% (limiar é %2$d%%)</string>
 </resources>

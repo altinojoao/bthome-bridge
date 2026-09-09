@@ -257,4 +257,12 @@
     <string name="rota_erro">Route konnte nicht berechnet werden: %1$s</string>
     <string name="beacons_adicionais">Zusätzliche Beacons</string>
     <string name="beacons_adicionais_dica">Sie liefern GPS-Punkte für dieses Szenario und machen die Erkennung zuverlässiger.</string>
+    <string name="sim_botao">Simulieren</string>
+    <string name="sim_titulo">Streckensimulation</string>
+    <string name="sim_subtitulo">%1$s  •  %2$d Punkte  •  Schwellenwert %3$d%%</string>
+    <string name="sim_iniciar">▶ Starten</string>
+    <string name="sim_pausar">⏸ Pausieren</string>
+    <string name="sim_reiniciar">↺ Neustarten</string>
+    <string name="sim_limiar_atingido">✓ Schwellenwert %1$d%% erreicht!</string>
+    <string name="sim_nao_atingiu">Endähnlichkeit %1$d%% (Schwellenwert ist %2$d%%)</string>
 </resources>
