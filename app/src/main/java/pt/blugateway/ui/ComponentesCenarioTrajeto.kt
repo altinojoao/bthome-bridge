@@ -280,7 +280,7 @@ fun CriadorOuEditorCenario(
                         CenarioTrajeto(
                             id = cenarioExistente?.id ?: UUID.randomUUID().toString(),
                             nome = nome,
-                            macComando = comandoVigiadoFinal.mac,
+                            macComando = comandoVigiadoFinal!!.mac,
                             template = template,
                             macOrigemTemplate = origemParaGuardar,
                             limiarPercentagem = limiar,

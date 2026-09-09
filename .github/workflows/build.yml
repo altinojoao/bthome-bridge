@@ -30,24 +30,7 @@ jobs:
           gradle-version: '8.7'
 
       - name: Compilar APK de debug
-        id: build
-        shell: bash
-        run: |
-          set -o pipefail
-          gradle assembleDebug --stacktrace 2>&1 | tee /tmp/build-output.log
-        continue-on-error: true
-
-      - name: Diagnostico -- publicar erro como annotation
-        if: steps.build.outcome == 'failure'
-        run: |
-          ERRO=$(grep -B2 -A20 "^e: \|FAILURE: Build failed\|: error:" /tmp/build-output.log | head -c 3000)
-          if [ -z "$ERRO" ]; then ERRO=$(tail -c 3000 /tmp/build-output.log); fi
-          ERRO_ESC=$(echo "$ERRO" | sed ':a;N;$!ba;s/\n/%0A/g')
-          echo "::error title=Erro de compilacao::${ERRO_ESC}"
-
-      - name: Falhar o job se a compilacao falhou
-        if: steps.build.outcome == 'failure'
-        run: exit 1
+        run: gradle assembleDebug --stacktrace
 
       - name: Publicar APK (artifact de build, todos os pushes)
         uses: actions/upload-artifact@v4
