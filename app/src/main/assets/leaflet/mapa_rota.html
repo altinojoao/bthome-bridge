@@ -135,7 +135,7 @@
      * definido; escolher uma rota nova exige marcar origem/destino
      * de novo.
      */
-    function defineTrajetoExistente(jsonTexto) {
+    function defineTrajetoExistente(jsonTexto, jsonOrigem, jsonDestino) {
       limpaAlternativas();
       if (marcadorOrigem) { mapa.removeLayer(marcadorOrigem); marcadorOrigem = null; }
       if (marcadorDestino) { mapa.removeLayer(marcadorDestino); marcadorDestino = null; }
@@ -149,11 +149,12 @@
       var latLngs = pontos.map(function (p) { return [p.lat, p.lon]; });
       var linha = L.polyline(latLngs, { color: '#2BA6E0', weight: 5, opacity: 0.9 }).addTo(mapa);
       camadasAlternativas.push(linha);
-      // restaurar marcadores de origem e destino nos extremos da rota
-      var primeiro = L.latLng(pontos[0].lat, pontos[0].lon);
-      var ultimo = L.latLng(pontos[pontos.length - 1].lat, pontos[pontos.length - 1].lon);
-      marcadorOrigem = L.marker(primeiro, { icon: ICONE_ORIGEM }).addTo(mapa);
-      marcadorDestino = L.marker(ultimo, { icon: ICONE_DESTINO }).addTo(mapa);
+      // usar os pontos exatos de toque se fornecidos -- o OSRM pode
+      // ter ajustado os extremos da linha para a estrada mais proxima
+      var pOrigem = (jsonOrigem && jsonOrigem !== 'null') ? JSON.parse(jsonOrigem) : pontos[0];
+      var pDestino = (jsonDestino && jsonDestino !== 'null') ? JSON.parse(jsonDestino) : pontos[pontos.length - 1];
+      marcadorOrigem = L.marker([pOrigem.lat, pOrigem.lon], { icon: ICONE_ORIGEM }).addTo(mapa);
+      marcadorDestino = L.marker([pDestino.lat, pDestino.lon], { icon: ICONE_DESTINO }).addTo(mapa);
       mapa.fitBounds(latLngs, { padding: [30, 30], maxZoom: 16 });
     }
 

@@ -50,6 +50,8 @@ private sealed class EstadoRota {
 fun MapaRotaTrajeto(
     modifier: Modifier = Modifier,
     templateExistente: List<PontoTemplate> = emptyList(),
+    origemExistente: PontoTemplate? = null,
+    destinoExistente: PontoTemplate? = null,
     onRotaEscolhida: (RotaCalculada) -> Unit,
     onErro: (String) -> Unit = {}
 ) {
@@ -80,8 +82,16 @@ fun MapaRotaTrajeto(
                     })
                 }
             }.toString()
+            val origemJson = origemExistente?.let {
+                JSONObject().apply { put("lat", it.lat); put("lon", it.lon) }.toString()
+            }
+            val destinoJson = destinoExistente?.let {
+                JSONObject().apply { put("lat", it.lat); put("lon", it.lon) }.toString()
+            }
+            val origemArg = if (origemJson != null) JSONObject.quote(origemJson) else "null"
+            val destinoArg = if (destinoJson != null) JSONObject.quote(destinoJson) else "null"
             webView.evaluateJavascript(
-                "defineTrajetoExistente(${JSONObject.quote(json)});",
+                "defineTrajetoExistente(${JSONObject.quote(json)}, $origemArg, $destinoArg);",
                 null
             )
         } else {

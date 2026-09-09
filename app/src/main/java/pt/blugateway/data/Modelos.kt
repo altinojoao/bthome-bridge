@@ -462,6 +462,16 @@ data class CenarioTrajeto(
     // Cenarios criados antes deste campo existir ficam com
     // "gravada", que era o unico modo possivel na altura.
     var modoTemplate: String = "gravada",
+    // Pontos onde o utilizador tocou no mapa ao definir uma rota
+    // OSRM -- guardados separadamente da geometria da rota, porque
+    // o OSRM ajusta os pontos para a rede viaria mais proxima e os
+    // extremos da linha guardada nao coincidem com o que o utilizador
+    // tocou. Usados para restaurar os marcadores no sitio certo ao
+    // reabrir para editar. Nulos em cenarios de outros modos.
+    var origemExataLat: Double? = null,
+    var origemExataLon: Double? = null,
+    var destinoExatoLat: Double? = null,
+    var destinoExatoLon: Double? = null,
     // timestamp da ultima vez que este cenario disparou -- usado so
     // para mostrar na UI quando foi a ultima vez, nao para logica de
     // bloqueio (essa fica no Repositorio, associada ao MAC + inicio
@@ -479,6 +489,10 @@ data class CenarioTrajeto(
         put("ativo", ativo)
         put("acoes", JSONArray().apply { acoes.forEach { put(it.paraJson()) } })
         put("modoTemplate", modoTemplate)
+        origemExataLat?.let { put("origemExataLat", it) }
+        origemExataLon?.let { put("origemExataLon", it) }
+        destinoExatoLat?.let { put("destinoExatoLat", it) }
+        destinoExatoLon?.let { put("destinoExatoLon", it) }
         ultimoDisparoEm?.let { put("ultimoDisparoEm", it) }
     }
 
@@ -508,6 +522,10 @@ data class CenarioTrajeto(
                 ativo = o.optBoolean("ativo", true),
                 acoes = acoes,
                 modoTemplate = o.optString("modoTemplate", "gravada"),
+                origemExataLat = if (o.has("origemExataLat")) o.getDouble("origemExataLat") else null,
+                origemExataLon = if (o.has("origemExataLon")) o.getDouble("origemExataLon") else null,
+                destinoExatoLat = if (o.has("destinoExatoLat")) o.getDouble("destinoExatoLat") else null,
+                destinoExatoLon = if (o.has("destinoExatoLon")) o.getDouble("destinoExatoLon") else null,
                 ultimoDisparoEm = if (o.has("ultimoDisparoEm")) o.optLong("ultimoDisparoEm") else null
             )
         }

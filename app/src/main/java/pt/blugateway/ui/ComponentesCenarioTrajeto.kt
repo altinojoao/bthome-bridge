@@ -158,6 +158,24 @@ fun CriadorOuEditorCenario(
     var templateDesenhado by remember {
         mutableStateOf<List<PontoTemplate>?>(cenarioExistente?.template?.toList())
     }
+    // pontos onde o utilizador tocou ao definir a rota -- distintos
+    // dos extremos da geometria OSRM (que podem estar na estrada mais
+    // proxima, nao no ponto exato do toque). Inicializados a partir
+    // do cenario existente ao editar.
+    var origemRotaExata by remember {
+        mutableStateOf(
+            if (cenarioExistente?.origemExataLat != null && cenarioExistente.origemExataLon != null)
+                PontoTemplate(cenarioExistente.origemExataLat!!, cenarioExistente.origemExataLon!!)
+            else null
+        )
+    }
+    var destinoRotaExato by remember {
+        mutableStateOf(
+            if (cenarioExistente?.destinoExatoLat != null && cenarioExistente.destinoExatoLon != null)
+                PontoTemplate(cenarioExistente.destinoExatoLat!!, cenarioExistente.destinoExatoLon!!)
+            else null
+        )
+    }
 
     // Comando VIGIADO -- por omissao o da edicao existente, ou o
     // indicado ao abrir o formulario (ex: a partir do card de um
@@ -315,8 +333,12 @@ fun CriadorOuEditorCenario(
                         .padding(top = 8.dp)
                         .clip(RoundedCornerShape(9.dp)),
                     templateExistente = templateDesenhado ?: emptyList(),
+                    origemExistente = origemRotaExata,
+                    destinoExistente = destinoRotaExato,
                     onRotaEscolhida = { rota ->
                         templateDesenhado = rota.pontos
+                        origemRotaExata = rota.origemExata
+                        destinoRotaExato = rota.destinoExato
                         templateOriginalMantido = false
                     }
                 )
@@ -455,6 +477,10 @@ fun CriadorOuEditorCenario(
                                 modoTemplate == ModoTemplateCenario.ROTA -> "rota"
                                 else -> "gravada"
                             },
+                            origemExataLat = origemRotaExata?.lat ?: cenarioExistente?.origemExataLat,
+                            origemExataLon = origemRotaExata?.lon ?: cenarioExistente?.origemExataLon,
+                            destinoExatoLat = destinoRotaExato?.lat ?: cenarioExistente?.destinoExatoLat,
+                            destinoExatoLon = destinoRotaExato?.lon ?: cenarioExistente?.destinoExatoLon,
                             ultimoDisparoEm = cenarioExistente?.ultimoDisparoEm
                         )
                     )
