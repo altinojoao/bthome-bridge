@@ -233,6 +233,13 @@ fun MapaRotaTrajeto(
                                                     "desenhaAlternativas(${JSONObject.quote(construirJsonAlternativas(e.rotas))});",
                                                     null
                                                 )
+                                                // Se há só 1 alternativa, seleccioná-la automaticamente
+                                                // -- o utilizador não precisa de tocar no botão.
+                                                // Se há várias, o utilizador escolhe tocando num botão.
+                                                if (e.rotas.size == 1) {
+                                                    onRotaEscolhida(e.rotas[0].copy(waypointsIntermédios = waypointsActuais))
+                                                    webViewRef?.evaluateJavascript("marcaAlternativaSelecionada(0);", null)
+                                                }
                                             }
                                         }
                                     } else {

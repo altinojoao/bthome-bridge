@@ -333,18 +333,16 @@ fun CriadorOuEditorCenario(
             // modos desenhar/rota) ha pelo menos 2 pontos capturados
             // -- um trajeto de 1 ponto nao tem forma nenhuma para
             // comparar semelhanca.
-            val temTemplatePronto = templateOriginalMantido || (templateNovo?.size ?: 0) >= 2
+            val temTemplatePronto = templateNovo != null ||
+                (cenarioExistente != null && cenarioExistente.template.size >= 2)
             val podeGravar = comandoVigiadoFinal != null && nome.isNotBlank() && temTemplatePronto
             TextButton(
                 enabled = podeGravar,
                 onClick = {
-                    val template = if (templateOriginalMantido && cenarioExistente != null) {
-                        // utilizador não mudou a rota -- manter o template existente
-                        cenarioExistente.template
-                    } else {
-                        // utilizador escolheu uma nova rota
-                        templateNovo!!
-                    }
+                    // templateNovo tem sempre prioridade quando existe
+                    // (utilizador escolheu rota nova). Só usa o template
+                    // existente se o utilizador não escolheu nada novo.
+                    val template = templateNovo ?: cenarioExistente?.template ?: return@TextButton
                     android.util.Log.d("BluGateway", "[D-editar] GUARDAR: templateOriginalMantido=$templateOriginalMantido templateNovo=${templateNovo?.size}pts -> template_final=${template.size}pts")
                     val limiar = limiarTexto.toIntOrNull()?.coerceIn(1, 100) ?: 80
                     val raio = raioTexto.toIntOrNull()?.coerceAtLeast(1) ?: 40
