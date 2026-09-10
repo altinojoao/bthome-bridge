@@ -22,7 +22,16 @@ object GestorSemelhancaTrajeto {
 
     private const val RAIO_PARAGEM_METROS = 50.0
     private const val TEMPO_MIN_PARAGEM_MS = 20L * 60 * 1000 // 20 minutos, mesmo criterio do modo "ultima viagem" do mapa
-    private const val SALTO_MAXIMO_FRACAO = 0.15
+    // Fracao maxima do template que o cursor pode saltar entre dois
+    // pontos reais consecutivos. Era 0.15 (15%); aumentado para 0.40
+    // (40%) porque com intervalos de GPS de 5s a velocidades de carro
+    // (30km/h = ~42m entre pontos), o cursor precisa de saltar zonas
+    // do template sem cobertura GPS. Com 40%, um unico ponto real pode
+    // "cobrir" ate 40% do template se o proximo ponto correspondente
+    // estiver dentro do raio -- evita bloquear em lacunas inevitaveis
+    // a alta velocidade. Validado em Python para varios cenarios de
+    // velocidade e intervalo antes de implementar.
+    private const val SALTO_MAXIMO_FRACAO = 0.40
 
     fun distanciaMetros(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
         val r = 6371000.0

@@ -478,7 +478,7 @@ private fun LinhaComando(
                     CampoTexto(
                         rotulo = stringResource(R.string.intervalo_beacon),
                         valor = intervaloTexto,
-                        placeholder = "60",
+                        placeholder = "5",
                         onValor = { novo ->
                             intervaloTexto = novo
                             novo.toIntOrNull()?.let { onDefineIntervaloBeaconTrajeto(it) }

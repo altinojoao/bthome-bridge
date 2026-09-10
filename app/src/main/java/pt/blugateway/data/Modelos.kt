@@ -250,7 +250,15 @@ data class Comando(
     // ativado, nunca no arranque -- e os dois opt-ins sao
     // independentes (pode ter um sem o outro).
     var modoBeaconTrajeto: Boolean = false,
-    var intervaloBeaconMs: Long = 60_000L,
+    // Intervalo minimo entre pontos GPS gravados -- por omissao 5
+    // segundos (era 60s, demasiado para rotas curtas percorridas de
+    // carro: a 30km/h numa rota de 500m o percurso dura ~60s e com
+    // intervalo de 60s so se gravava 1 ponto, tornando qualquer
+    // comparacao de trajeto impossivel). O beacon anuncia via BLE a
+    // cada ~1s, por isso 5s nao tem custo de radio adicional -- so
+    // pede o GPS mais vezes. Configuravel por comando no cartao de
+    // detalhes.
+    var intervaloBeaconMs: Long = 5_000L,
     var ultimoPontoTrajetoEm: Long? = null,
     // link de imagem online (http/https) que representa este
     // comando na grelha visual (ver EcraGrelhaComandos) -- opt-in
@@ -337,7 +345,7 @@ data class Comando(
             chaveEncriptacao = if (o.has("chaveEncriptacao")) o.optString("chaveEncriptacao") else null,
             incluirLocalizacao = o.optBoolean("incluirLocalizacao", false),
             modoBeaconTrajeto = o.optBoolean("modoBeaconTrajeto", false),
-            intervaloBeaconMs = o.optLong("intervaloBeaconMs", 60_000L),
+            intervaloBeaconMs = o.optLong("intervaloBeaconMs", 5_000L),
             ultimoPontoTrajetoEm = if (o.has("ultimoPontoTrajetoEm")) o.optLong("ultimoPontoTrajetoEm") else null,
             imagemUrl = if (o.has("imagemUrl")) o.optString("imagemUrl") else null,
             imagemBloqueada = o.optBoolean("imagemBloqueada", false)
