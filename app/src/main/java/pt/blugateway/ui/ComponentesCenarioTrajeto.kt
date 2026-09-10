@@ -366,10 +366,8 @@ fun CriadorOuEditorCenario(
                             origemExataLon = origemRotaExata?.lon ?: cenarioExistente?.origemExataLon,
                             destinoExatoLat = destinoRotaExato?.lat ?: cenarioExistente?.destinoExatoLat,
                             destinoExatoLon = destinoRotaExato?.lon ?: cenarioExistente?.destinoExatoLon,
-                            waypointsLat = if (waypointsRota.isNotEmpty()) waypointsRota.map { it.lat }
-                                else cenarioExistente?.waypointsLat ?: emptyList(),
-                            waypointsLon = if (waypointsRota.isNotEmpty()) waypointsRota.map { it.lon }
-                                else cenarioExistente?.waypointsLon ?: emptyList(),
+                            waypointsLat = waypointsRota.map { it.lat },
+                            waypointsLon = waypointsRota.map { it.lon },
                             ultimoDisparoEm = cenarioExistente?.ultimoDisparoEm
                         )
                     )

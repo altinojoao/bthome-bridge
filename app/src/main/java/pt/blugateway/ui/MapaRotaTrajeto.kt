@@ -64,6 +64,9 @@ fun MapaRotaTrajeto(
     var estado by remember { mutableStateOf<EstadoRota>(EstadoRota.AEscolherPontos) }
     var origemAtual by remember { mutableStateOf<PontoTemplate?>(null) }
     var destinoAtual by remember { mutableStateOf<PontoTemplate?>(null) }
+    // waypoints actuais -- actualizados sempre que o JS notifica pontos,
+    // independentemente de o utilizador ter tocado num botão de rota
+    var waypointsActuais by remember { mutableStateOf<List<PontoTemplate>>(emptyList()) }
     var existenteEnviado by remember { mutableStateOf(false) }
 
     // Ao abrir: centra na localizacao atual (senao o mapa abre no
@@ -207,6 +210,9 @@ fun MapaRotaTrajeto(
                                             PontoTemplate(w.getDouble("lat"), w.getDouble("lon"))
                                         }
                                     } else emptyList()
+                                    // guardar os waypoints actuais no estado interno --
+                                    // independentemente de o utilizador tocar num botão
+                                    waypointsActuais = waypoints
                                     val origem = origemAtual
                                     val destino = destinoAtual
                                     if (origem != null && destino != null) {
@@ -239,7 +245,10 @@ fun MapaRotaTrajeto(
                                 val indice = url.getQueryParameter("indice")?.toIntOrNull() ?: return true
                                 val e = estado
                                 if (e is EstadoRota.Alternativas) {
-                                    e.rotas.getOrNull(indice)?.let(onRotaEscolhida)
+                                    e.rotas.getOrNull(indice)?.let { rota ->
+                                        // incluir os waypoints actuais na rota escolhida
+                                        onRotaEscolhida(rota.copy(waypointsIntermédios = waypointsActuais))
+                                    }
                                     webViewRef?.evaluateJavascript("marcaAlternativaSelecionada($indice);", null)
                                 }
                             }

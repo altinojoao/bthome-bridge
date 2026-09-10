@@ -149,6 +149,7 @@
     }
 
     function defineTrajetoExistente(jsonTexto, jsonOrigem, jsonDestino, jsonWaypoints) {
+      console.log('[D-wp] defineTrajetoExistente jsonWaypoints=' + jsonWaypoints);
       limpaAlternativas();
       if (marcadorOrigem) { mapa.removeLayer(marcadorOrigem); marcadorOrigem = null; }
       if (marcadorDestino) { mapa.removeLayer(marcadorDestino); marcadorDestino = null; }
