@@ -107,22 +107,42 @@ object GestorSemelhancaTrajeto {
     ): Double {
         if (template.isEmpty() || trajetoAtual.isEmpty()) return 0.0
 
-        val saltoMaximo = (template.size * SALTO_MAXIMO_FRACAO).toInt().coerceAtLeast(1)
+        // Calcular o saltoMaximo dinamicamente: quantos pontos do
+        // template correspondem a uma distancia de 2x o raio?
+        // Porquê: o raio define a zona de "aceitação" de um ponto.
+        // Se os pontos GPS ficam mais afastados que 2*raio (o que
+        // acontece a velocidades de carro com GPS a cada 10s), o
+        // salto fixo de 15% bloqueia o cursor -- o ponto GPS seguinte
+        // está fora da janela de busca.
+        //
+        // Exemplo real: template de 500m com 49 pontos OSRM = 10m/ponto.
+        // A 30km/h com GPS a 10s, cada ponto GPS fica a 83m do anterior.
+        // Para cobrir 83m no template preciso de saltar 8 pontos.
+        // Com 15% de 49 = 7 pontos de salto, o cursor bloqueava sempre.
+        //
+        // Solução: calcular a distância média entre pontos consecutivos
+        // do template, e definir o salto como o número de pontos que
+        // cobrem 2*raio nesse espaçamento. Mínimo de 15% para templates
+        // muito densos; máximo de 50% para evitar falsos positivos em
+        // rotas com curvas apertadas.
+        val saltoMaximo: Int = if (template.size >= 2) {
+            val distMediaTemplate = (0 until template.size - 1).map { i ->
+                distanciaMetros(template[i].lat, template[i].lon, template[i+1].lat, template[i+1].lon)
+            }.average()
+            val saltoIdeal = if (distMediaTemplate > 0) {
+                ((raioMetros * 2.0) / distMediaTemplate).toInt().coerceAtLeast(1)
+            } else 1
+            // clamp entre 15% e 50% do template
+            saltoIdeal.coerceIn(
+                (template.size * SALTO_MAXIMO_FRACAO).toInt().coerceAtLeast(1),
+                (template.size * 0.50).toInt().coerceAtLeast(1)
+            )
+        } else {
+            (template.size * SALTO_MAXIMO_FRACAO).toInt().coerceAtLeast(1)
+        }
 
-        // Entrada flexivel: em vez de comecar sempre no ponto 0 do
-        // template, encontra o ponto do template mais proximo do
-        // primeiro ponto real e comeca a partir dai.
-        //
-        // Porquê: o template OSRM define o percurso completo (ex:
-        // Porto de Mos -> Batalha, 49 pontos), mas o beacon so entra
-        // em alcance quando o utilizador ja esta a meio do percurso
-        // (ex: Calvaria de Cima). Com cursor=0, o algoritmo ficava
-        // bloqueado nos primeiros pontos do template (que estao a
-        // 4-5km dos pontos reais) e devolvia sempre 0%.
-        //
-        // Restricao: so procura nos primeiros 50% do template -- se
-        // o beacon so aparece na segunda metade, o percurso util e'
-        // demasiado curto para ser relevante.
+        // Entrada flexivel: começa no ponto do template mais próximo
+        // do primeiro ponto GPS real (dentro dos primeiros 50%)
         val maxEntrada = (template.size / 2).coerceAtLeast(1)
         val primeiroPonto = trajetoAtual.first()
         var melhorEntrada = 0
@@ -132,10 +152,7 @@ object GestorSemelhancaTrajeto {
                 primeiroPonto.latitude, primeiroPonto.longitude,
                 template[i].lat, template[i].lon
             )
-            if (d < melhorDist) {
-                melhorDist = d
-                melhorEntrada = i
-            }
+            if (d < melhorDist) { melhorDist = d; melhorEntrada = i }
         }
 
         var cursor = melhorEntrada
@@ -145,10 +162,7 @@ object GestorSemelhancaTrajeto {
             var i = cursor
             while (i < limiteAvanco) {
                 val d = distanciaMetros(pontoAtual.latitude, pontoAtual.longitude, template[i].lat, template[i].lon)
-                if (d <= raioMetros) {
-                    cursor = i + 1
-                    break
-                }
+                if (d <= raioMetros) { cursor = i + 1; break }
                 i++
             }
         }
