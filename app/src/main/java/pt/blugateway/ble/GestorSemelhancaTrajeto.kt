@@ -381,10 +381,15 @@ object GestorSemelhancaTrajeto {
             if (semelhanca * 100 >= cenario.limiarPercentagem) {
                 repo.marcaDisparado(cenario.id, inicio)
                 repo.atualizaUltimoDisparoCenario(cenario.id, System.currentTimeMillis())
-                // evento/codigo identificam a origem como um cenario de
-                // trajeto (nao um clique real) nos marcadores {evento}/
-                // {codigo} das acoes, para quem receber o pedido poder
-                // distinguir a causa se precisar
+
+                // Notificar no CartaoRegisto (UI em tempo real) e no
+                // ecrã de Diagnóstico do Trajeto
+                val pctFinal = (semelhanca * 100).toInt()
+                RegistoDiagnostico.regista(context,
+                    "✅ CENÁRIO DISPARADO: '${cenario.nome}' ($pctFinal% >= ${cenario.limiarPercentagem}%)"
+                )
+                RegistoEventos.adicionaTrajeto(cenario.nome, pctFinal)
+
                 ExecutorAcoes.executaLista(
                     context = context,
                     acoes = cenario.acoes,

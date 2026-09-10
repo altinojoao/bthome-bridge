@@ -63,6 +63,11 @@ object RegistoEventos {
         adicionaLinha(hora, "\uD83D\uDD17 $nomeCombinacao", true)
     }
 
+    fun adicionaTrajeto(nomeCenario: String, percentagem: Int) {
+        val hora = horaAtual()
+        adicionaLinha(hora, "\uD83D\uDEA6 $nomeCenario  $percentagem%", true)
+    }
+
     fun adicionaAlertaAlcance(nomeComando: String) {
         val hora = horaAtual()
         adicionaLinha(hora, "\uD83D\uDCE1 $nomeComando", false)
