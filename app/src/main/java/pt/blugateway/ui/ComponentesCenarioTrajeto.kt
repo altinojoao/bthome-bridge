@@ -163,6 +163,15 @@ fun CriadorOuEditorCenario(
             else null
         )
     }
+    var waypointsRota by remember {
+        mutableStateOf(
+            if (cenarioExistente != null &&
+                cenarioExistente.waypointsLat.size == cenarioExistente.waypointsLon.size)
+                cenarioExistente.waypointsLat.zip(cenarioExistente.waypointsLon)
+                    .map { (lat, lon) -> PontoTemplate(lat, lon) }
+            else emptyList()
+        )
+    }
 
     // Comando VIGIADO -- por omissao o da edicao existente, ou o
     // indicado ao abrir o formulario (ex: a partir do card de um
@@ -193,12 +202,14 @@ fun CriadorOuEditorCenario(
             templateExistente = templateExistenteParaMapa,
             origemExistente = origemRotaExata,
             destinoExistente = destinoRotaExato,
+            waypointsExistentes = waypointsRota,
             onRotaEscolhida = { rota ->
                 templateNovo = rota.pontos
                 origemRotaExata = rota.origemExata
                 destinoRotaExato = rota.destinoExato
+                waypointsRota = rota.waypointsIntermédios
                 templateOriginalMantido = false
-                android.util.Log.d("BluGateway", "[D-editar] onRotaEscolhida: ${rota.pontos.size}pts")
+                android.util.Log.d("BluGateway", "[D-editar] onRotaEscolhida: ${rota.pontos.size}pts waypoints=${rota.waypointsIntermédios.size}")
             }
         )
 
@@ -355,6 +366,10 @@ fun CriadorOuEditorCenario(
                             origemExataLon = origemRotaExata?.lon ?: cenarioExistente?.origemExataLon,
                             destinoExatoLat = destinoRotaExato?.lat ?: cenarioExistente?.destinoExatoLat,
                             destinoExatoLon = destinoRotaExato?.lon ?: cenarioExistente?.destinoExatoLon,
+                            waypointsLat = if (waypointsRota.isNotEmpty()) waypointsRota.map { it.lat }
+                                else cenarioExistente?.waypointsLat ?: emptyList(),
+                            waypointsLon = if (waypointsRota.isNotEmpty()) waypointsRota.map { it.lon }
+                                else cenarioExistente?.waypointsLon ?: emptyList(),
                             ultimoDisparoEm = cenarioExistente?.ultimoDisparoEm
                         )
                     )

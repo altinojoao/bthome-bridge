@@ -52,6 +52,7 @@ fun MapaRotaTrajeto(
     templateExistente: List<PontoTemplate> = emptyList(),
     origemExistente: PontoTemplate? = null,
     destinoExistente: PontoTemplate? = null,
+    waypointsExistentes: List<PontoTemplate> = emptyList(),
     onRotaEscolhida: (RotaCalculada) -> Unit,
     onErro: (String) -> Unit = {}
 ) {
@@ -90,8 +91,17 @@ fun MapaRotaTrajeto(
             }
             val origemArg = if (origemJson != null) JSONObject.quote(origemJson) else "null"
             val destinoArg = if (destinoJson != null) JSONObject.quote(destinoJson) else "null"
+            // Waypoints intermédios (pinos laranja)
+            val waypointsJson = if (waypointsExistentes.isNotEmpty()) {
+                JSONArray().apply {
+                    waypointsExistentes.forEach { w ->
+                        put(JSONObject().apply { put("lat", w.lat); put("lon", w.lon) })
+                    }
+                }.toString()
+            } else null
+            val waypointsArg = if (waypointsJson != null) JSONObject.quote(waypointsJson) else "null"
             webView.evaluateJavascript(
-                "defineTrajetoExistente(${JSONObject.quote(json)}, $origemArg, $destinoArg);",
+                "defineTrajetoExistente(${JSONObject.quote(json)}, $origemArg, $destinoArg, $waypointsArg);",
                 null
             )
         } else {

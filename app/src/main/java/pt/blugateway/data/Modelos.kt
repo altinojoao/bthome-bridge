@@ -487,6 +487,10 @@ data class CenarioTrajeto(
     var origemExataLon: Double? = null,
     var destinoExatoLat: Double? = null,
     var destinoExatoLon: Double? = null,
+    // waypoints intermédios (pinos laranja) que o utilizador definiu
+    // para forçar a rota a passar por pontos específicos
+    var waypointsLat: List<Double> = emptyList(),
+    var waypointsLon: List<Double> = emptyList(),
     // timestamp da ultima vez que este cenario disparou -- usado so
     // para mostrar na UI quando foi a ultima vez, nao para logica de
     // bloqueio (essa fica no Repositorio, associada ao MAC + inicio
@@ -511,6 +515,10 @@ data class CenarioTrajeto(
         origemExataLon?.let { put("origemExataLon", it) }
         destinoExatoLat?.let { put("destinoExatoLat", it) }
         destinoExatoLon?.let { put("destinoExatoLon", it) }
+        if (waypointsLat.isNotEmpty()) {
+            put("waypointsLat", JSONArray().apply { waypointsLat.forEach { put(it) } })
+            put("waypointsLon", JSONArray().apply { waypointsLon.forEach { put(it) } })
+        }
         ultimoDisparoEm?.let { put("ultimoDisparoEm", it) }
     }
 
@@ -549,6 +557,8 @@ data class CenarioTrajeto(
                 origemExataLon = if (o.has("origemExataLon")) o.getDouble("origemExataLon") else null,
                 destinoExatoLat = if (o.has("destinoExatoLat")) o.getDouble("destinoExatoLat") else null,
                 destinoExatoLon = if (o.has("destinoExatoLon")) o.getDouble("destinoExatoLon") else null,
+                waypointsLat = o.optJSONArray("waypointsLat")?.let { arr -> (0 until arr.length()).map { arr.getDouble(it) } } ?: emptyList(),
+                waypointsLon = o.optJSONArray("waypointsLon")?.let { arr -> (0 until arr.length()).map { arr.getDouble(it) } } ?: emptyList(),
                 ultimoDisparoEm = if (o.has("ultimoDisparoEm")) o.optLong("ultimoDisparoEm") else null
             )
         }

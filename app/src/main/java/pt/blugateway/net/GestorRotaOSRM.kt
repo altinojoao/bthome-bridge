@@ -16,13 +16,12 @@ data class RotaCalculada(
     val pontos: List<PontoTemplate>,
     val distanciaMetros: Double,
     val duracaoSegundos: Double,
-    // pontos que o utilizador tocou no mapa -- guardados separadamente
-    // dos pontos da geometria OSRM (que podem estar deslocados para a
-    // estrada mais proxima do toque), para ao reabrir o cenario para
-    // editar os marcadores aparecerem onde o utilizador os colocou e
-    // nao no ponto ajustado pelo router
     val origemExata: PontoTemplate? = null,
-    val destinoExato: PontoTemplate? = null
+    val destinoExato: PontoTemplate? = null,
+    // pontos de passagem intermédios (pinos laranja) definidos pelo
+    // utilizador para forçar variantes de rota -- guardados para
+    // restaurar ao reabrir o cenário para editar
+    val waypointsIntermédios: List<PontoTemplate> = emptyList()
 )
 
 sealed class ResultadoCalculoRota {
@@ -118,7 +117,8 @@ object GestorRotaOSRM {
                         distanciaMetros = rota.optDouble("distance", 0.0),
                         duracaoSegundos = rota.optDouble("duration", 0.0),
                         origemExata = origemExata,
-                        destinoExato = destinoExato
+                        destinoExato = destinoExato,
+                        waypointsIntermédios = waypoints
                     )
                 }
 

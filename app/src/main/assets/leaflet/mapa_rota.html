@@ -148,10 +148,12 @@
       });
     }
 
-    function defineTrajetoExistente(jsonTexto, jsonOrigem, jsonDestino) {
+    function defineTrajetoExistente(jsonTexto, jsonOrigem, jsonDestino, jsonWaypoints) {
       limpaAlternativas();
       if (marcadorOrigem) { mapa.removeLayer(marcadorOrigem); marcadorOrigem = null; }
       if (marcadorDestino) { mapa.removeLayer(marcadorDestino); marcadorDestino = null; }
+      waypointsIntermédios.forEach(function(m) { mapa.removeLayer(m); });
+      waypointsIntermédios = [];
       var pontos;
       try { pontos = JSON.parse(jsonTexto); } catch(e) { return; }
       if (!pontos || pontos.length < 2) return;
@@ -162,6 +164,21 @@
       var pD = (jsonDestino && jsonDestino !== 'null') ? JSON.parse(jsonDestino) : pontos[pontos.length-1];
       marcadorOrigem = L.marker([pO.lat, pO.lon], { icon: ICONE_ORIGEM }).addTo(mapa);
       marcadorDestino = L.marker([pD.lat, pD.lon], { icon: ICONE_DESTINO }).addTo(mapa);
+      // restaurar waypoints intermédios (pinos laranja)
+      if (jsonWaypoints && jsonWaypoints !== 'null') {
+        try {
+          var wps = JSON.parse(jsonWaypoints);
+          wps.forEach(function(wp) {
+            var m = L.marker([wp.lat, wp.lon], { icon: ICONE_WAYPOINT }).addTo(mapa);
+            m.on('click', function() {
+              mapa.removeLayer(m);
+              waypointsIntermédios.splice(waypointsIntermédios.indexOf(m), 1);
+              notificaPontos();
+            });
+            waypointsIntermédios.push(m);
+          });
+        } catch(e) {}
+      }
       mapa.fitBounds(latLngs, { padding: [30, 30], maxZoom: 16 });
       instrucao('Rota guardada — toque para redefinir');
     }
