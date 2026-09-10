@@ -49,6 +49,11 @@ object ProcessadorClique {
             RegistoDiagnostico.regista(context, "sinal[$mac]: rssi=$rssi recebido, evento=${trama.evento}")
 
             if (comandoExistente.modoBeaconTrajeto) {
+                // Activar GPS continuo: mantem o GPS "aquecido" para
+                // que cada ponto gravado use uma leitura ja estabilizada.
+                // Idempotente -- chamadas repetidas nao criam listeners
+                // duplicados (ver GestorLocalizacao.iniciaModoContinuo).
+                pt.blugateway.net.GestorLocalizacao.iniciaModoContinuo(context)
                 CoroutineScope(Dispatchers.IO).launch {
                     GestorTrajeto.registaPontoDeBeaconSeNecessario(context, comandoExistente)
                 }
