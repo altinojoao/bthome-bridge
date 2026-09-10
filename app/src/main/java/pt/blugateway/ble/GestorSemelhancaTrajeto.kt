@@ -107,8 +107,38 @@ object GestorSemelhancaTrajeto {
     ): Double {
         if (template.isEmpty() || trajetoAtual.isEmpty()) return 0.0
 
-        var cursor = 0
         val saltoMaximo = (template.size * SALTO_MAXIMO_FRACAO).toInt().coerceAtLeast(1)
+
+        // Entrada flexivel: em vez de comecar sempre no ponto 0 do
+        // template, encontra o ponto do template mais proximo do
+        // primeiro ponto real e comeca a partir dai.
+        //
+        // Porquê: o template OSRM define o percurso completo (ex:
+        // Porto de Mos -> Batalha, 49 pontos), mas o beacon so entra
+        // em alcance quando o utilizador ja esta a meio do percurso
+        // (ex: Calvaria de Cima). Com cursor=0, o algoritmo ficava
+        // bloqueado nos primeiros pontos do template (que estao a
+        // 4-5km dos pontos reais) e devolvia sempre 0%.
+        //
+        // Restricao: so procura nos primeiros 50% do template -- se
+        // o beacon so aparece na segunda metade, o percurso util e'
+        // demasiado curto para ser relevante.
+        val maxEntrada = (template.size / 2).coerceAtLeast(1)
+        val primeiroPonto = trajetoAtual.first()
+        var melhorEntrada = 0
+        var melhorDist = Double.MAX_VALUE
+        for (i in 0 until maxEntrada) {
+            val d = distanciaMetros(
+                primeiroPonto.latitude, primeiroPonto.longitude,
+                template[i].lat, template[i].lon
+            )
+            if (d < melhorDist) {
+                melhorDist = d
+                melhorEntrada = i
+            }
+        }
+
+        var cursor = melhorEntrada
 
         for (pontoAtual in trajetoAtual) {
             val limiteAvanco = (cursor + saltoMaximo).coerceAtMost(template.size)
@@ -245,6 +275,7 @@ object GestorSemelhancaTrajeto {
             }
 
             val semelhanca = calculaSemelhanca(trajetoCombinado, cenario.template, cenario.raioMetros)
+            RegistoDiagnostico.regista(context, "[D-cenarios] semelhanca=${(semelhanca*100).toInt()}% (precisa>=${cenario.limiarPercentagem}%)")
             RegistoDiagnostico.regista(context, "[D-cenarios] semelhanca=${(semelhanca*100).toInt()}% (precisa>=${cenario.limiarPercentagem}%)")
             if (semelhanca * 100 >= cenario.limiarPercentagem) {
                 repo.marcaDisparado(cenario.id, inicio)
