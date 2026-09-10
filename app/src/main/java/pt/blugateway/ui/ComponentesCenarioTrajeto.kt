@@ -135,9 +135,16 @@ fun CriadorOuEditorCenario(
     // Inicializado com o template ja gravado quando se esta a EDITAR
     // um cenario, para o mapa mostrar o que estava definido em vez
     // de abrir vazio.
-    var templateDesenhado by remember {
-        mutableStateOf<List<PontoTemplate>?>(cenarioExistente?.template?.toList())
-    }
+    // templateExistenteParaMapa: só para mostrar no mapa ao abrir para editar.
+    // NÃO é o template que será guardado -- esse é templateNovo.
+    // Separar os dois evita guardar o template antigo quando o utilizador
+    // escolhe uma nova rota (bug: templateDesenhado era inicializado com
+    // o template existente, e se onRotaEscolhida não actualizasse
+    // correctamente, guardava o antigo).
+    val templateExistenteParaMapa = remember { cenarioExistente?.template?.toList() ?: emptyList() }
+    // templateNovo: null até o utilizador escolher uma rota nova.
+    // Só fica preenchido quando onRotaEscolhida é chamado.
+    var templateNovo by remember { mutableStateOf<List<PontoTemplate>?>(null) }
     // pontos onde o utilizador tocou ao definir a rota -- distintos
     // dos extremos da geometria OSRM (que podem estar na estrada mais
     // proxima, nao no ponto exato do toque). Inicializados a partir
@@ -183,14 +190,15 @@ fun CriadorOuEditorCenario(
                 .fillMaxWidth()
                 .height(300.dp)
                 .clip(RoundedCornerShape(9.dp)),
-            templateExistente = templateDesenhado ?: emptyList(),
+            templateExistente = templateExistenteParaMapa,
             origemExistente = origemRotaExata,
             destinoExistente = destinoRotaExato,
             onRotaEscolhida = { rota ->
-                templateDesenhado = rota.pontos
+                templateNovo = rota.pontos
                 origemRotaExata = rota.origemExata
                 destinoRotaExato = rota.destinoExato
                 templateOriginalMantido = false
+                android.util.Log.d("BluGateway", "[D-editar] onRotaEscolhida: ${rota.pontos.size}pts")
             }
         )
 
@@ -314,16 +322,19 @@ fun CriadorOuEditorCenario(
             // modos desenhar/rota) ha pelo menos 2 pontos capturados
             // -- um trajeto de 1 ponto nao tem forma nenhuma para
             // comparar semelhanca.
-            val temTemplatePronto = templateOriginalMantido || (templateDesenhado?.size ?: 0) >= 2
+            val temTemplatePronto = templateOriginalMantido || (templateNovo?.size ?: 0) >= 2
             val podeGravar = comandoVigiadoFinal != null && nome.isNotBlank() && temTemplatePronto
             TextButton(
                 enabled = podeGravar,
                 onClick = {
                     val template = if (templateOriginalMantido && cenarioExistente != null) {
+                        // utilizador não mudou a rota -- manter o template existente
                         cenarioExistente.template
                     } else {
-                        templateDesenhado!!
+                        // utilizador escolheu uma nova rota
+                        templateNovo!!
                     }
+                    android.util.Log.d("BluGateway", "[D-editar] GUARDAR: templateOriginalMantido=$templateOriginalMantido templateNovo=${templateNovo?.size}pts -> template_final=${template.size}pts")
                     val limiar = limiarTexto.toIntOrNull()?.coerceIn(1, 100) ?: 80
                     val raio = raioTexto.toIntOrNull()?.coerceAtLeast(1) ?: 40
                     val origemParaGuardar: String? = null
