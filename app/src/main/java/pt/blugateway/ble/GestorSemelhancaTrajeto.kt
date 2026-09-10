@@ -109,116 +109,152 @@ object GestorSemelhancaTrajeto {
      * nao consegue avancar o cursor de forma significativa.
      * Devolve um valor entre 0.0 e 1.0.
      */
+    /**
+     * Projecta o ponto (px,py) no segmento (ax,ay)-(bx,by).
+     * Devolve (t, distancia_perpendicular) onde t in [0,1] e' a
+     * posicao na linha (0=inicio, 1=fim do segmento).
+     */
+    private fun projectaNoSegmento(
+        px: Double, py: Double,
+        ax: Double, ay: Double,
+        bx: Double, by: Double
+    ): Pair<Double, Double> {
+        val dx = bx - ax; val dy = by - ay
+        if (dx == 0.0 && dy == 0.0) return 0.0 to distanciaMetros(px, py, ax, ay)
+        val t = ((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy)
+        val tc = t.coerceIn(0.0, 1.0)
+        return tc to distanciaMetros(px, py, ax + tc * dx, ay + tc * dy)
+    }
+
     fun calculaSemelhanca(
         trajetoAtual: List<PontoTrajeto>,
         template: List<PontoTemplate>,
         raioMetros: Int
     ): Double {
         if (template.isEmpty() || trajetoAtual.isEmpty()) return 0.0
+        if (template.size < 2) return 0.0
 
         // --- Geometria do template ---
-        val distsTemplate: List<Double> = (0 until template.size - 1).map { i ->
+        val distancias = (0 until template.size - 1).map { i ->
             distanciaMetros(template[i].lat, template[i].lon, template[i+1].lat, template[i+1].lon)
         }
-        val distMediaTemplate = if (distsTemplate.isNotEmpty()) distsTemplate.average() else 1.0
+        val total = distancias.sum()
+        if (total == 0.0) return 0.0
+        val distAcum = DoubleArray(distancias.size)
+        for (i in 1 until distancias.size) distAcum[i] = distAcum[i-1] + distancias[i-1]
+        val dAvgTemplate = total / distancias.size
 
-        // Raio adaptativo: nunca menor que raioMetros, mas escala
-        // com o espaçamento médio do template para garantir que um
-        // ponto GPS consegue sempre alcançar pelo menos 1 ponto do
-        // template, independentemente da sua densidade.
-        val raioEfectivo = maxOf(raioMetros.toDouble(), distMediaTemplate * 1.5)
+        // Raio: min configurado ou 1.5x espaçamento médio do template
+        val raio = maxOf(raioMetros.toDouble(), dAvgTemplate * 1.5)
 
-        // Salto dinâmico: quantos pontos do template cobrem a distância
-        // que um ponto GPS percorre entre duas leituras.
-        // Mínimo: 40% do template (para saltar lacunas de sinal)
-        // Máximo: 50% do template (para não aceitar rotas muito diferentes)
-        val saltoIdeal = if (distMediaTemplate > 0)
-            ((raioMetros * 2.0) / distMediaTemplate).toInt().coerceAtLeast(1) else 1
-        val saltoMaximo = saltoIdeal
-            .coerceIn(
-                (template.size * SALTO_MAXIMO_FRACAO).toInt().coerceAtLeast(1),
-                (template.size * 0.50).toInt().coerceAtLeast(1)
+        // Velocidade GPS estimada (distância média entre pontos GPS consecutivos)
+        val dMediaGps = if (trajetoAtual.size >= 2) {
+            (0 until trajetoAtual.size - 1).map { i ->
+                distanciaMetros(trajetoAtual[i].latitude, trajetoAtual[i].longitude,
+                                trajetoAtual[i+1].latitude, trajetoAtual[i+1].longitude)
+            }.average()
+        } else 50.0
+
+        // Janela de map matching: quantos segmentos do template cobrem
+        // a distância que o GPS percorre entre duas leituras consecutivas.
+        // Adaptativa: a velocidades altas (GPS espaçado), a janela é maior.
+        val janela = if (dAvgTemplate > 0)
+            (dMediaGps / dAvgTemplate * 1.5).toInt().coerceIn(3, distancias.size)
+        else distancias.size
+
+        // Ponto de entrada: segmento do template mais próximo do
+        // primeiro ponto GPS (dentro dos primeiros 50% do template)
+        val maxEntrada = (distancias.size / 2).coerceAtLeast(1)
+        val p0 = trajetoAtual.first()
+        var segEntrada = 0; var melhorDEntrada = Double.MAX_VALUE
+        for (i in 0 until maxEntrada) {
+            val (_, dp) = projectaNoSegmento(
+                p0.latitude, p0.longitude,
+                template[i].lat, template[i].lon,
+                template[i+1].lat, template[i+1].lon
             )
+            if (dp < melhorDEntrada) { melhorDEntrada = dp; segEntrada = i }
+        }
 
-        // --- Verificação de direcção ---
-        // Compara o vector de movimento do trajeto real (primeiros 2 pontos)
-        // com o vector do template (primeiro quarto). Se forem opostos
-        // (produto interno negativo), aplica uma penalização forte --
-        // evita falsos positivos quando o percurso é feito no sentido
-        // inverso do template, que sem esta verificação dava 80%+.
+        // --- MAP MATCHING ---
+        // Para cada ponto GPS, projecta no segmento mais próximo dentro
+        // da janela à frente do segmento actual. O progresso em metros
+        // só avança (nunca recua mais de 5% do total).
+        var segActual = segEntrada
+        var maxProgMetros = distAcum[segEntrada]
+        var pontosAceites = 0
+
+        for (pt in trajetoAtual) {
+            val segFim = (segActual + janela).coerceAtMost(distancias.size)
+            var melhorProj = -1.0; var melhorDp = Double.MAX_VALUE; var melhorSeg = segActual
+            for (i in segActual until segFim) {
+                val (t, dp) = projectaNoSegmento(
+                    pt.latitude, pt.longitude,
+                    template[i].lat, template[i].lon,
+                    template[i+1].lat, template[i+1].lon
+                )
+                if (dp <= raio && dp < melhorDp) {
+                    melhorDp = dp
+                    melhorProj = distAcum[i] + t * distancias[i]
+                    melhorSeg = i
+                }
+            }
+            if (melhorProj >= 0 && melhorProj > maxProgMetros - total * 0.05) {
+                if (melhorProj > maxProgMetros) { maxProgMetros = melhorProj; segActual = melhorSeg }
+                pontosAceites++
+            }
+        }
+
+        val cobertura = pontosAceites.toDouble() / trajetoAtual.size
+        val semMM = if (cobertura >= 0.4) (maxProgMetros / total).coerceIn(0.0, 1.0) else 0.0
+
+        // --- LCSS melhorado (fallback e complemento) ---
+        // Usado quando o map matching tem pouca cobertura (GPS esparso,
+        // lacunas de sinal), e como check de direcção (sentido inverso).
+        val saltoIdeal = if (dAvgTemplate > 0)
+            ((raioMetros * 2.0) / dAvgTemplate).toInt().coerceAtLeast(1) else 1
+        val saltoMaximo = saltoIdeal.coerceIn(
+            (template.size * SALTO_MAXIMO_FRACAO).toInt().coerceAtLeast(1),
+            (template.size * 0.50).toInt().coerceAtLeast(1)
+        )
+
+        // Verificação de direcção (sentido inverso -> penalização)
         val factorDireccao: Double = if (trajetoAtual.size >= 2 && template.size >= 4) {
             val dtLat = trajetoAtual[1].latitude - trajetoAtual[0].latitude
             val dtLon = trajetoAtual[1].longitude - trajetoAtual[0].longitude
-            val q = maxOf(1, template.size / 4)
+            val q = (template.size / 4).coerceAtLeast(1)
             val dmLat = template[q].lat - template[0].lat
             val dmLon = template[q].lon - template[0].lon
             val magT = Math.sqrt(dtLat * dtLat + dtLon * dtLon)
             val magM = Math.sqrt(dmLat * dmLat + dmLon * dmLon)
             if (magT > 0.0 && magM > 0.0) {
                 val produto = (dtLat * dmLat + dtLon * dmLon) / (magT * magM)
-                when {
-                    produto < -0.5 -> 0.3  // direcções muito opostas: penalização forte
-                    produto < 0.0  -> 0.7  // direcções moderadamente opostas
-                    else           -> 1.0  // direcções compatíveis: sem penalização
-                }
+                when { produto < -0.5 -> 0.3; produto < 0.0 -> 0.7; else -> 1.0 }
             } else 1.0
         } else 1.0
 
-        // --- Entrada flexível ---
-        // Começa no ponto do template mais próximo do primeiro ponto GPS
-        // real (dentro dos primeiros 50%) -- resolve o caso em que o beacon
-        // só entra em alcance a meio do percurso definido no template.
-        val maxEntrada = (template.size / 2).coerceAtLeast(1)
-        val primeiroPonto = trajetoAtual.first()
-        var melhorEntrada = 0
-        var melhorDist = Double.MAX_VALUE
-        for (i in 0 until maxEntrada) {
-            val d = distanciaMetros(
-                primeiroPonto.latitude, primeiroPonto.longitude,
-                template[i].lat, template[i].lon
-            )
-            if (d < melhorDist) { melhorDist = d; melhorEntrada = i }
-        }
-
-        // --- Loop LCSS ---
-        var cursor = melhorEntrada
-        var totalAvancos = 0
-        var nAvancos = 0
-
-        for (pontoAtual in trajetoAtual) {
+        var cursor = segEntrada; var totalAvancos = 0; var nAvancos = 0
+        for (pt in trajetoAtual) {
             val cursorAntes = cursor
-            val limiteAvanco = (cursor + saltoMaximo).coerceAtMost(template.size)
+            val lim = (cursor + saltoMaximo).coerceAtMost(template.size)
             var i = cursor
-            while (i < limiteAvanco) {
-                val d = distanciaMetros(
-                    pontoAtual.latitude, pontoAtual.longitude,
-                    template[i].lat, template[i].lon
-                )
-                if (d <= raioEfectivo) {
-                    totalAvancos += (i - cursorAntes + 1)
-                    nAvancos++
-                    cursor = i + 1
-                    break
-                }
+            while (i < lim) {
+                val d = distanciaMetros(pt.latitude, pt.longitude, template[i].lat, template[i].lon)
+                if (d <= raio) { totalAvancos += (i - cursorAntes + 1); nAvancos++; cursor = i + 1; break }
                 i++
             }
         }
-
-        val semBruta = cursor.toDouble() / template.size
-
-        // Penalização de saltos médios excessivos: se cada ponto GPS
-        // avançou em média mais de 25% do template, o algoritmo está
-        // a "forçar" correspondências (típico de rota diferente ou
-        // sentido inverso com poucas amostras).
-        val factorSaltos: Double = if (nAvancos > 0) {
-            val avancoPorPonto = (totalAvancos.toDouble() / nAvancos) / template.size
-            if (avancoPorPonto > 0.25)
-                maxOf(0.2, 1.0 - (avancoPorPonto - 0.25) * 3.0)
-            else
-                1.0
+        val semLcssRaw = cursor.toDouble() / template.size
+        val factorSaltos = if (nAvancos > 0) {
+            val avanco = (totalAvancos.toDouble() / nAvancos) / template.size
+            if (avanco > 0.25) maxOf(0.2, 1.0 - (avanco - 0.25) * 3.0) else 1.0
         } else 1.0
+        val semLcss = (semLcssRaw * factorDireccao * factorSaltos).coerceIn(0.0, 1.0)
 
-        return minOf(1.0, semBruta * factorDireccao * factorSaltos)
+        // Resultado final: map matching tem prioridade quando tem boa
+        // cobertura; LCSS serve de complemento para casos com GPS esparso
+        return if (cobertura >= 0.6) maxOf(semMM, semLcss * 0.8)
+        else maxOf(semMM, semLcss)
     }
 
 
