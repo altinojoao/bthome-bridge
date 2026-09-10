@@ -63,13 +63,26 @@ object GestorRotaOSRM {
         origemLat: Double,
         origemLon: Double,
         destinoLat: Double,
-        destinoLon: Double
+        destinoLon: Double,
+        waypoints: List<PontoTemplate> = emptyList()
     ): ResultadoCalculoRota = withContext(Dispatchers.IO) {
         val origemExata = PontoTemplate(origemLat, origemLon)
         val destinoExato = PontoTemplate(destinoLat, destinoLon)
         try {
-            val url = "$URL_BASE/$origemLon,$origemLat;$destinoLon,$destinoLat" +
+            // Construir a lista de coordenadas: origem, waypoints, destino
+            val coordenadas = buildString {
+                append("$origemLon,$origemLat")
+                waypoints.forEach { append(";${it.lon},${it.lat}") }
+                append(";$destinoLon,$destinoLat")
+            }
+            // Com waypoints, o OSRM não suporta alternatives --
+            // cada waypoint define um troço fixo, sem margem para variantes.
+            // Sem waypoints, pedir sempre 3 alternativas.
+            val params = if (waypoints.isEmpty())
                 "?geometries=geojson&overview=full&alternatives=3"
+            else
+                "?geometries=geojson&overview=full"
+            val url = "$URL_BASE/$coordenadas$params"
             val pedido = Request.Builder()
                 .url(url)
                 .header("User-Agent", USER_AGENT)

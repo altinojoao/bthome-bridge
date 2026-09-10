@@ -8,113 +8,144 @@
     html, body { height: 100%; margin: 0; padding: 0; }
     #mapa { height: 100%; background: #0D1117; }
     .leaflet-control-attribution { font-size: 9px; }
-    #botoes-alternativas {
-      position: absolute;
-      top: 8px;
-      right: 8px;
-      z-index: 1000;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
+    #botoes {
+      position: absolute; top: 8px; right: 8px; z-index: 1000;
+      display: flex; flex-direction: column; gap: 4px;
     }
-    .btn-alt {
-      padding: 6px 10px;
-      border: none;
-      border-radius: 6px;
-      font-size: 12px;
-      font-weight: bold;
-      color: white;
-      cursor: pointer;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.4);
-      text-align: left;
+    .btn-rota {
+      padding: 6px 10px; border: none; border-radius: 6px;
+      font-size: 12px; font-weight: bold; color: white; cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.4); text-align: left; min-width: 110px;
+    }
+    .btn-rota.selecionada { border: 2px solid white; }
+    #instrucao {
+      position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
+      z-index: 1000; background: rgba(13,17,23,0.85); border-radius: 8px;
+      padding: 6px 14px; font-size: 11px; color: #8B9AB0; pointer-events: none;
+      white-space: nowrap;
     }
   </style>
 </head>
 <body>
   <div id="mapa"></div>
-  <div id="botoes-alternativas"></div>
+  <div id="botoes"></div>
+  <div id="instrucao">Toque para marcar a origem</div>
   <script src="leaflet.js"></script>
   <script>
     var mapa = L.map('mapa', { zoomControl: true }).setView([0, 0], 2);
-
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '&copy; OpenStreetMap'
+      maxZoom: 19, attribution: '&copy; OpenStreetMap'
     }).addTo(mapa);
+    setTimeout(function() { mapa.invalidateSize(); }, 100);
 
-    setTimeout(function () { mapa.invalidateSize(); }, 100);
-
-    var marcadorOrigem = null;
-    var marcadorDestino = null;
+    var marcadorOrigem = null, marcadorDestino = null;
+    var waypointsIntermédios = [];   // marcadores de pontos intermédios
     var camadasAlternativas = [];
-    var alternativasActuais = [];
+    var CORES = ['#2BA6E0', '#9C6ADE', '#E0A62B'];
+    var rotaSelecionada = -1;
+    var modoWaypoint = false;        // true = próximo toque adiciona waypoint
 
     var ICONE_ORIGEM = L.divIcon({
-      html: '<div style="width:16px;height:16px;border-radius:50%;background:#3FB950;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.5)"></div>',
-      className: '', iconSize: [16, 16], iconAnchor: [8, 8]
+      html: '<div style="width:16px;height:16px;border-radius:50%;background:#3FB950;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,.5)"></div>',
+      className: '', iconSize: [16,16], iconAnchor: [8,8]
     });
     var ICONE_DESTINO = L.divIcon({
-      html: '<div style="width:16px;height:16px;border-radius:50%;background:#E0522B;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.5)"></div>',
-      className: '', iconSize: [16, 16], iconAnchor: [8, 8]
+      html: '<div style="width:16px;height:16px;border-radius:50%;background:#E0522B;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,.5)"></div>',
+      className: '', iconSize: [16,16], iconAnchor: [8,8]
+    });
+    var ICONE_WAYPOINT = L.divIcon({
+      html: '<div style="width:12px;height:12px;border-radius:50%;background:#F0A500;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,.5)"></div>',
+      className: '', iconSize: [12,12], iconAnchor: [6,6]
     });
 
-    var CORES = ['#2BA6E0', '#9C6ADE', '#E0A62B'];
+    function instrucao(txt) {
+      document.getElementById('instrucao').textContent = txt;
+    }
 
     function centraNaLocalizacao(lat, lon, zoom) {
       mapa.setView([lat, lon], zoom || 14);
     }
 
-    function limpaPontos() {
+    function limpaAlternativas() {
+      camadasAlternativas.forEach(function(c) { mapa.removeLayer(c); });
+      camadasAlternativas = [];
+      rotaSelecionada = -1;
+      document.getElementById('botoes').innerHTML = '';
+    }
+
+    function limpaTudo() {
       if (marcadorOrigem) { mapa.removeLayer(marcadorOrigem); marcadorOrigem = null; }
       if (marcadorDestino) { mapa.removeLayer(marcadorDestino); marcadorDestino = null; }
+      waypointsIntermédios.forEach(function(m) { mapa.removeLayer(m); });
+      waypointsIntermédios = [];
       limpaAlternativas();
+      modoWaypoint = false;
+      instrucao('Toque para marcar a origem');
     }
 
-    function limpaAlternativas() {
-      camadasAlternativas.forEach(function (c) { mapa.removeLayer(c); });
-      camadasAlternativas = [];
-      alternativasActuais = [];
-      document.getElementById('botoes-alternativas').innerHTML = '';
-    }
-
-    function escolheAlternativa(indice) {
-      window.location.href = 'blugateway-rota://escolhe?indice=' + indice;
+    function notificaPontos() {
+      var wps = waypointsIntermédios.map(function(m) {
+        return { lat: m.getLatLng().lat, lon: m.getLatLng().lng };
+      });
+      var payload = {
+        origem: marcadorOrigem ? { lat: marcadorOrigem.getLatLng().lat, lon: marcadorOrigem.getLatLng().lng } : null,
+        destino: marcadorDestino ? { lat: marcadorDestino.getLatLng().lat, lon: marcadorDestino.getLatLng().lng } : null,
+        waypoints: wps
+      };
+      window.location.href = 'blugateway-rota://pontos?dados=' + encodeURIComponent(JSON.stringify(payload));
     }
 
     function desenhaAlternativas(jsonTexto) {
       limpaAlternativas();
-      var alternativas;
-      try { alternativas = JSON.parse(jsonTexto); } catch (e) { return; }
-      alternativasActuais = alternativas;
-
+      var alts;
+      try { alts = JSON.parse(jsonTexto); } catch(e) { return; }
+      var container = document.getElementById('botoes');
       var todosPontos = [];
-      var container = document.getElementById('botoes-alternativas');
 
-      alternativas.forEach(function (alt, indice) {
-        var latLngs = alt.pontos.map(function (p) { return [p.lat, p.lon]; });
+      alts.forEach(function(alt, idx) {
+        var latLngs = alt.pontos.map(function(p) { return [p.lat, p.lon]; });
         todosPontos = todosPontos.concat(latLngs);
-        var cor = CORES[indice % CORES.length];
-
         var linha = L.polyline(latLngs, {
-          color: cor, weight: 5, opacity: 0.8
+          color: CORES[idx % CORES.length], weight: idx === 0 ? 6 : 4,
+          opacity: idx === 0 ? 0.9 : 0.55
         }).addTo(mapa);
         camadasAlternativas.push(linha);
-
-        // Botao HTML em vez de clicar na linha -- evita o problema
-        // de eventos de clique em SVG (polylines) nao funcionarem
-        // de forma fiavel em Android WebView
-        var km = alt.distanciaMetros ? (alt.distanciaMetros / 1000).toFixed(1) + ' km' : '';
+        var km = alt.distanciaMetros ? (alt.distanciaMetros/1000).toFixed(1)+'km' : '';
+        var min = alt.duracaoSegundos ? Math.round(alt.duracaoSegundos/60)+'min' : '';
         var btn = document.createElement('button');
-        btn.className = 'btn-alt';
-        btn.style.background = cor;
-        btn.textContent = 'Rota ' + (indice + 1) + (km ? '  ' + km : '');
-        btn.addEventListener('click', function () { escolheAlternativa(indice); });
+        btn.className = 'btn-rota' + (idx === 0 ? ' selecionada' : '');
+        btn.style.background = CORES[idx % CORES.length];
+        btn.textContent = 'Rota '+(idx+1)+(km ? '  '+km : '')+(min ? '  '+min : '');
+        btn.addEventListener('click', function() {
+          window.location.href = 'blugateway-rota://escolhe?indice='+idx;
+        });
         container.appendChild(btn);
       });
 
-      if (todosPontos.length > 0) {
-        mapa.fitBounds(todosPontos, { padding: [40, 40] });
+      // Botão para adicionar waypoint (forçar variante de rota)
+      if (marcadorOrigem && marcadorDestino) {
+        var btnWp = document.createElement('button');
+        btnWp.className = 'btn-rota';
+        btnWp.style.background = '#444';
+        btnWp.textContent = '+ Via...';
+        btnWp.addEventListener('click', function() {
+          modoWaypoint = true;
+          instrucao('Toque no mapa para forçar a rota a passar por aqui');
+        });
+        container.appendChild(btnWp);
       }
+
+      if (todosPontos.length > 0) mapa.fitBounds(todosPontos, { padding: [40, 40] });
+      instrucao(alts.length + (alts.length === 1 ? ' rota — toque em "+ Via" para forçar variante' : ' rotas — toque numa para escolher'));
+    }
+
+    function marcaAlternativaSelecionada(indice) {
+      rotaSelecionada = indice;
+      var btns = document.querySelectorAll('.btn-rota');
+      btns.forEach(function(b, i) { b.classList.toggle('selecionada', i === indice); });
+      camadasAlternativas.forEach(function(linha, i) {
+        linha.setStyle({ weight: i === indice ? 6 : 4, opacity: i === indice ? 0.9 : 0.55 });
+      });
     }
 
     function defineTrajetoExistente(jsonTexto, jsonOrigem, jsonDestino) {
@@ -122,59 +153,53 @@
       if (marcadorOrigem) { mapa.removeLayer(marcadorOrigem); marcadorOrigem = null; }
       if (marcadorDestino) { mapa.removeLayer(marcadorDestino); marcadorDestino = null; }
       var pontos;
-      try { pontos = JSON.parse(jsonTexto); } catch (e) { return; }
+      try { pontos = JSON.parse(jsonTexto); } catch(e) { return; }
       if (!pontos || pontos.length < 2) return;
-      var latLngs = pontos.map(function (p) { return [p.lat, p.lon]; });
+      var latLngs = pontos.map(function(p) { return [p.lat, p.lon]; });
       var linha = L.polyline(latLngs, { color: '#2BA6E0', weight: 5, opacity: 0.9 }).addTo(mapa);
       camadasAlternativas.push(linha);
-      var pOrigem = (jsonOrigem && jsonOrigem !== 'null') ? JSON.parse(jsonOrigem) : pontos[0];
-      var pDestino = (jsonDestino && jsonDestino !== 'null') ? JSON.parse(jsonDestino) : pontos[pontos.length - 1];
-      marcadorOrigem = L.marker([pOrigem.lat, pOrigem.lon], { icon: ICONE_ORIGEM }).addTo(mapa);
-      marcadorDestino = L.marker([pDestino.lat, pDestino.lon], { icon: ICONE_DESTINO }).addTo(mapa);
+      var pO = (jsonOrigem && jsonOrigem !== 'null') ? JSON.parse(jsonOrigem) : pontos[0];
+      var pD = (jsonDestino && jsonDestino !== 'null') ? JSON.parse(jsonDestino) : pontos[pontos.length-1];
+      marcadorOrigem = L.marker([pO.lat, pO.lon], { icon: ICONE_ORIGEM }).addTo(mapa);
+      marcadorDestino = L.marker([pD.lat, pD.lon], { icon: ICONE_DESTINO }).addTo(mapa);
       mapa.fitBounds(latLngs, { padding: [30, 30], maxZoom: 16 });
+      instrucao('Rota guardada — toque para redefinir');
     }
 
-    function marcaAlternativaSelecionada(indice) {
-      camadasAlternativas.forEach(function (linha, i) {
-        linha.setStyle({ weight: i === indice ? 8 : 4, opacity: i === indice ? 1.0 : 0.4 });
-      });
-    }
-
-    // Captura de toques no mapa para marcar origem/destino --
-    // usando addEventListener nativo no container (mais fiavel em
-    // Android WebView do que mapa.on('click',...))
+    // Captura de toques
     var container = mapa.getContainer();
-
-    function processaToque(event) {
-      // ignorar toques nos botoes de alternativa
-      if (event.target && event.target.closest && event.target.closest('#botoes-alternativas')) return;
+    container.addEventListener('click', function(event) {
+      if (event.target && event.target.closest && event.target.closest('#botoes')) return;
       var rect = container.getBoundingClientRect();
       var toque = event.touches ? event.touches[0] : event;
-      var x = toque.clientX - rect.left;
-      var y = toque.clientY - rect.top;
-      var latlng = mapa.containerPointToLatLng(L.point(x, y));
+      var latlng = mapa.containerPointToLatLng(L.point(toque.clientX - rect.left, toque.clientY - rect.top));
+
+      if (modoWaypoint) {
+        // Adicionar waypoint intermédio
+        var m = L.marker(latlng, { icon: ICONE_WAYPOINT }).addTo(mapa);
+        // Toque longo remove o waypoint
+        var t; m.on('click', function() { mapa.removeLayer(m); waypointsIntermédios.splice(waypointsIntermédios.indexOf(m), 1); notificaPontos(); });
+        waypointsIntermédios.push(m);
+        modoWaypoint = false;
+        instrucao('Via adicionada — a recalcular...');
+        notificaPontos();
+        return;
+      }
 
       if (!marcadorOrigem) {
         marcadorOrigem = L.marker(latlng, { icon: ICONE_ORIGEM }).addTo(mapa);
+        instrucao('Toque para marcar o destino');
       } else if (!marcadorDestino) {
         marcadorDestino = L.marker(latlng, { icon: ICONE_DESTINO }).addTo(mapa);
+        instrucao('A calcular rotas...');
       } else {
-        // terceiro toque: reinicia
-        if (marcadorOrigem) { mapa.removeLayer(marcadorOrigem); }
-        if (marcadorDestino) { mapa.removeLayer(marcadorDestino); }
-        limpaAlternativas();
+        // Terceiro toque fora dos botões: recomeçar
+        limpaTudo();
         marcadorOrigem = L.marker(latlng, { icon: ICONE_ORIGEM }).addTo(mapa);
-        marcadorDestino = null;
+        instrucao('Toque para marcar o destino');
       }
-
-      var payload = {
-        origem: marcadorOrigem ? { lat: marcadorOrigem.getLatLng().lat, lon: marcadorOrigem.getLatLng().lng } : null,
-        destino: marcadorDestino ? { lat: marcadorDestino.getLatLng().lat, lon: marcadorDestino.getLatLng().lng } : null
-      };
-      window.location.href = 'blugateway-rota://pontos?dados=' + encodeURIComponent(JSON.stringify(payload));
-    }
-
-    container.addEventListener('click', processaToque);
+      notificaPontos();
+    });
   </script>
 </body>
 </html>

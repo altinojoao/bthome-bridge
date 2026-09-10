@@ -184,19 +184,27 @@ fun MapaRotaTrajeto(
                                     val json = JSONObject(dados)
                                     val jOrigem = json.optJSONObject("origem")
                                     val jDestino = json.optJSONObject("destino")
+                                    val jWaypoints = json.optJSONArray("waypoints")
                                     origemAtual = jOrigem?.let {
                                         PontoTemplate(it.getDouble("lat"), it.getDouble("lon"))
                                     }
                                     destinoAtual = jDestino?.let {
                                         PontoTemplate(it.getDouble("lat"), it.getDouble("lon"))
                                     }
+                                    val waypoints = if (jWaypoints != null) {
+                                        (0 until jWaypoints.length()).map { i ->
+                                            val w = jWaypoints.getJSONObject(i)
+                                            PontoTemplate(w.getDouble("lat"), w.getDouble("lon"))
+                                        }
+                                    } else emptyList()
                                     val origem = origemAtual
                                     val destino = destinoAtual
                                     if (origem != null && destino != null) {
                                         estado = EstadoRota.ACalcular
                                         escopo.launch {
                                             val resultado = GestorRotaOSRM.calculaRotas(
-                                                origem.lat, origem.lon, destino.lat, destino.lon
+                                                origem.lat, origem.lon, destino.lat, destino.lon,
+                                                waypoints
                                             )
                                             estado = when (resultado) {
                                                 is ResultadoCalculoRota.Disponivel -> EstadoRota.Alternativas(resultado.rotas)
