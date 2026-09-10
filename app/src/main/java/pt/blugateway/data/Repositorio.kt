@@ -252,7 +252,11 @@ class Repositorio private constructor(context: Context) {
     }
 
     fun atualizaCenarioTrajeto(cenario: CenarioTrajeto) {
-        guardaCenariosTrajeto(_cenariosTrajeto.value.map { if (it.id == cenario.id) cenario else it })
+        android.util.Log.d("BluGateway", "[D-editar] atualizaCenarioTrajeto id=${cenario.id} nome='${cenario.nome}' template=${cenario.template.size}pts mac=${cenario.macComando} acoes=${cenario.acoes.size} limiar=${cenario.limiarPercentagem}")
+        val listaAtual = _cenariosTrajeto.value
+        val existe = listaAtual.any { it.id == cenario.id }
+        android.util.Log.d("BluGateway", "[D-editar] cenario existe na lista=$existe (total=${listaAtual.size})")
+        guardaCenariosTrajeto(listaAtual.map { if (it.id == cenario.id) cenario else it })
     }
 
     fun removeCenarioTrajeto(id: String) {
