@@ -150,6 +150,27 @@ object GestorSemelhancaTrajeto {
             (template.size * SALTO_MAXIMO_FRACAO).toInt().coerceAtLeast(1)
         }
 
+        // Raio adaptativo: o valor configurado (raioMetros) e' um MINIMO.
+        // Se o espaçamento medio entre pontos do template for maior,
+        // usa-se 1.5x esse espaçamento como raio efectivo.
+        // Porquê: um template OSRM sinuoso tem pontos a cada 8m, um
+        // template recto a cada 50-100m. Com raio fixo de 40m, um ponto
+        // GPS a 42m de dois pontos do template a 50m um do outro nao
+        // consegue casar com nenhum -- semelhança=0% mesmo percorrendo
+        // a rota. O raio adaptativo garante que sempre alcança pelo
+        // menos 1 ponto do template, independentemente da densidade.
+        val raioEfectivo: Double = if (template.size > 1) {
+            var totalDist = 0.0
+            for (i in 0 until template.size - 1) {
+                totalDist += distanciaMetros(
+                    template[i].lat, template[i].lon,
+                    template[i + 1].lat, template[i + 1].lon
+                )
+            }
+            val espacoMedio = totalDist / (template.size - 1)
+            maxOf(raioMetros.toDouble(), espacoMedio * 1.5)
+        } else raioMetros.toDouble()
+
         // Entrada flexivel: começa no ponto do template mais próximo
         // do primeiro ponto GPS real (dentro dos primeiros 50%)
         val maxEntrada = (template.size / 2).coerceAtLeast(1)
@@ -171,7 +192,7 @@ object GestorSemelhancaTrajeto {
             var i = cursor
             while (i < limiteAvanco) {
                 val d = distanciaMetros(pontoAtual.latitude, pontoAtual.longitude, template[i].lat, template[i].lon)
-                if (d <= raioMetros) { cursor = i + 1; break }
+                if (d <= raioEfectivo) { cursor = i + 1; break }
                 i++
             }
         }
