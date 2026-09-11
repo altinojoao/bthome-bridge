@@ -290,19 +290,19 @@ class Repositorio private constructor(context: Context) {
      * diretamente) para simplificar; o volume e' minimo (um par
      * id->timestamp por cenario).
      */
-    private fun mapaBloqueioDisparo(): MutableMap<String, Long> {
+    private fun mapaBloqueioDisparo(): MutableMap<String, String> {
         val raw = prefs.getString("cenarios_disparados", null) ?: return mutableMapOf()
         return try {
             val obj = JSONObject(raw)
-            val mapa = mutableMapOf<String, Long>()
-            obj.keys().forEach { chave -> mapa[chave] = obj.optLong(chave) }
+            val mapa = mutableMapOf<String, String>()
+            obj.keys().forEach { chave -> mapa[chave] = obj.optString(chave) }
             mapa
         } catch (e: Exception) {
             mutableMapOf()
         }
     }
 
-    private fun guardaMapaBloqueioDisparo(mapa: Map<String, Long>) {
+    private fun guardaMapaBloqueioDisparo(mapa: Map<String, String>) {
         val obj = JSONObject()
         mapa.forEach { (chave, valor) -> obj.put(chave, valor) }
         prefs.edit().putString("cenarios_disparados", obj.toString()).apply()
