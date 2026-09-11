@@ -210,7 +210,11 @@ object ExecutorAcoes {
 
             override fun onResponse(call: Call, response: okhttp3.Response) {
                 val codigo = response.code
-                RegistoEventos.adicionaResultado(etiqueta, response.isSuccessful, "HTTP $codigo")
+                val detalhe = if (!response.isSuccessful) {
+                    val corpo = response.body?.string()?.take(120) ?: ""
+                    "HTTP $codigo $corpo".trim()
+                } else "HTTP $codigo"
+                RegistoEventos.adicionaResultado(etiqueta, response.isSuccessful, detalhe)
                 response.close()
             }
         })

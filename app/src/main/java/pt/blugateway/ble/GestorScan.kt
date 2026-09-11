@@ -56,8 +56,8 @@ object GestorScan {
     }
     @Volatile private var contextoVigiado: Context? = null
 
-    private const val TEMPO_INATIVIDADE_MS = 20_000L
-    private const val INTERVALO_VERIFICACAO_MS = 10_000L
+    private const val TEMPO_INATIVIDADE_MS = 60_000L   // 60s sem anúncios → reiniciar scan
+    private const val INTERVALO_VERIFICACAO_MS = 30_000L // verificar de 30 em 30s
 
     /** Chamado pelo ScanReceiver sempre que qualquer anúncio BLE
      *  chega — sinal de que o scan continua vivo. */
