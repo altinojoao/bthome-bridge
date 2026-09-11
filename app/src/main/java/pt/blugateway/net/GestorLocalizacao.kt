@@ -12,37 +12,53 @@ import android.os.Looper
 import androidx.core.content.ContextCompat
 
 /**
- * Gere a localizacao GPS com modo adaptativo baseado em RSSI:
+ * GPS adaptativo em duas camadas:
  *
- * - EM MOVIMENTO (RSSI varia >= 3 dBm em 60s): GPS a 1s
- * - PARADO RECENTE (< 5min parado): GPS a 30s (mantém aquecido)
- * - PARADO LONGO (>= 5min): GPS desligado -- religar ao primeiro
- *   sinal de movimento (RSSI)
+ * CAMADA 1 -- GPS activo: usa a POSIÇÃO REAL para decidir se há
+ * movimento -- imune a variações de RSSI por giro do corpo ou
+ * reflexões. Se a posição não muda > RAIO_PARADO_M em
+ * TEMPO_PARADO_LENTO_MS → reduz GPS para 30s. Se não muda em
+ * TEMPO_PARADO_DESLIGA_MS → desliga GPS.
  *
- * O RSSI do beacon (BLE, sempre activo) funciona como detector de
- * movimento gratuito: quando o utilizador se move, a distância ao
- * beacon muda e o RSSI varia. Quando está parado, o RSSI é estável.
- * Poupança típica: ~95% do consumo GPS face ao modo contínuo a 1s.
+ * CAMADA 2 -- GPS desligado: usa RSSI como proxy, mas com critério
+ * muito conservador (variação de 10 dBm consistente ao longo de 90s)
+ * para evitar religar o GPS a cada giro do corpo. Só religar após
+ * confirmação em duas janelas seguidas.
+ *
+ * Resultado: GPS activo apenas durante deslocações reais, sem falsos
+ * positivos por postura/reflexões. Poupança ~95% face ao modo contínuo.
  */
 object GestorLocalizacao {
 
     private const val TIMEOUT_MS = 30_000L
     private const val MAX_IDADE_CACHE_MS = 8_000L
 
-    private const val LIMIAR_RSSI_MOVIMENTO = 3      // dBm variação mínima = movimento
-    private const val JANELA_MOVIMENTO_MS = 60_000L  // janela de análise RSSI
-    private const val TEMPO_GPS_REDUZIDO_MS = 5 * 60_000L  // 5min parado → GPS desliga
+    // Camada 1: detecção de movimento por posição GPS
+    private const val RAIO_PARADO_M = 30.0          // < 30m em X tempo = parado
+    private const val TEMPO_PARADO_LENTO_MS = 3 * 60_000L   // 3min → GPS a 30s
+    private const val TEMPO_PARADO_DESLIGA_MS = 8 * 60_000L // 8min → GPS desligado
+
+    // Camada 2: RSSI conservador (GPS desligado)
+    private const val LIMIAR_RSSI_MOVIMENTO_DBM = 10  // variação mínima credível
+    private const val JANELA_RSSI_MS = 90_000L         // janela de análise
+    private const val FRACAO_CONSISTENCIA = 0.60       // variação em ≥60% da janela
+    private const val CONFIRMACOES_PARA_RELIGAR = 2    // janelas seguidas antes de religar
 
     private const val INTERVALO_MOVIMENTO_MS = 1_000L
-    private const val INTERVALO_PARADO_MS = 30_000L
+    private const val INTERVALO_LENTO_MS = 30_000L
     private const val DISTANCIA_M = 0f
 
     @Volatile private var ultimaLocalizacao: Location? = null
+    @Volatile private var posicaoAncora: Location? = null   // posição quando parou
+    @Volatile private var tempoAncora: Long = 0L            // quando ficou parado
     @Volatile private var modoContinuoActivo = false
-    @Volatile private var emMovimento = false
-    @Volatile private var ultimoMovimentoEm = 0L
+    @Volatile private var modoLento = false                  // GPS a 30s
     private var listenerContinuo: LocationListener? = null
-    private val historicoRssi = java.util.concurrent.ConcurrentHashMap<String, ArrayDeque<Pair<Long, Int>>>()
+
+    // Camada 2: histórico RSSI por MAC
+    private val historicoRssi = java.util.concurrent.ConcurrentHashMap<
+        String, ArrayDeque<Pair<Long, Int>>>()
+    @Volatile private var confirmacoesPendentes = 0
 
     fun temPermissao(context: Context): Boolean =
         ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) ==
@@ -52,8 +68,9 @@ object GestorLocalizacao {
 
     fun temPermissaoSegundoPlano(context: Context): Boolean {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return temPermissao(context)
-        return ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_BACKGROUND_LOCATION) ==
-            PackageManager.PERMISSION_GRANTED
+        return ContextCompat.checkSelfPermission(
+            context, Manifest.permission.ACCESS_BACKGROUND_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
     }
 
     fun abreDefinicoesApp(context: Context) {
@@ -66,43 +83,102 @@ object GestorLocalizacao {
     }
 
     /**
-     * Chamado a cada anúncio BLE com o RSSI do beacon.
-     * Detecta movimento pela variação do RSSI e ajusta o GPS.
+     * Camada 1: chamado a cada nova posição GPS.
+     * Usa a posição real -- imune a RSSI -- para decidir o estado.
+     */
+    private fun processaPosicaoGps(context: Context, loc: Location) {
+        ultimaLocalizacao = loc
+        val agora = System.currentTimeMillis()
+        val ancora = posicaoAncora
+
+        if (ancora == null) {
+            // primeira posição -- inicializar âncora
+            posicaoAncora = loc
+            tempoAncora = agora
+            return
+        }
+
+        val deslocacao = ancora.distanceTo(loc)  // metros desde a âncora
+
+        if (deslocacao > RAIO_PARADO_M) {
+            // movimento real confirmado pelo GPS → resetar âncora, GPS rápido
+            posicaoAncora = loc
+            tempoAncora = agora
+            confirmacoesPendentes = 0
+            if (modoLento) {
+                modoLento = false
+                ajustaIntervalo(context, INTERVALO_MOVIMENTO_MS)
+            }
+        } else {
+            // dentro do raio -- verificar há quanto tempo
+            val tempoParado = agora - tempoAncora
+            when {
+                tempoParado >= TEMPO_PARADO_DESLIGA_MS && !modoLento -> {
+                    // parado há muito -- desligar GPS completamente
+                    paraModoContinuo(context)
+                }
+                tempoParado >= TEMPO_PARADO_LENTO_MS && !modoLento -> {
+                    // parado há algum tempo -- reduzir GPS para 30s
+                    modoLento = true
+                    ajustaIntervalo(context, INTERVALO_LENTO_MS)
+                }
+                tempoParado >= TEMPO_PARADO_DESLIGA_MS && modoLento -> {
+                    paraModoContinuo(context)
+                }
+            }
+        }
+    }
+
+    /**
+     * Camada 2: RSSI conservador quando o GPS está desligado.
+     * Chamado a cada anúncio BLE -- ignora variações de postura/reflexão.
      */
     fun actualizaRssi(context: Context, mac: String, rssi: Int) {
+        // Se GPS activo, não precisamos do RSSI para detectar movimento
+        if (modoContinuoActivo) return
+
         val agora = System.currentTimeMillis()
         val hist = historicoRssi.getOrPut(mac) { ArrayDeque() }
         hist.addLast(agora to rssi)
-        while (hist.isNotEmpty() && agora - hist.first().first > JANELA_MOVIMENTO_MS) {
+        while (hist.isNotEmpty() && agora - hist.first().first > JANELA_RSSI_MS) {
             hist.removeFirst()
         }
-        if (hist.size < 3) return
+        if (hist.size < 15) return  // precisa de pelo menos 15 amostras (90s / ~6s)
 
-        val valores = hist.map { it.second }
-        val variacao = valores.max() - valores.min()
-        val detectouMovimento = variacao >= LIMIAR_RSSI_MOVIMENTO
-
-        if (detectouMovimento) {
-            ultimoMovimentoEm = agora
-            if (!emMovimento) {
-                emMovimento = true
-                // religar/acelerar GPS
-                if (modoContinuoActivo) ajustaIntervalo(context, INTERVALO_MOVIMENTO_MS)
-                else iniciaModoContinuo(context, INTERVALO_MOVIMENTO_MS)
+        val movimentoDetectado = detectaMovimentoRssiConservador(hist.map { it.second })
+        if (movimentoDetectado) {
+            confirmacoesPendentes++
+            if (confirmacoesPendentes >= CONFIRMACOES_PARA_RELIGAR) {
+                // movimento confirmado em várias janelas -- religar GPS
+                confirmacoesPendentes = 0
+                posicaoAncora = null  // resetar âncora para nova detecção
+                tempoAncora = System.currentTimeMillis()
+                modoLento = false
+                iniciaModoContinuo(context, INTERVALO_MOVIMENTO_MS)
             }
-        } else if (emMovimento) {
-            val tempoParado = agora - ultimoMovimentoEm
-            when {
-                tempoParado > TEMPO_GPS_REDUZIDO_MS -> {
-                    emMovimento = false
-                    paraModoContinuo(context)  // GPS desligado
-                }
-                tempoParado > JANELA_MOVIMENTO_MS -> {
-                    emMovimento = false
-                    ajustaIntervalo(context, INTERVALO_PARADO_MS)  // GPS lento
-                }
-            }
+        } else {
+            confirmacoesPendentes = 0
         }
+    }
+
+    /**
+     * Detecta movimento no RSSI com critério conservador:
+     * a variação tem de ser grande (≥10 dBm) E consistente ao longo
+     * da janela (não apenas um pico de giro de corpo).
+     */
+    private fun detectaMovimentoRssiConservador(valores: List<Int>): Boolean {
+        if (valores.size < 15) return false
+        if (valores.max() - valores.min() < LIMIAR_RSSI_MOVIMENTO_DBM) return false
+        // Verificar consistência: em sub-janelas de 20 amostras, quantas
+        // têm variação >= metade do limiar?
+        val subJanela = 20
+        val variacoes = (0..valores.size - subJanela step 5).map { i ->
+            val sub = valores.subList(i, i + subJanela)
+            sub.max() - sub.min()
+        }
+        if (variacoes.isEmpty()) return false
+        val fracaoAlta = variacoes.count { it >= LIMIAR_RSSI_MOVIMENTO_DBM / 2 }.toDouble() / variacoes.size
+        return fracaoAlta >= FRACAO_CONSISTENCIA
     }
 
     @Synchronized
@@ -116,8 +192,9 @@ object GestorLocalizacao {
         }
         try { gestor.removeUpdates(listener) } catch (_: Exception) {}
         try {
-            gestor.requestLocationUpdates(provider, intervaloMs, DISTANCIA_M,
-                listener, Looper.getMainLooper())
+            gestor.requestLocationUpdates(
+                provider, intervaloMs, DISTANCIA_M, listener, Looper.getMainLooper()
+            )
         } catch (_: SecurityException) {}
     }
 
@@ -132,12 +209,15 @@ object GestorLocalizacao {
             else -> return
         }
         val listener = object : LocationListener {
-            override fun onLocationChanged(loc: Location) { ultimaLocalizacao = loc }
+            override fun onLocationChanged(loc: Location) {
+                processaPosicaoGps(context, loc)
+            }
             @Deprecated("") override fun onStatusChanged(p: String?, s: Int, e: Bundle?) {}
         }
         try {
-            gestor.requestLocationUpdates(provider, intervaloMs, DISTANCIA_M,
-                listener, Looper.getMainLooper())
+            gestor.requestLocationUpdates(
+                provider, intervaloMs, DISTANCIA_M, listener, Looper.getMainLooper()
+            )
             listenerContinuo = listener
             modoContinuoActivo = true
         } catch (_: SecurityException) {}
@@ -150,6 +230,7 @@ object GestorLocalizacao {
         listenerContinuo?.let { try { gestor.removeUpdates(it) } catch (_: Exception) {} }
         listenerContinuo = null
         modoContinuoActivo = false
+        modoLento = false
     }
 
     suspend fun obtemLocalizacaoAtual(context: Context): Pair<Double, Double>? {
