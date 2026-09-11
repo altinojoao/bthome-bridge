@@ -417,8 +417,10 @@ object GestorSemelhancaTrajeto {
                 // Notificar no CartaoRegisto (UI em tempo real) e no
                 // ecrã de Diagnóstico do Trajeto
                 val pctFinal = (semelhanca * 100).toInt()
+                val tsDisparo = java.text.SimpleDateFormat("HH:mm:ss dd/MM", java.util.Locale.getDefault())
+                    .format(java.util.Date())
                 RegistoDiagnostico.regista(context,
-                    "✅ CENÁRIO DISPARADO: '${cenario.nome}' ($pctFinal% >= ${cenario.limiarPercentagem}%)"
+                    "✅ CENÁRIO DISPARADO: '${cenario.nome}' ($pctFinal% >= ${cenario.limiarPercentagem}%) às $tsDisparo | sessao=$pontoGravadoNestaSessao"
                 )
                 RegistoEventos.adicionaTrajeto(cenario.nome, pctFinal)
 

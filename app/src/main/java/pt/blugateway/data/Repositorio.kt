@@ -308,15 +308,22 @@ class Repositorio private constructor(context: Context) {
         prefs.edit().putString("cenarios_disparados", obj.toString()).apply()
     }
 
-    fun jaDisparadoNestaViagem(cenarioId: String, inicioViagem: Long): Boolean {
-        val mapa = mapaBloqueioDisparo()
-        val tsDisparo = mapa[cenarioId] ?: return false
-        // O mapa guarda o timestamp REAL do disparo (System.currentTimeMillis()).
-        // O cenário já disparou nesta viagem se:
-        //   1. O disparo foi depois do início da viagem actual
-        //   2. E há menos de 24h (para não bloquear a viagem do dia seguinte)
+    /**
+     * Verifica se o cenário já disparou recentemente.
+     * Bloqueia durante 4 horas após o último disparo -- janela
+     * suficiente para cobrir uma viagem típica (ida + chegada) sem
+     * voltar a disparar, e curta o suficiente para não bloquear
+     * a viagem do dia seguinte.
+     *
+     * Não usa inicioViagem na comparação porque o inicioViagem é
+     * recalculado a cada avaliação e pode avançar após paragens
+     * intermédias, tornando o tsDisparo anterior "mais antigo"
+     * que o novo inicioViagem e causando re-disparos.
+     */
+    fun jaDisparadoNestaViagem(cenarioId: String, @Suppress("UNUSED_PARAMETER") inicioViagem: Long): Boolean {
+        val tsDisparo = mapaBloqueioDisparo()[cenarioId] ?: return false
         val agora = System.currentTimeMillis()
-        return tsDisparo >= inicioViagem && (agora - tsDisparo) < 30 * 60 * 60 * 1000L
+        return (agora - tsDisparo) < 4 * 60 * 60 * 1000L  // 4 horas
     }
 
     fun marcaDisparado(cenarioId: String, @Suppress("UNUSED_PARAMETER") inicioViagem: Long) {
