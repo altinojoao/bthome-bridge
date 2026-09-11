@@ -309,12 +309,24 @@ class Repositorio private constructor(context: Context) {
     }
 
     fun jaDisparadoNestaViagem(cenarioId: String, inicioViagem: Long): Boolean {
-        return mapaBloqueioDisparo()[cenarioId] == inicioViagem
+        val mapa = mapaBloqueioDisparo()
+        val tsDisparo = mapa[cenarioId] ?: return false
+        // O mapa guarda o timestamp REAL do disparo (System.currentTimeMillis()).
+        // O cenário já disparou nesta viagem se:
+        //   1. O disparo foi depois do início da viagem actual
+        //   2. E há menos de 24h (para não bloquear a viagem do dia seguinte)
+        val agora = System.currentTimeMillis()
+        return tsDisparo >= inicioViagem && (agora - tsDisparo) < 30 * 60 * 60 * 1000L
     }
 
-    fun marcaDisparado(cenarioId: String, inicioViagem: Long) {
+    fun marcaDisparado(cenarioId: String, @Suppress("UNUSED_PARAMETER") inicioViagem: Long) {
+        // Guardar o timestamp REAL do disparo, não o inicioViagem calculado.
+        // O inicioViagem é recalculado a cada sessão e pode diferir
+        // ligeiramente após reinícios da app (novas paragens detectadas).
+        // O timestamp real é imutável e permite verificar se o disparo
+        // ocorreu depois do início da viagem actual.
         val mapa = mapaBloqueioDisparo()
-        mapa[cenarioId] = inicioViagem
+        mapa[cenarioId] = System.currentTimeMillis()
         guardaMapaBloqueioDisparo(mapa)
     }
 
