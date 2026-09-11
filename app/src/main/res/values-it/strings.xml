@@ -192,7 +192,9 @@
     <string name="nome_cenario">Nome dello scenario</string>
     <string name="nome_cenario_exemplo">Es: Verso casa</string>
     <string name="novo_cenario_trajeto">Nuovo scenario di percorso</string>
-    <string name="raio_correspondencia">Raggio (m)</string>
+        <string name="raio_correspondencia">Raggio GPS (m)</string>
+    <string name="raio_geofence">Geofence sosta (m)</string>
+    <string name="minutos_nova_viagem">Min. per nuovo viaggio</string>
     <string name="ultimo_disparo">Ultimo attivazione: %1$s</string>
     <string name="template_atual_mantido">Mantiene il modello attuale (%1$d punti)</string>
     <string name="editar_cenario">Modifica</string>

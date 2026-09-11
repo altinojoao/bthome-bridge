@@ -309,31 +309,25 @@ class Repositorio private constructor(context: Context) {
     }
 
     /**
-     * Verifica se o cenário já disparou recentemente.
-     * Bloqueia durante 4 horas após o último disparo -- janela
-     * suficiente para cobrir uma viagem típica (ida + chegada) sem
-     * voltar a disparar, e curta o suficiente para não bloquear
-     * a viagem do dia seguinte.
-     *
-     * Não usa inicioViagem na comparação porque o inicioViagem é
-     * recalculado a cada avaliação e pode avançar após paragens
-     * intermédias, tornando o tsDisparo anterior "mais antigo"
-     * que o novo inicioViagem e causando re-disparos.
+     * Verifica se o cenário já disparou nesta viagem específica.
+     * Guarda "tsDisparo:inicioViagem" -- o inicioViagem activo no
+     * momento do disparo (calculado com o geofence do cenário).
+     * Se o inicioViagem mudar (nova saída do geofence = nova viagem),
+     * o bloqueio é automaticamente levantado.
+     * Tolerância de 5min para variações do algoritmo ao reiniciar.
      */
-    fun jaDisparadoNestaViagem(cenarioId: String, @Suppress("UNUSED_PARAMETER") inicioViagem: Long): Boolean {
-        val tsDisparo = mapaBloqueioDisparo()[cenarioId] ?: return false
-        val agora = System.currentTimeMillis()
-        return (agora - tsDisparo) < 4 * 60 * 60 * 1000L  // 4 horas
+    fun jaDisparadoNestaViagem(cenarioId: String, inicioViagem: Long): Boolean {
+        val entrada = mapaBloqueioDisparo()[cenarioId] ?: return false
+        val partes = entrada.toString().split(":")
+        if (partes.size != 2) return false
+        val inicioViagemNoDisparo = partes[1].toLongOrNull() ?: return false
+        val diff = Math.abs(inicioViagemNoDisparo - inicioViagem)
+        return diff < 5 * 60 * 1000L
     }
 
-    fun marcaDisparado(cenarioId: String, @Suppress("UNUSED_PARAMETER") inicioViagem: Long) {
-        // Guardar o timestamp REAL do disparo, não o inicioViagem calculado.
-        // O inicioViagem é recalculado a cada sessão e pode diferir
-        // ligeiramente após reinícios da app (novas paragens detectadas).
-        // O timestamp real é imutável e permite verificar se o disparo
-        // ocorreu depois do início da viagem actual.
+    fun marcaDisparado(cenarioId: String, inicioViagem: Long) {
         val mapa = mapaBloqueioDisparo()
-        mapa[cenarioId] = System.currentTimeMillis()
+        mapa[cenarioId] = "${System.currentTimeMillis()}:$inicioViagem"
         guardaMapaBloqueioDisparo(mapa)
     }
 

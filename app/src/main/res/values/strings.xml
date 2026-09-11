@@ -193,7 +193,9 @@
     <string name="nome_cenario">Nome do cenário</string>
     <string name="nome_cenario_exemplo">Ex: A caminho de casa</string>
     <string name="novo_cenario_trajeto">Novo cenário de trajeto</string>
-    <string name="raio_correspondencia">Raio (m)</string>
+    <string name="raio_correspondencia">Raio GPS (m)</string>
+    <string name="raio_geofence">Geofence paragem (m)</string>
+    <string name="minutos_nova_viagem">Min. para nova viagem</string>
     <string name="ultimo_disparo">Último disparo: %1$s</string>
     <string name="template_atual_mantido">Mantém o template atual (%1$d pontos)</string>
     <string name="editar_cenario">Editar</string>

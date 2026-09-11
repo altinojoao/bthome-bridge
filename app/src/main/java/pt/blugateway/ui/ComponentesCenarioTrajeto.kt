@@ -186,6 +186,8 @@ fun CriadorOuEditorCenario(
     var nome by remember { mutableStateOf(cenarioExistente?.nome ?: "") }
     var limiarTexto by remember { mutableStateOf((cenarioExistente?.limiarPercentagem ?: 80).toString()) }
     var raioTexto by remember { mutableStateOf((cenarioExistente?.raioMetros ?: 40).toString()) }
+    var raioGeofenceTexto by remember { mutableStateOf((cenarioExistente?.raioGeofenceMetros ?: 150).toString()) }
+    var minutosParaNovaViagemTexto by remember { mutableStateOf((cenarioExistente?.minutosParaNovaViagem ?: 15).toString()) }
     var acoes by remember { mutableStateOf(cenarioExistente?.acoes?.toList() ?: listOf(Acao())) }
     // MACs adicionais selecionados (checkboxes) -- qualquer beacon
     // aqui tambem contribui com pontos GPS para o historio do cenario
@@ -302,6 +304,25 @@ fun CriadorOuEditorCenario(
             }
         }
 
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Box(Modifier.weight(1f)) {
+                CampoTexto(
+                    rotulo = stringResource(R.string.raio_geofence),
+                    valor = raioGeofenceTexto,
+                    placeholder = "150",
+                    onValor = { raioGeofenceTexto = it }
+                )
+            }
+            Box(Modifier.weight(1f)) {
+                CampoTexto(
+                    rotulo = stringResource(R.string.minutos_nova_viagem),
+                    valor = minutosParaNovaViagemTexto,
+                    placeholder = "15",
+                    onValor = { minutosParaNovaViagemTexto = it }
+                )
+            }
+        }
+
         Text(
             stringResource(R.string.acoes_do_cenario),
             color = cores.tinta,
@@ -346,6 +367,8 @@ fun CriadorOuEditorCenario(
                     android.util.Log.d("BluGateway", "[D-editar] GUARDAR: templateOriginalMantido=$templateOriginalMantido templateNovo=${templateNovo?.size}pts -> template_final=${template.size}pts")
                     val limiar = limiarTexto.toIntOrNull()?.coerceIn(1, 100) ?: 80
                     val raio = raioTexto.toIntOrNull()?.coerceAtLeast(1) ?: 40
+                    val raioGeofence = raioGeofenceTexto.toIntOrNull()?.coerceAtLeast(50) ?: 150
+                    val minutosViagem = minutosParaNovaViagemTexto.toIntOrNull()?.coerceIn(5, 120) ?: 15
                     val origemParaGuardar: String? = null
                     onGrava(
                         CenarioTrajeto(
@@ -357,6 +380,8 @@ fun CriadorOuEditorCenario(
                             macOrigemTemplate = origemParaGuardar,
                             limiarPercentagem = limiar,
                             raioMetros = raio,
+                            raioGeofenceMetros = raioGeofence,
+                            minutosParaNovaViagem = minutosViagem,
                             ativo = cenarioExistente?.ativo ?: true,
                             acoes = acoes.toMutableList(),
                             modoTemplate = "rota",

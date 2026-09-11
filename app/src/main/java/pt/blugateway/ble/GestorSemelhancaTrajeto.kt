@@ -20,8 +20,10 @@ import pt.blugateway.net.ExecutorAcoes
  */
 object GestorSemelhancaTrajeto {
 
-    private const val RAIO_PARAGEM_METROS = 50.0
-    private const val TEMPO_MIN_PARAGEM_MS = 20L * 60 * 1000 // 20 minutos, mesmo criterio do modo "ultima viagem" do mapa
+    // Padrões globais usados pelo mapa de trajeto (modo "última viagem")
+    // Os cenários usam os seus próprios raioGeofenceMetros e minutosParaNovaViagem
+    internal const val RAIO_PARAGEM_METROS_PADRAO = 150.0
+    internal const val TEMPO_MIN_PARAGEM_MS_PADRAO = 15L * 60 * 1000
     // Fracao maxima do template que o cursor pode saltar entre dois
     // pontos reais consecutivos. Era 0.15 (15%); aumentado para 0.40
     // (40%) porque com intervalos de GPS de 5s a velocidades de carro
@@ -56,25 +58,49 @@ object GestorSemelhancaTrajeto {
      * como identificador dessa viagem para efeitos de bloqueio de
      * disparo repetido (ver Repositorio.jaDisparadoNestaViagem).
      */
-    fun inicioViagemAtual(pontosOrdenados: List<PontoTrajeto>): Long? {
+    /**
+     * Detecta o início da viagem actual usando um GEOFENCE real.
+     *
+     * Uma "paragem" é: o utilizador ficou dentro de um círculo de
+     * [raioGeofenceMetros] durante pelo menos [tempoMinimoParagemMs].
+     * O centro do geofence é o primeiro ponto de cada período estático.
+     *
+     * Ao sair do geofence (distância ao centro > raioGeofenceMetros),
+     * começa uma nova viagem. Este critério é muito mais robusto que
+     * comparar pontos consecutivos (que falhava com GPS ruidoso).
+     *
+     * Retrocompatível: chamadas sem parâmetros usam os valores padrão
+     * (150m, 15min), que são também os novos padrões dos cenários.
+     */
+    fun inicioViagemAtual(
+        pontosOrdenados: List<PontoTrajeto>,
+        raioGeofenceMetros: Double = RAIO_PARAGEM_METROS_PADRAO,
+        tempoMinimoParagemMs: Long = TEMPO_MIN_PARAGEM_MS_PADRAO
+    ): Long? {
         if (pontosOrdenados.isEmpty()) return null
         if (pontosOrdenados.size == 1) return pontosOrdenados[0].timestamp
 
-        // fronteiras de todas as paragens longas encontradas
+        // Percorrer os pontos identificando períodos de permanência
+        // dentro de um geofence
         val fronteiras = mutableListOf<Pair<Int, Int>>()
         var i = 0
         while (i < pontosOrdenados.size) {
+            // Centro do geofence: posição do primeiro ponto deste período
+            val centroLat = pontosOrdenados[i].latitude
+            val centroLon = pontosOrdenados[i].longitude
             var j = i
+            // Avançar enquanto os pontos seguintes estiverem dentro do geofence
             while (j + 1 < pontosOrdenados.size) {
                 val d = distanciaMetros(
-                    pontosOrdenados[i].latitude, pontosOrdenados[i].longitude,
-                    pontosOrdenados[j + 1].latitude, pontosOrdenados[j + 1].longitude
+                    centroLat, centroLon,
+                    pontosOrdenados[j + 1].latitude,
+                    pontosOrdenados[j + 1].longitude
                 )
-                if (d > RAIO_PARAGEM_METROS) break
+                if (d > raioGeofenceMetros) break
                 j++
             }
             val duracaoParagem = pontosOrdenados[j].timestamp - pontosOrdenados[i].timestamp
-            if (duracaoParagem >= TEMPO_MIN_PARAGEM_MS) {
+            if (duracaoParagem >= tempoMinimoParagemMs) {
                 fronteiras.add(i to j)
                 i = j + 1
             } else {
@@ -86,19 +112,14 @@ object GestorSemelhancaTrajeto {
 
         val (ultimoInicio, ultimoFim) = fronteiras.last()
 
-        // Se a ultima paragem vai ate ao fim, o comando esta parado
-        // AGORA -- tipicamente porque acabou de chegar ao destino. A
-        // viagem relevante para avaliar cenarios e' a que LEVOU ate
-        // essa paragem, nao "nenhuma": devolver null aqui fazia
-        // verificaCenarios sair sem avaliar nada, e um cenario do
-        // tipo "a chegar a casa" nunca disparava.
+        // Se a ultima paragem vai ate ao fim, o utilizador está parado
+        // AGORA -- a viagem relevante é a que levou até esta paragem.
         if (ultimoFim == pontosOrdenados.size - 1) {
             val inicio = if (fronteiras.size >= 2) fronteiras[fronteiras.size - 2].second + 1 else 0
             return if (inicio <= ultimoInicio) pontosOrdenados[inicio].timestamp else null
         }
 
-        // Ha movimento depois da ultima paragem -- a viagem atual e'
-        // esse movimento.
+        // Há movimento depois da última paragem -- essa é a viagem actual.
         return pontosOrdenados[ultimoFim + 1].timestamp
     }
 
@@ -289,11 +310,11 @@ object GestorSemelhancaTrajeto {
                     pontosOrdenados[i].latitude, pontosOrdenados[i].longitude,
                     pontosOrdenados[j + 1].latitude, pontosOrdenados[j + 1].longitude
                 )
-                if (d > RAIO_PARAGEM_METROS) break
+                if (d > RAIO_PARAGEM_METROS_PADRAO) break
                 j++
             }
             val duracaoParagem = pontosOrdenados[j].timestamp - pontosOrdenados[i].timestamp
-            if (duracaoParagem >= TEMPO_MIN_PARAGEM_MS) {
+            if (duracaoParagem >= TEMPO_MIN_PARAGEM_MS_PADRAO) {
                 if (j + 1 > inicioAtual) {
                     viagens.add(pontosOrdenados.subList(inicioAtual, j + 1))
                 }
@@ -344,8 +365,16 @@ object GestorSemelhancaTrajeto {
         RegistoDiagnostico.regista(context, "[D-cenarios] mac=$mac historico=${historico.size}pts")
         if (historico.isEmpty()) return
 
-        val inicioViagem = inicioViagemAtual(historico)
-        RegistoDiagnostico.regista(context, "[D-cenarios] inicioViagem=$inicioViagem (null=sem viagem ativa)")
+        // Usar os parâmetros de geofence do primeiro cenário activo como
+        // referência para calcular o inicioViagem do MAC principal.
+        // Se os cenários tiverem parâmetros diferentes, cada um recalcula
+        // o seu próprio inicioOutro abaixo.
+        val cenarioPrincipal = cenarios.first()
+        val raioGeo = cenarioPrincipal.raioGeofenceMetros.toDouble()
+        val tempoParagem = cenarioPrincipal.minutosParaNovaViagem * 60_000L
+
+        val inicioViagem = inicioViagemAtual(historico, raioGeo, tempoParagem)
+        RegistoDiagnostico.regista(context, "[D-cenarios] inicioViagem=$inicioViagem (null=sem viagem ativa) geo=${cenarioPrincipal.raioGeofenceMetros}m/${cenarioPrincipal.minutosParaNovaViagem}min")
         val inicio = inicioViagem ?: return
         val trajetoViagemAtual = historico.filter { it.timestamp >= inicio }
         RegistoDiagnostico.regista(context, "[D-cenarios] trajetoAtual=${trajetoViagemAtual.size}pts")
@@ -367,7 +396,11 @@ object GestorSemelhancaTrajeto {
                     .filter { it != mac }
                     .flatMap { outroMac ->
                         val hist = repo.historicoTrajeto(outroMac)
-                        val inicioOutro = inicioViagemAtual(hist) ?: return@flatMap emptyList()
+                        val inicioOutro = inicioViagemAtual(
+                            hist,
+                            cenario.raioGeofenceMetros.toDouble(),
+                            cenario.minutosParaNovaViagem * 60_000L
+                        ) ?: return@flatMap emptyList()
                         hist.filter { it.timestamp >= inicioOutro }
                     }
                 (trajetoViagemAtual + pontosAdicionais)

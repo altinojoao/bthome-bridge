@@ -192,7 +192,9 @@
     <string name="nome_cenario">Naam van het scenario</string>
     <string name="nome_cenario_exemplo">Bijv.: Op weg naar huis</string>
     <string name="novo_cenario_trajeto">Nieuw trajectscenario</string>
-    <string name="raio_correspondencia">Straal (m)</string>
+        <string name="raio_correspondencia">GPS-straal (m)</string>
+    <string name="raio_geofence">Geofence stop (m)</string>
+    <string name="minutos_nova_viagem">Min. voor nieuwe rit</string>
     <string name="ultimo_disparo">Laatst geactiveerd: %1$s</string>
     <string name="template_atual_mantido">Behoudt de huidige sjabloon (%1$d punten)</string>
     <string name="editar_cenario">Bewerken</string>

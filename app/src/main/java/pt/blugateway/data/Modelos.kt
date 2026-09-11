@@ -463,10 +463,13 @@ data class CenarioTrajeto(
     // % (0-100) de semelhanca necessaria para disparar
     var limiarPercentagem: Int = 80,
     // raio de correspondencia entre um ponto do trajeto atual e um
-    // ponto do template, em metros -- mais folgado que o raio de
-    // "paragem" (50m) usado para detetar fim de viagem, porque aqui
-    // e' sobre o erro do GPS em movimento, nao sobre permanencia
+    // ponto do template, em metros
     var raioMetros: Int = 40,
+    // Geofence de paragem: raio e tempo minimo para considerar que
+    // o utilizador parou e que a proxima saida e' uma nova viagem.
+    // Configuravel por cenario. Padrao: 150m, 15 minutos.
+    var raioGeofenceMetros: Int = 150,
+    var minutosParaNovaViagem: Int = 15,
     var ativo: Boolean = true,
     var acoes: MutableList<Acao> = mutableListOf(),
     // Como o template deste cenario foi definido -- "gravada"
@@ -508,6 +511,8 @@ data class CenarioTrajeto(
         macOrigemTemplate?.let { put("macOrigemTemplate", it) }
         put("limiarPercentagem", limiarPercentagem)
         put("raioMetros", raioMetros)
+        put("raioGeofenceMetros", raioGeofenceMetros)
+        put("minutosParaNovaViagem", minutosParaNovaViagem)
         put("ativo", ativo)
         put("acoes", JSONArray().apply { acoes.forEach { put(it.paraJson()) } })
         put("modoTemplate", modoTemplate)
@@ -550,6 +555,8 @@ data class CenarioTrajeto(
                 macOrigemTemplate = if (o.has("macOrigemTemplate")) o.optString("macOrigemTemplate") else null,
                 limiarPercentagem = o.optInt("limiarPercentagem", 80),
                 raioMetros = o.optInt("raioMetros", 40),
+                raioGeofenceMetros = o.optInt("raioGeofenceMetros", 150),
+                minutosParaNovaViagem = o.optInt("minutosParaNovaViagem", 15),
                 ativo = o.optBoolean("ativo", true),
                 acoes = acoes,
                 modoTemplate = o.optString("modoTemplate", "gravada"),

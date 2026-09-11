@@ -192,7 +192,9 @@
     <string name="nome_cenario">Name des Szenarios</string>
     <string name="nome_cenario_exemplo">Z.B.: Auf dem Weg nach Hause</string>
     <string name="novo_cenario_trajeto">Neues Streckenszenario</string>
-    <string name="raio_correspondencia">Radius (m)</string>
+        <string name="raio_correspondencia">GPS-Radius (m)</string>
+    <string name="raio_geofence">Stopp-Geofence (m)</string>
+    <string name="minutos_nova_viagem">Min. für neue Fahrt</string>
     <string name="ultimo_disparo">Letzte Auslösung: %1$s</string>
     <string name="template_atual_mantido">Behält die aktuelle Vorlage (%1$d Punkte)</string>
     <string name="editar_cenario">Bearbeiten</string>
