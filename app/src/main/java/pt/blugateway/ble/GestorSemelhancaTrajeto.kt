@@ -163,15 +163,20 @@ object GestorSemelhancaTrajeto {
         else distancias.size
 
         // Ponto de entrada: segmento do template mais próximo do
-        // primeiro ponto GPS (dentro dos primeiros 50% do template)
-        val maxEntrada = (distancias.size / 2).coerceAtLeast(1)
+        // primeiro ponto GPS real, pesquisado em TODO o template.
+        // A limitação anterior de 50% impedia encontrar o ponto
+        // de entrada quando o beacon só entrava em alcance na segunda
+        // metade da rota (ex: rota de 7km mas beacon só em alcance
+        // nos últimos 3km -- o cursor ficava bloqueado na primeira
+        // metade que estava a 5km do GPS real).
         val p0 = trajetoAtual.first()
         var segEntrada = 0; var melhorDEntrada = Double.MAX_VALUE
-        for (i in 0 until maxEntrada) {
+        for (i in 0 until distancias.size) {
+            val iNext = (i + 1).coerceAtMost(template.size - 1)
             val (_, dp) = projectaNoSegmento(
                 p0.latitude, p0.longitude,
                 template[i].lat, template[i].lon,
-                template[i+1].lat, template[i+1].lon
+                template[iNext].lat, template[iNext].lon
             )
             if (dp < melhorDEntrada) { melhorDEntrada = dp; segEntrada = i }
         }
@@ -209,8 +214,6 @@ object GestorSemelhancaTrajeto {
         val semMM = if (cobertura >= 0.4) (maxProgMetros / total).coerceIn(0.0, 1.0) else 0.0
 
         // --- LCSS melhorado (fallback e complemento) ---
-        // Usado quando o map matching tem pouca cobertura (GPS esparso,
-        // lacunas de sinal), e como check de direcção (sentido inverso).
         val saltoIdeal = if (dAvgTemplate > 0)
             ((raioMetros * 2.0) / dAvgTemplate).toInt().coerceAtLeast(1) else 1
         val saltoMaximo = saltoIdeal.coerceIn(
@@ -218,13 +221,18 @@ object GestorSemelhancaTrajeto {
             (template.size * 0.50).toInt().coerceAtLeast(1)
         )
 
-        // Verificação de direcção (sentido inverso -> penalização)
-        val factorDireccao: Double = if (trajetoAtual.size >= 2 && template.size >= 4) {
+        // Verificação de direcção LOCAL ao ponto de entrada:
+        // compara a direcção do trajeto com a direcção do template
+        // NOS PONTOS SEGUINTES AO PONTO DE ENTRADA (não no início do
+        // template). Essencial quando o beacon entra em alcance a meio
+        // ou no fim da rota -- a direcção do início do template pode
+        // ser completamente diferente da zona onde o GPS está.
+        val factorDireccao: Double = if (trajetoAtual.size >= 2 && segEntrada + 2 < template.size) {
             val dtLat = trajetoAtual[1].latitude - trajetoAtual[0].latitude
             val dtLon = trajetoAtual[1].longitude - trajetoAtual[0].longitude
-            val q = (template.size / 4).coerceAtLeast(1)
-            val dmLat = template[q].lat - template[0].lat
-            val dmLon = template[q].lon - template[0].lon
+            val fim = (segEntrada + 3).coerceAtMost(template.size - 1)
+            val dmLat = template[fim].lat - template[segEntrada].lat
+            val dmLon = template[fim].lon - template[segEntrada].lon
             val magT = Math.sqrt(dtLat * dtLat + dtLon * dtLon)
             val magM = Math.sqrt(dmLat * dmLat + dmLon * dmLon)
             if (magT > 0.0 && magM > 0.0) {
@@ -372,7 +380,13 @@ object GestorSemelhancaTrajeto {
                 if (cenario.template.isNotEmpty()) {
                     val t0 = cenario.template.first()
                     val dist = distanciaMetros(p0.latitude, p0.longitude, t0.lat, t0.lon)
-                    RegistoDiagnostico.regista(context, "[D-cenarios] dist_inicio=${dist.toInt()}m (>5000m = zonas diferentes)")
+                    // calcular tambem a distancia ao ponto do template mais proximo
+                    val (iMaisProximo, dMaisProximo) = cenario.template
+                        .mapIndexed { i, t -> i to distanciaMetros(p0.latitude, p0.longitude, t.lat, t.lon) }
+                        .minByOrNull { it.second } ?: (0 to dist)
+                    val totalTemplate = cenario.template.zipWithNext()
+                        .sumOf { (a, b) -> distanciaMetros(a.lat, a.lon, b.lat, b.lon) }
+                    RegistoDiagnostico.regista(context, "[D-cenarios] dist_inicio=${dist.toInt()}m | ponto_mais_proximo=template[$iMaisProximo] a ${dMaisProximo.toInt()}m | comprimento_template=${totalTemplate.toInt()}m")
                 }
             }
 
