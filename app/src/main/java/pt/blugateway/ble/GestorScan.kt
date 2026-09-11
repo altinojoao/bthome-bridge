@@ -29,54 +29,20 @@ object GestorScan {
     private const val TAG = "GestorScan"
     @Volatile private var scanAtivo = false
 
-    // Segunda linha de defesa contra o Bluetooth parar de responder
-    // em silencio -- o mesmo problema ja diagnosticado e corrigido na
-    // versao web (ver GestorScan da app: aqui ja usamos ScanFilter em
-    // vez de scan sem filtro, o que evita a causa mais comum, mas o
-    // radio pode falhar por outras razoes). Se houver comandos
-    // associados e nenhum anuncio BLE chegar durante muito tempo,
-    // presumimos que o scan morreu e reiniciamo-lo.
-    @Volatile private var ultimaAtividade = System.currentTimeMillis()
-    private var handlerVigilante: android.os.Handler? = null
-    private val vigilanteRunnable = object : Runnable {
-        override fun run() {
-            val inatividade = System.currentTimeMillis() - ultimaAtividade
-            if (inatividade > TEMPO_INATIVIDADE_MS && contextoVigiado != null) {
-                val repo = pt.blugateway.data.Repositorio(contextoVigiado!!)
-                if (repo.comandos.value.isNotEmpty()) {
-                    Log.w(TAG, "sem atividade de scan há ${inatividade}ms, a reiniciar")
-                    RegistoEventos.adicionaResultado(
-                        contextoVigiado!!.getString(pt.blugateway.R.string.scan_reiniciado), false, ""
-                    )
-                    reinicia(contextoVigiado!!)
-                }
-            }
-            handlerVigilante?.postDelayed(this, INTERVALO_VERIFICACAO_MS)
-        }
-    }
-    @Volatile private var contextoVigiado: Context? = null
+    // Scan com PendingIntent: o Android mantém o registo mesmo que
+    // o processo seja morto. Não é necessário reiniciar por inactividade
+    // de anúncios -- o beacon pode estar simplesmente longe.
+    // Só reiniciamos se o adaptador BLE reportar uma falha explícita
+    // (SCAN_FAILED_*) ou se o Bluetooth for desligado e religado.
+    private var contextoVigiado: Context? = null
 
-    private const val TEMPO_INATIVIDADE_MS = 60_000L   // 60s sem anúncios → reiniciar scan
-    private const val INTERVALO_VERIFICACAO_MS = 30_000L // verificar de 30 em 30s
-
-    /** Chamado pelo ScanReceiver sempre que qualquer anúncio BLE
-     *  chega — sinal de que o scan continua vivo. */
-    fun marcaAtividade() {
-        ultimaAtividade = System.currentTimeMillis()
-    }
-
+    /** Guarda o contexto para uso interno (iniciaEscuta/paraEscuta). */
     fun iniciaVigilante(context: Context) {
         contextoVigiado = context.applicationContext
-        if (handlerVigilante != null) return
-        handlerVigilante = android.os.Handler(android.os.Looper.getMainLooper())
-        handlerVigilante?.postDelayed(vigilanteRunnable, INTERVALO_VERIFICACAO_MS)
     }
 
-    private fun reinicia(context: Context) {
-        paraEscuta(context)
-        ultimaAtividade = System.currentTimeMillis()
-        iniciaEscuta(context)
-    }
+    /** Chamado pelo ScanReceiver -- mantido por compatibilidade, não faz nada. */
+    fun marcaAtividade() {}
 
     fun suportaBLE(): Boolean {
         val adapter = BluetoothAdapter.getDefaultAdapter() ?: return false
