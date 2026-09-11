@@ -317,7 +317,25 @@ object GestorSemelhancaTrajeto {
      * cada anuncio de beacon (o template raramente tem mais que
      * algumas centenas de pontos).
      */
+    /**
+     * Flag de sessão: só avaliar cenários após ter gravado pelo menos
+     * 1 ponto GPS nesta sessão. Evita que ao reiniciar a app (update,
+     * reboot) o histórico acumulado de viagens anteriores dispare
+     * cenários imediatamente sem nenhum movimento real ter ocorrido.
+     * Reset para false a cada arranque do processo (valor inicial).
+     */
+    @Volatile
+    var pontoGravadoNestaSessao: Boolean = false
+
     suspend fun verificaCenarios(context: Context, mac: String) {
+        // Não avaliar cenários até ter pelo menos 1 ponto GPS gravado
+        // nesta sessão. Ao reiniciar a app (update, reboot, crash),
+        // o histórico acumulado de viagens anteriores já pode ter
+        // semelhança suficiente para disparar -- mas não houve nenhum
+        // movimento real desde que a app arrancou. Só avaliar após
+        // o GestorTrajeto ter gravado o primeiro ponto desta sessão.
+        if (!pontoGravadoNestaSessao) return
+
         val repo = Repositorio(context)
         val cenarios = repo.cenariosTrajetoPara(mac).filter { it.ativo }
         if (cenarios.isEmpty()) return

@@ -133,6 +133,9 @@ object GestorTrajeto {
                 comando.mac, PontoTrajeto(localizacao.first, localizacao.second, agora, OrigemPonto.BEACON)
             )
             repo.atualizaUltimoPontoTrajeto(comando.mac, agora)
+            // Sinalizar que já houve pelo menos 1 ponto GPS nesta sessão
+            // -- a partir daqui os cenários de trajeto podem ser avaliados
+            GestorSemelhancaTrajeto.pontoGravadoNestaSessao = true
             RegistoDiagnostico.regista(context, "trajeto[${comando.mac}]: ponto gravado")
         } finally {
             pedidosEmCurso.remove(comando.mac)
