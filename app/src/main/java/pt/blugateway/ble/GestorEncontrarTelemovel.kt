@@ -14,7 +14,6 @@ import android.os.Handler
 import android.os.Looper
 import android.os.VibrationEffect
 import android.os.Vibrator
-import android.os.VibratorManager
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import pt.blugateway.R
@@ -82,7 +81,7 @@ object GestorEncontrarTelemovel {
         // Vibração em padrão SOS: ...---...
         try {
             val vib = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                (ctx.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager)
+                (ctx.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as android.os.VibratorManager)
                     .defaultVibrator
             } else {
                 @Suppress("DEPRECATION")
