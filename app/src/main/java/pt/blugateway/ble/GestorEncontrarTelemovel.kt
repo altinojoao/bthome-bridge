@@ -15,11 +15,6 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import pt.blugateway.R
 
-/**
- * Toca um alarme no telemóvel quando acionado por um clique no beacon.
- * Funciona em modo silencioso (usa STREAM_ALARM).
- * Para via notificação (botão Parar) ou automaticamente após 60s.
- */
 object GestorEncontrarTelemovel {
 
     private const val CANAL_ID = "encontrar_telemovel"
@@ -37,24 +32,21 @@ object GestorEncontrarTelemovel {
     fun toca(context: Context) {
         if (emAlarme) return
         emAlarme = true
-
         val ctx = context.applicationContext
 
-        // Aumentar volume de alarme ao máximo
+        // Volume ao máximo
         try {
             val am = ctx.getSystemService(Context.AUDIO_SERVICE) as AudioManager
-            am.setStreamVolume(
-                AudioManager.STREAM_ALARM,
-                am.getStreamMaxVolume(AudioManager.STREAM_ALARM),
-                0
-            )
-        } catch (e: Exception) {}
+            am.setStreamVolume(AudioManager.STREAM_ALARM,
+                am.getStreamMaxVolume(AudioManager.STREAM_ALARM), 0)
+        } catch (e: Exception) { /* ignorar */ }
 
-        // Tocar ringtone de alarme em loop
+        // Ringtone de alarme em loop
         try {
             val uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
                 ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
-            ringtone = RingtoneManager.getRingtone(ctx, uri)?.also { rt ->
+            val rt = RingtoneManager.getRingtone(ctx, uri)
+            if (rt != null) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                     rt.isLooping = true
                 }
@@ -62,13 +54,13 @@ object GestorEncontrarTelemovel {
                     .setUsage(android.media.AudioAttributes.USAGE_ALARM)
                     .build()
                 rt.play()
+                ringtone = rt
             }
         } catch (e: Exception) {
-            // fallback: usar ToneGenerator
             GestorSons.tocaAlarmeAlcance()
         }
 
-        // Vibração simples em loop (API 26+)
+        // Vibração
         try {
             @Suppress("DEPRECATION")
             val vib = ctx.getSystemService(Context.VIBRATOR_SERVICE) as android.os.Vibrator
@@ -79,15 +71,13 @@ object GestorEncontrarTelemovel {
                 @Suppress("DEPRECATION")
                 vib.vibrate(padrao, 0)
             }
-        } catch (e: Exception) {}
+        } catch (e: Exception) { /* ignorar */ }
 
-        // Notificação com botão Parar
+        // Notificação
         criaCanal(ctx)
         val intentParar = Intent(ACTION_PARAR).setPackage(ctx.packageName)
-        val piParar = PendingIntent.getBroadcast(
-            ctx, 0, intentParar,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
+        val piFlags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        val piParar = PendingIntent.getBroadcast(ctx, 0, intentParar, piFlags)
         val notif = NotificationCompat.Builder(ctx, CANAL_ID)
             .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
             .setContentTitle(ctx.getString(R.string.encontrar_telemovel_titulo))
@@ -101,7 +91,7 @@ object GestorEncontrarTelemovel {
             .build()
         try {
             NotificationManagerCompat.from(ctx).notify(NOTIF_ID, notif)
-        } catch (e: SecurityException) {}
+        } catch (e: SecurityException) { /* sem permissão de notificação */ }
 
         handler.postDelayed(pararAutomatico, DURACAO_MAX_MS)
     }
@@ -110,15 +100,15 @@ object GestorEncontrarTelemovel {
         if (!emAlarme) return
         emAlarme = false
         handler.removeCallbacks(pararAutomatico)
-        try { ringtone?.stop() } catch (e: Exception) {}
+        try { ringtone?.stop() } catch (e: Exception) { /* ignorar */ }
         ringtone = null
         try {
             @Suppress("DEPRECATION")
             val vib = context?.getSystemService(Context.VIBRATOR_SERVICE) as? android.os.Vibrator
             vib?.cancel()
-        } catch (e: Exception) {}
-        context?.applicationContext?.let {
-            NotificationManagerCompat.from(it).cancel(NOTIF_ID)
+        } catch (e: Exception) { /* ignorar */ }
+        context?.applicationContext?.let { ctx ->
+            NotificationManagerCompat.from(ctx).cancel(NOTIF_ID)
         }
     }
 
@@ -126,15 +116,11 @@ object GestorEncontrarTelemovel {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         if (nm.getNotificationChannel(CANAL_ID) != null) return
-        val canal = NotificationChannel(
-            CANAL_ID,
+        val canal = NotificationChannel(CANAL_ID,
             context.getString(R.string.encontrar_telemovel_titulo),
-            NotificationManager.IMPORTANCE_HIGH
-        ).apply {
-            setSound(null, null)
-            enableVibration(false)
-            lockscreenVisibility = NotificationCompat.VISIBILITY_PUBLIC
-        }
+            NotificationManager.IMPORTANCE_HIGH)
+        canal.setSound(null, null)
+        canal.enableVibration(false)
         nm.createNotificationChannel(canal)
     }
 }
