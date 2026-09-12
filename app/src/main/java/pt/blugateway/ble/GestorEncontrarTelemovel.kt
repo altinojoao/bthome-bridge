@@ -81,7 +81,7 @@ object GestorEncontrarTelemovel {
         // Vibração em padrão SOS: ...---...
         try {
             val vib = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                (ctx.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as android.os.VibratorManager)
+                (ctx.getSystemService("vibrator_manager") as android.os.VibratorManager)
                     .defaultVibrator
             } else {
                 @Suppress("DEPRECATION")
