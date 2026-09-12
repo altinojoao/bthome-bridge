@@ -192,7 +192,11 @@
     <string name="nome_cenario">Naam van het scenario</string>
     <string name="nome_cenario_exemplo">Bijv.: Op weg naar huis</string>
     <string name="novo_cenario_trajeto">Nieuw trajectscenario</string>
-        <string name="raio_correspondencia">GPS-straal (m)</string>
+        <string name="encontrar_telemovel_titulo">Telefoon vinden</string>
+    <string name="encontrar_telemovel_desc">Tik op de beacon om de telefoon te laten rinkelen</string>
+    <string name="encontrar_telemovel_parar">Stoppen</string>
+    <string name="encontrar_telemovel_descricao_acao">Speelt een alarm af tot 60 seconden. Om te stoppen: Stoppen in de melding.</string>
+    <string name="raio_correspondencia">GPS-straal (m)</string>
     <string name="raio_geofence">Geofence stop (m)</string>
     <string name="minutos_nova_viagem">Min. voor nieuwe rit</string>
     <string name="ultimo_disparo">Laatst geactiveerd: %1$s</string>

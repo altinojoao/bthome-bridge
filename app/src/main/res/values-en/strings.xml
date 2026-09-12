@@ -192,7 +192,11 @@
     <string name="nome_cenario">Scenario name</string>
     <string name="nome_cenario_exemplo">E.g.: Heading home</string>
     <string name="novo_cenario_trajeto">New trajectory scenario</string>
-        <string name="raio_correspondencia">GPS Radius (m)</string>
+        <string name="encontrar_telemovel_titulo">Find phone</string>
+    <string name="encontrar_telemovel_desc">Tap the beacon to make the phone ring</string>
+    <string name="encontrar_telemovel_parar">Stop</string>
+    <string name="encontrar_telemovel_descricao_acao">Rings an alarm on the phone for up to 60 seconds. To stop: tap Stop in the notification.</string>
+    <string name="raio_correspondencia">GPS Radius (m)</string>
     <string name="raio_geofence">Stop geofence (m)</string>
     <string name="minutos_nova_viagem">Min. for new trip</string>
     <string name="ultimo_disparo">Last triggered: %1$s</string>

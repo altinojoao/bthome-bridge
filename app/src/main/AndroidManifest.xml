@@ -45,6 +45,7 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
+    <uses-permission android:name="android.permission.VIBRATE" />
     <!-- Permite pedir diretamente a isencao da otimizacao de bateria
          padrao do Android (ver CartaoBateria.kt). A Google restringe
          este pedido direto a apps com necessidade genuina de execucao
@@ -84,6 +85,15 @@
         <receiver
             android:name=".ble.ScanReceiver"
             android:exported="false" />
+
+        <!-- Recebe o botão "Parar" da notificação do alarme de encontrar telemóvel. -->
+        <receiver
+            android:name=".ble.RecetorPararAlarme"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="pt.blugateway.PARAR_ALARME_TELEMOVEL" />
+            </intent-filter>
+        </receiver>
 
         <!-- Recomeça a escuta depois de reiniciar o telemóvel. -->
         <receiver

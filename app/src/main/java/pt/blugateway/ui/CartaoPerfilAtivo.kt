@@ -187,6 +187,11 @@ fun LinhaAcao(
                 placeholder = "000000000000",
                 onValor = { v -> onAtualiza { it.copy(valor = v) } }
             )
+            TipoAcao.ENCONTRAR_TELEMOVEL -> Text(
+                stringResource(R.string.encontrar_telemovel_descricao_acao),
+                color = cores.suave, fontSize = 11.sp,
+                modifier = Modifier.padding(vertical = 4.dp)
+            )
             TipoAcao.URL, TipoAcao.NTFY -> {
                 Row(verticalAlignment = Alignment.Top) {
                     Box(Modifier.weight(1f)) {
@@ -227,7 +232,8 @@ fun SeletorTipo(tipo: TipoAcao, onMuda: (TipoAcao) -> Unit) {
         listOf(
             TipoAcao.CENARIO to "\uD83C\uDFAC " + stringResource(R.string.cenario),
             TipoAcao.URL to "\uD83D\uDD17 " + stringResource(R.string.url),
-            TipoAcao.NTFY to "\uD83D\uDCE2 " + stringResource(R.string.ntfy)
+            TipoAcao.NTFY to "\uD83D\uDCE2 " + stringResource(R.string.ntfy),
+            TipoAcao.ENCONTRAR_TELEMOVEL to "\uD83D\uDD14 " + stringResource(R.string.encontrar_telemovel_titulo)
         ).forEach { (t, rotulo) ->
             val sel = t == tipo
             Text(

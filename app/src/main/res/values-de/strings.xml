@@ -192,7 +192,11 @@
     <string name="nome_cenario">Name des Szenarios</string>
     <string name="nome_cenario_exemplo">Z.B.: Auf dem Weg nach Hause</string>
     <string name="novo_cenario_trajeto">Neues Streckenszenario</string>
-        <string name="raio_correspondencia">GPS-Radius (m)</string>
+        <string name="encontrar_telemovel_titulo">Telefon finden</string>
+    <string name="encontrar_telemovel_desc">Beacon drücken um das Telefon klingeln zu lassen</string>
+    <string name="encontrar_telemovel_parar">Stopp</string>
+    <string name="encontrar_telemovel_descricao_acao">Spielt einen Alarm fuer bis zu 60 Sekunden. Zum Beenden: Stopp in der Benachrichtigung.</string>
+    <string name="raio_correspondencia">GPS-Radius (m)</string>
     <string name="raio_geofence">Stopp-Geofence (m)</string>
     <string name="minutos_nova_viagem">Min. für neue Fahrt</string>
     <string name="ultimo_disparo">Letzte Auslösung: %1$s</string>

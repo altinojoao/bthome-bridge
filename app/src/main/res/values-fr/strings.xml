@@ -192,7 +192,11 @@
     <string name="nome_cenario">Nom du scénario</string>
     <string name="nome_cenario_exemplo">Ex : En route vers la maison</string>
     <string name="novo_cenario_trajeto">Nouveau scénario de trajet</string>
-        <string name="raio_correspondencia">Rayon GPS (m)</string>
+        <string name="encontrar_telemovel_titulo">Trouver le téléphone</string>
+    <string name="encontrar_telemovel_desc">Appuyez sur le beacon pour faire sonner le téléphone</string>
+    <string name="encontrar_telemovel_parar">Arrêter</string>
+    <string name="encontrar_telemovel_descricao_acao">Sonne une alarme 60 secondes max. Pour arrêter: Arrêter dans la notification.</string>
+    <string name="raio_correspondencia">Rayon GPS (m)</string>
     <string name="raio_geofence">Géofence arrêt (m)</string>
     <string name="minutos_nova_viagem">Min. pour nouveau trajet</string>
     <string name="ultimo_disparo">Dernier déclenchement : %1$s</string>

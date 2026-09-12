@@ -13,6 +13,7 @@ import pt.blugateway.ble.RegistoEventos
 import pt.blugateway.data.Comando
 import pt.blugateway.data.Metodo
 import pt.blugateway.data.Repositorio
+import pt.blugateway.ble.GestorEncontrarTelemovel
 import pt.blugateway.data.TipoAcao
 import java.io.IOException
 import java.net.URLEncoder
@@ -89,6 +90,12 @@ object ExecutorAcoes {
             TipoAcao.CENARIO -> executaCenario(context, valor)
             TipoAcao.URL -> executaUrlLivre(context, valor, acao.metodo, ctx)
             TipoAcao.NTFY -> executaNtfy(context, valor, acao.metodo, acao.mensagem, ctx)
+            TipoAcao.ENCONTRAR_TELEMOVEL -> {
+                GestorEncontrarTelemovel.toca(context)
+                RegistoEventos.adicionaResultado(
+                    context.getString(R.string.encontrar_telemovel_titulo), true, "🔔"
+                )
+            }
         }
     }
 

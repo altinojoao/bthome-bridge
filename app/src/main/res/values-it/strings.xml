@@ -192,7 +192,11 @@
     <string name="nome_cenario">Nome dello scenario</string>
     <string name="nome_cenario_exemplo">Es: Verso casa</string>
     <string name="novo_cenario_trajeto">Nuovo scenario di percorso</string>
-        <string name="raio_correspondencia">Raggio GPS (m)</string>
+        <string name="encontrar_telemovel_titulo">Trova telefono</string>
+    <string name="encontrar_telemovel_desc">Tocca il beacon per far squillare il telefono</string>
+    <string name="encontrar_telemovel_parar">Ferma</string>
+    <string name="encontrar_telemovel_descricao_acao">Suona un allarme sul telefono 60 secondi. Per fermare: Ferma nella notifica.</string>
+    <string name="raio_correspondencia">Raggio GPS (m)</string>
     <string name="raio_geofence">Geofence sosta (m)</string>
     <string name="minutos_nova_viagem">Min. per nuovo viaggio</string>
     <string name="ultimo_disparo">Ultimo attivazione: %1$s</string>
