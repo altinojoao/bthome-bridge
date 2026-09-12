@@ -48,7 +48,7 @@ object GestorEncontrarTelemovel {
                 am.getStreamMaxVolume(AudioManager.STREAM_ALARM),
                 0
             )
-        } catch (_: Exception) {}
+        } catch (e: Exception) {}
 
         // Tocar ringtone de alarme em loop
         try {
@@ -63,7 +63,7 @@ object GestorEncontrarTelemovel {
                     .build()
                 rt.play()
             }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
             // fallback: usar ToneGenerator
             GestorSons.tocaAlarmeAlcance()
         }
@@ -79,7 +79,7 @@ object GestorEncontrarTelemovel {
                 @Suppress("DEPRECATION")
                 vib.vibrate(padrao, 0)
             }
-        } catch (_: Exception) {}
+        } catch (e: Exception) {}
 
         // Notificação com botão Parar
         criaCanal(ctx)
@@ -101,7 +101,7 @@ object GestorEncontrarTelemovel {
             .build()
         try {
             NotificationManagerCompat.from(ctx).notify(NOTIF_ID, notif)
-        } catch (_: SecurityException) {}
+        } catch (e: SecurityException) {}
 
         handler.postDelayed(pararAutomatico, DURACAO_MAX_MS)
     }
@@ -110,13 +110,13 @@ object GestorEncontrarTelemovel {
         if (!emAlarme) return
         emAlarme = false
         handler.removeCallbacks(pararAutomatico)
-        try { ringtone?.stop() } catch (_: Exception) {}
+        try { ringtone?.stop() } catch (e: Exception) {}
         ringtone = null
         try {
             @Suppress("DEPRECATION")
             val vib = context?.getSystemService(Context.VIBRATOR_SERVICE) as? android.os.Vibrator
             vib?.cancel()
-        } catch (_: Exception) {}
+        } catch (e: Exception) {}
         context?.applicationContext?.let {
             NotificationManagerCompat.from(it).cancel(NOTIF_ID)
         }

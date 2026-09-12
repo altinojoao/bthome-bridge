@@ -190,12 +190,12 @@ object GestorLocalizacao {
             gestor.isProviderEnabled(LocationManager.NETWORK_PROVIDER) -> LocationManager.NETWORK_PROVIDER
             else -> return
         }
-        try { gestor.removeUpdates(listener) } catch (_: Exception) {}
+        try { gestor.removeUpdates(listener) } catch (e: Exception) {}
         try {
             gestor.requestLocationUpdates(
                 provider, intervaloMs, DISTANCIA_M, listener, Looper.getMainLooper()
             )
-        } catch (_: SecurityException) {}
+        } catch (e: SecurityException) {}
     }
 
     @Synchronized
@@ -220,14 +220,14 @@ object GestorLocalizacao {
             )
             listenerContinuo = listener
             modoContinuoActivo = true
-        } catch (_: SecurityException) {}
+        } catch (e: SecurityException) {}
     }
 
     @Synchronized
     fun paraModoContinuo(context: Context) {
         if (!modoContinuoActivo) return
         val gestor = context.getSystemService(Context.LOCATION_SERVICE) as? LocationManager ?: return
-        listenerContinuo?.let { try { gestor.removeUpdates(it) } catch (_: Exception) {} }
+        listenerContinuo?.let { try { gestor.removeUpdates(it) } catch (e: Exception) {} }
         listenerContinuo = null
         modoContinuoActivo = false
         modoLento = false
@@ -251,7 +251,7 @@ object GestorLocalizacao {
             androidx.core.location.LocationManagerCompat.getCurrentLocation(
                 gestor, provider, cancelSignal, java.util.concurrent.Executor { it.run() }
             ) { loc -> deferred.complete(loc) }
-        } catch (_: SecurityException) { return null }
+        } catch (e: SecurityException) { return null }
         val loc = kotlinx.coroutines.withTimeoutOrNull(TIMEOUT_MS) { deferred.await() }
         if (loc == null) cancelSignal.cancel()
         loc?.let { ultimaLocalizacao = it }
