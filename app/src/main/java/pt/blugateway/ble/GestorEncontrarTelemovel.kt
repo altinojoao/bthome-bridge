@@ -17,6 +17,7 @@ import android.os.Vibrator
 import android.os.VibratorManager
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import pt.blugateway.R
 
 /**
  * Toca um alarme contínuo no telemóvel quando acionado por um clique
@@ -114,15 +115,15 @@ object GestorEncontrarTelemovel {
         )
         val notif = NotificationCompat.Builder(ctx, CANAL_ID)
             .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
-            .setContentTitle(ctx.getString(pt.blugateway.R.string.encontrar_telemovel_titulo))
-            .setContentText(ctx.getString(pt.blugateway.R.string.encontrar_telemovel_desc))
+            .setContentTitle(ctx.getString(R.string.encontrar_telemovel_titulo))
+            .setContentText(ctx.getString(R.string.encontrar_telemovel_desc))
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setOngoing(true)
             .addAction(
                 android.R.drawable.ic_media_pause,
-                ctx.getString(pt.blugateway.R.string.encontrar_telemovel_parar),
+                ctx.getString(R.string.encontrar_telemovel_parar),
                 piParar
             )
             .build()
@@ -159,10 +160,10 @@ object GestorEncontrarTelemovel {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val canal = NotificationChannel(
             CANAL_ID,
-            context.getString(pt.blugateway.R.string.encontrar_telemovel_titulo),
+            context.getString(R.string.encontrar_telemovel_titulo),
             NotificationManager.IMPORTANCE_HIGH
         ).apply {
-            description = context.getString(pt.blugateway.R.string.encontrar_telemovel_desc)
+            description = context.getString(R.string.encontrar_telemovel_desc)
             setSound(null, null)  // o som vem do MediaPlayer, não da notificação
             enableVibration(false)
             lockscreenVisibility = NotificationCompat.VISIBILITY_PUBLIC
