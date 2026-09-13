@@ -20,13 +20,21 @@ import pt.blugateway.data.Repositorio
 object GestorScan {
 
     private const val TAG = "GestorScan"
-    private const val INTERVALO_ALARME_MS = 45_000L  // reiniciar scan de 45 em 45s
+    private const val INTERVALO_ALARME_MS = 20_000L  // reiniciar scan de 20 em 20s
     private const val ACTION_REINICIA_SCAN = "pt.blugateway.REINICIA_SCAN"
 
     @Volatile private var scanAtivo = false
     @Volatile private var contextoVigiado: Context? = null
 
-    fun marcaAtividade() { /* mantido por compatibilidade */ }
+    /** Chamado pelo ScanReceiver a cada anúncio BLE recebido.
+     *  Reagenda o alarme para daqui a 20s -- se não chegarem mais
+     *  anúncios nesse tempo, o alarme reinicia o scan. */
+    fun marcaAtividade(context: Context) {
+        agendaProximoAlarme(context)
+    }
+
+    /** Compatibilidade com chamadas sem contexto (ScanReceiver antigo). */
+    fun marcaAtividade() { contextoVigiado?.let { marcaAtividade(it) } }
 
     fun iniciaVigilante(context: Context) {
         contextoVigiado = context.applicationContext

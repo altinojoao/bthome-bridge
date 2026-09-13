@@ -39,7 +39,7 @@ class ScanReceiver : BroadcastReceiver() {
             android.bluetooth.le.BluetoothLeScanner.EXTRA_LIST_SCAN_RESULT
         ) ?: return
 
-        if (resultados.isNotEmpty()) GestorScan.marcaAtividade()
+        if (resultados.isNotEmpty()) GestorScan.marcaAtividade(context)
 
         RegistoDiagnostico.regista(context, "onReceive: ${resultados.size} resultado(s)")
 
