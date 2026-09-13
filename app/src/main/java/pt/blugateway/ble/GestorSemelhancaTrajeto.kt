@@ -248,6 +248,9 @@ object GestorSemelhancaTrajeto {
         // template). Essencial quando o beacon entra em alcance a meio
         // ou no fim da rota -- a direcção do início do template pode
         // ser completamente diferente da zona onde o GPS está.
+        // Aplicada a AMBOS os algoritmos (map matching e LCSS) --
+        // antes só era aplicada ao LCSS, o que permitia disparos
+        // no sentido inverso via o map matching.
         val factorDireccao: Double = if (trajetoAtual.size >= 2 && segEntrada + 2 < template.size) {
             val dtLat = trajetoAtual[1].latitude - trajetoAtual[0].latitude
             val dtLon = trajetoAtual[1].longitude - trajetoAtual[0].longitude
@@ -258,7 +261,16 @@ object GestorSemelhancaTrajeto {
             val magM = Math.sqrt(dmLat * dmLat + dmLon * dmLon)
             if (magT > 0.0 && magM > 0.0) {
                 val produto = (dtLat * dmLat + dtLon * dmLon) / (magT * magM)
-                when { produto < -0.5 -> 0.3; produto < 0.0 -> 0.7; else -> 1.0 }
+                // Se a entrada é nos últimos 30% do template E a direcção
+                // é oposta, é quase certamente sentido inverso
+                val entradaTardia = segEntrada.toDouble() / distancias.size > 0.70
+                when {
+                    produto < -0.5 && entradaTardia -> 0.05  // sentido inverso claro
+                    produto < -0.5 -> 0.20
+                    produto < -0.2 -> 0.40
+                    produto < 0.0  -> 0.70
+                    else           -> 1.0
+                }
             } else 1.0
         } else 1.0
 
@@ -280,10 +292,11 @@ object GestorSemelhancaTrajeto {
         } else 1.0
         val semLcss = (semLcssRaw * factorDireccao * factorSaltos).coerceIn(0.0, 1.0)
 
-        // Resultado final: map matching tem prioridade quando tem boa
-        // cobertura; LCSS serve de complemento para casos com GPS esparso
-        return if (cobertura >= 0.6) maxOf(semMM, semLcss * 0.8)
-        else maxOf(semMM, semLcss)
+        // Resultado final com factorDireccao aplicado a ambos:
+        // map matching tem prioridade quando tem boa cobertura
+        val semMMComDir = (semMM * factorDireccao).coerceIn(0.0, 1.0)
+        return if (cobertura >= 0.6) maxOf(semMMComDir, semLcss * 0.8)
+        else maxOf(semMMComDir, semLcss)
     }
 
 
