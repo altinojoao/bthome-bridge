@@ -22,8 +22,7 @@ object ProcessadorClique {
 
     private const val PREFS = "blugateway_dedup"
 
-    fun processa(context: Context, mac: String, nome: String, trama: TramaBTHome, bytesOriginais: ByteArray, rssi: Int,
-                 scope: kotlinx.coroutines.CoroutineScope = CoroutineScope(Dispatchers.IO)) {
+    suspend fun processa(context: Context, mac: String, nome: String, trama: TramaBTHome, bytesOriginais: ByteArray, rssi: Int) {
         val prefsDedup = requireNotNull(context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)) {
             "getSharedPreferences nunca deveria devolver null"
         }
@@ -54,9 +53,8 @@ object ProcessadorClique {
                 // automaticamente o intervalo GPS (1s em movimento,
                 // 30s parado recente, desligado após 5min parado)
                 pt.blugateway.net.GestorLocalizacao.actualizaRssi(context, mac, rssi)
-                scope.launch {
-                    GestorTrajeto.registaPontoDeBeaconSeNecessario(context, comandoExistente)
-                }
+                GestorTrajeto.registaPontoDeBeaconSeNecessario(context, comandoExistente)
+                
             }
 
             // Verificar os cenarios de trajeto NAO pode ficar
@@ -67,9 +65,8 @@ object ProcessadorClique {
             // nunca chegava a ser avaliado. A propria funcao sai cedo,
             // sem trabalho extra, se nao houver cenarios definidos
             // para este comando ou se nao houver historico.
-            scope.launch {
-                GestorSemelhancaTrajeto.verificaCenarios(context, comandoExistente.mac)
-            }
+            GestorSemelhancaTrajeto.verificaCenarios(context, comandoExistente.mac)
+            
 
             if (novoPacote && trama.evento != null) {
                 val indice = pt.blugateway.data.TipoClique.indiceDeCodigo(trama.evento)
@@ -87,8 +84,7 @@ object ProcessadorClique {
                             DiagnosticoEstado.atualizaCombinacao(nome, rssi, trama, bytesOriginais, combinacaoDisparada.nome)
                             GestorSons.tocaCombinacao(combinacaoDisparada.sequencia)
 
-                            scope.launch {
-                                ExecutorAcoes.executaLista(
+                            ExecutorAcoes.executaLista(
                                     context = context,
                                     acoes = combinacaoDisparada.acoes,
                                     evento = combinacaoDisparada.nome,
@@ -98,7 +94,7 @@ object ProcessadorClique {
                                     rssi = rssi,
                                     incluirLocalizacao = comandoExistente.incluirLocalizacao
                                 )
-                            }
+                            
                         } else {
                             repo.registaClique(mac, indice, disparouAcao = false)
                             DiagnosticoEstado.atualizaEspera(nome, rssi, trama, bytesOriginais)
@@ -110,8 +106,7 @@ object ProcessadorClique {
                         val temAcoes = perfil?.eventos?.getOrNull(indice)?.isNotEmpty() == true
                         repo.registaClique(mac, indice, disparouAcao = temAcoes)
 
-                        scope.launch {
-                            ExecutorAcoes.executa(
+                        ExecutorAcoes.executa(
                                 context = context,
                                 comando = comandoExistente,
                                 indiceEvento = indice,
@@ -121,7 +116,7 @@ object ProcessadorClique {
                                 bateria = trama.bateria ?: comandoExistente.bateria,
                                 rssi = rssi
                             )
-                        }
+                        
                     }
                 }
             }
