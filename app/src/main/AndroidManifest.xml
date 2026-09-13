@@ -47,8 +47,6 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.VIBRATE" />
-    <uses-permission android:name="android.permission.VIBRATE" />
-    <uses-permission android:name="android.permission.WAKE_LOCK" />
     <!-- Permite pedir diretamente a isencao da otimizacao de bateria
          padrao do Android (ver CartaoBateria.kt). A Google restringe
          este pedido direto a apps com necessidade genuina de execucao
