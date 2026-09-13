@@ -432,6 +432,28 @@ object GestorSemelhancaTrajeto {
             }
             RegistoDiagnostico.regista(context, "[D-cenarios] trajetoCombinado=${trajetoCombinado.size}pts (${todosMacs.size} beacons)")
 
+            // Enriquecer o trajetoCombinado com a posição GPS actual
+            // (cache do GestorLocalizacao) sem gravar um novo ponto.
+            // Elimina o atraso entre atingir o limiar e o trigger:
+            // antes, a semelhança só avançava quando o próximo ponto
+            // era gravado (até 5s, = até 42m a 30km/h depois do limiar).
+            // Agora o mapa de trajeto inclui sempre o ponto mais recente.
+            val posicaoAtual = pt.blugateway.net.GestorLocalizacao.ultimaLocalizacaoCache()
+            val trajetoComPosAtual = if (posicaoAtual != null) {
+                val agora = System.currentTimeMillis()
+                val ultimoPonto = trajetoCombinado.lastOrNull()
+                // Só adicionar se a posição em cache for mais recente que o último ponto
+                // e não for uma duplicata (> 3m de distância do último ponto)
+                if (ultimoPonto == null ||
+                    (agora - (ultimoPonto.timestamp) > 1_000L &&
+                     distanciaMetros(posicaoAtual.first, posicaoAtual.second,
+                                     ultimoPonto.latitude, ultimoPonto.longitude) > 3.0)) {
+                    trajetoCombinado + PontoTrajeto(
+                        posicaoAtual.first, posicaoAtual.second, agora, OrigemPonto.BEACON
+                    )
+                } else trajetoCombinado
+            } else trajetoCombinado
+
             // Log das coordenadas reais dos primeiros pontos, para
             // confirmar se o template e o trajeto estao na mesma zona
             if (cenario.template.isNotEmpty()) {
@@ -454,7 +476,7 @@ object GestorSemelhancaTrajeto {
                 }
             }
 
-            val semelhanca = calculaSemelhanca(trajetoCombinado, cenario.template, cenario.raioMetros)
+            val semelhanca = calculaSemelhanca(trajetoComPosAtual, cenario.template, cenario.raioMetros)
             RegistoDiagnostico.regista(context, "[D-cenarios] semelhanca=${(semelhanca*100).toInt()}% (precisa>=${cenario.limiarPercentagem}%)")
             if (semelhanca * 100 >= cenario.limiarPercentagem) {
                 repo.marcaDisparado(cenario.id, inicio)

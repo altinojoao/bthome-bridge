@@ -60,6 +60,18 @@ object GestorLocalizacao {
         String, ArrayDeque<Pair<Long, Int>>>()
     @Volatile private var confirmacoesPendentes = 0
 
+    /**
+     * Devolve a última posição GPS em cache como (lat, lon), ou null
+     * se não houver nenhuma. Não activa o GPS -- usa apenas o que já
+     * estava em memória. Usada pelo GestorSemelhancaTrajeto para
+     * enriquecer o trajetoCombinado com a posição mais recente sem
+     * ter de esperar pelo próximo ponto gravado (intervalo de 5s).
+     */
+    fun ultimaLocalizacaoCache(): Pair<Double, Double>? {
+        val loc = ultimaLocalizacao ?: return null
+        return loc.latitude to loc.longitude
+    }
+
     fun temPermissao(context: Context): Boolean =
         ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) ==
             PackageManager.PERMISSION_GRANTED ||
