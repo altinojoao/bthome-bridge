@@ -5,6 +5,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
+import kotlinx.coroutines.launch
 import pt.blugateway.data.Repositorio
 
 /**
@@ -31,10 +32,6 @@ class ScanReceiver : BroadcastReceiver() {
             return
         }
 
-        // getParcelableArrayListExtra(String) sem a classe (API 33+) foi
-        // descontinuado a favor da versao com Class<T>, mas essa exige
-        // minSdk 33 -- como o minSdk do projeto e 26, usamos a forma antiga
-        // e silenciamos o aviso de depreciacao aqui, no unico sitio que a usa.
         val resultados: ArrayList<ScanResult> = intent.getParcelableArrayListExtra(
             android.bluetooth.le.BluetoothLeScanner.EXTRA_LIST_SCAN_RESULT
         ) ?: return
@@ -43,8 +40,19 @@ class ScanReceiver : BroadcastReceiver() {
 
         RegistoDiagnostico.regista(context, "onReceive: ${resultados.size} resultado(s)")
 
-        for (resultado in resultados) {
-            processaResultado(context, resultado)
+        // goAsync() mantém o processo vivo após onReceive() retornar,
+        // necessário para que as coroutines de ExecutorAcoes e
+        // GestorTrajeto completem com o ecrã bloqueado -- sem isto o
+        // Android pode matar o processo antes das acções executarem.
+        val pendingResult = goAsync()
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+            try {
+                for (resultado in resultados) {
+                    processaResultado(context, resultado)
+                }
+            } finally {
+                pendingResult.finish()
+            }
         }
     }
 
