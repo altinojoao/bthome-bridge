@@ -65,8 +65,10 @@ object GestorScan {
             context, 0, intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        // SET_AND_ALLOW_WHILE_IDLE acorda o processo mesmo em Doze mode
-        am.setAndAllowWhileIdle(
+        // setExactAndAllowWhileIdle: garante execução exacta mesmo em
+        // Doze mode -- ao contrário de setAndAllowWhileIdle que impõe
+        // um intervalo mínimo de 9 minutos entre execuções em Doze.
+        am.setExactAndAllowWhileIdle(
             AlarmManager.RTC_WAKEUP,
             System.currentTimeMillis() + INTERVALO_ALARME_MS,
             pi
