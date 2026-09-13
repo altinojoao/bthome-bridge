@@ -22,7 +22,8 @@ object ProcessadorClique {
 
     private const val PREFS = "blugateway_dedup"
 
-    fun processa(context: Context, mac: String, nome: String, trama: TramaBTHome, bytesOriginais: ByteArray, rssi: Int) {
+    fun processa(context: Context, mac: String, nome: String, trama: TramaBTHome, bytesOriginais: ByteArray, rssi: Int,
+                 scope: kotlinx.coroutines.CoroutineScope = CoroutineScope(Dispatchers.IO)) {
         val prefsDedup = requireNotNull(context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)) {
             "getSharedPreferences nunca deveria devolver null"
         }
@@ -53,7 +54,7 @@ object ProcessadorClique {
                 // automaticamente o intervalo GPS (1s em movimento,
                 // 30s parado recente, desligado após 5min parado)
                 pt.blugateway.net.GestorLocalizacao.actualizaRssi(context, mac, rssi)
-                CoroutineScope(Dispatchers.IO).launch {
+                scope.launch {
                     GestorTrajeto.registaPontoDeBeaconSeNecessario(context, comandoExistente)
                 }
             }
@@ -66,7 +67,7 @@ object ProcessadorClique {
             // nunca chegava a ser avaliado. A propria funcao sai cedo,
             // sem trabalho extra, se nao houver cenarios definidos
             // para este comando ou se nao houver historico.
-            CoroutineScope(Dispatchers.IO).launch {
+            scope.launch {
                 GestorSemelhancaTrajeto.verificaCenarios(context, comandoExistente.mac)
             }
 
@@ -86,7 +87,7 @@ object ProcessadorClique {
                             DiagnosticoEstado.atualizaCombinacao(nome, rssi, trama, bytesOriginais, combinacaoDisparada.nome)
                             GestorSons.tocaCombinacao(combinacaoDisparada.sequencia)
 
-                            CoroutineScope(Dispatchers.IO).launch {
+                            scope.launch {
                                 ExecutorAcoes.executaLista(
                                     context = context,
                                     acoes = combinacaoDisparada.acoes,
@@ -109,7 +110,7 @@ object ProcessadorClique {
                         val temAcoes = perfil?.eventos?.getOrNull(indice)?.isNotEmpty() == true
                         repo.registaClique(mac, indice, disparouAcao = temAcoes)
 
-                        CoroutineScope(Dispatchers.IO).launch {
+                        scope.launch {
                             ExecutorAcoes.executa(
                                 context = context,
                                 comando = comandoExistente,

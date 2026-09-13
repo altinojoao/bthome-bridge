@@ -45,10 +45,11 @@ class ScanReceiver : BroadcastReceiver() {
         // GestorTrajeto completem com o ecrã bloqueado -- sem isto o
         // Android pode matar o processo antes das acções executarem.
         val pendingResult = goAsync()
-        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+        val scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO)
+        scope.launch {
             try {
                 for (resultado in resultados) {
-                    processaResultado(context, resultado)
+                    processaResultado(context, resultado, scope)
                 }
             } finally {
                 pendingResult.finish()
@@ -56,7 +57,7 @@ class ScanReceiver : BroadcastReceiver() {
         }
     }
 
-    private fun processaResultado(context: Context, resultado: ScanResult) {
+    private fun processaResultado(context: Context, resultado: ScanResult, scope: kotlinx.coroutines.CoroutineScope) {
         val dispositivo = resultado.device ?: return
         val registo = resultado.scanRecord ?: return
         val mac = dispositivo.address ?: return
@@ -96,7 +97,8 @@ class ScanReceiver : BroadcastReceiver() {
             nome = nome,
             trama = trama,
             bytesOriginais = serviceData,
-            rssi = rssi
+            rssi = rssi,
+            scope = scope
         )
     }
 
