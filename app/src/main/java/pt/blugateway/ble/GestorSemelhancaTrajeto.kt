@@ -114,10 +114,22 @@ object GestorSemelhancaTrajeto {
         val (ultimoInicio, ultimoFim) = fronteiras.last()
 
         // Se a ultima paragem vai ate ao fim, o utilizador está parado
-        // AGORA -- a viagem relevante é a que levou até esta paragem.
+        // AGORA -- tipicamente porque acabou de chegar ao destino.
+        // A viagem relevante é a que levou até esta paragem.
         if (ultimoFim == pontosOrdenados.size - 1) {
-            val inicio = if (fronteiras.size >= 2) fronteiras[fronteiras.size - 2].second + 1 else 0
-            return if (inicio <= ultimoInicio) pontosOrdenados[inicio].timestamp else null
+            return if (fronteiras.size >= 2) {
+                // Há uma paragem anterior: a viagem é entre as duas paragens
+                val inicioViagem = fronteiras[fronteiras.size - 2].second + 1
+                pontosOrdenados[inicioViagem].timestamp
+            } else {
+                // Só há uma paragem (a chegada): a viagem começa no ponto 0.
+                // Isto acontece quando não houve paragem longa na origem
+                // (ex: beacon em alcance desde a saída de casa até chegar
+                // ao destino, sem paragem intermédia de 15+ min).
+                // Devolver o início do histórico para que a semelhança
+                // seja calculada sobre todos os pontos disponíveis.
+                pontosOrdenados[0].timestamp
+            }
         }
 
         // Há movimento depois da última paragem -- essa é a viagem actual.
