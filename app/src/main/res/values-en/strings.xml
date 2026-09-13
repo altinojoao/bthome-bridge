@@ -268,4 +268,7 @@
     <string name="sim_limiar_atingido">✓ Threshold %1$d%% reached!</string>
     <string name="sim_nao_atingiu">Final similarity %1$d%% (threshold is %2$d%%)</string>
     <string name="sim_escolher">Simulate scenario:</string>
+    <string name="encontrar_telemovel_titulo">Find phone</string>
+    <string name="encontrar_telemovel_desc">Tap the beacon to make the phone ring</string>
+    <string name="encontrar_telemovel_parar">Stop</string>
 </resources>

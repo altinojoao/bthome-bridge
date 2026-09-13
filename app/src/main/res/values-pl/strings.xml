@@ -268,4 +268,7 @@
     <string name="sim_limiar_atingido">✓ Próg %1$d%% osiągnięty!</string>
     <string name="sim_nao_atingiu">Końcowe podobieństwo %1$d%% (próg wynosi %2$d%%)</string>
     <string name="sim_escolher">Symuluj scenariusz:</string>
+    <string name="encontrar_telemovel_titulo">Znajdz telefon</string>
+    <string name="encontrar_telemovel_desc">Nacisnij beacon aby telefon dzwonil</string>
+    <string name="encontrar_telemovel_parar">Zatrzymaj</string>
 </resources>

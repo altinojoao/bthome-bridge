@@ -268,4 +268,7 @@
     <string name="sim_limiar_atingido">✓ Schwellenwert %1$d%% erreicht!</string>
     <string name="sim_nao_atingiu">Endähnlichkeit %1$d%% (Schwellenwert ist %2$d%%)</string>
     <string name="sim_escolher">Szenario simulieren:</string>
+    <string name="encontrar_telemovel_titulo">Telefon finden</string>
+    <string name="encontrar_telemovel_desc">Beacon tippen um das Telefon klingeln zu lassen</string>
+    <string name="encontrar_telemovel_parar">Stopp</string>
 </resources>
