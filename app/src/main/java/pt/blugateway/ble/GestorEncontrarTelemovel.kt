@@ -30,6 +30,12 @@ object GestorEncontrarTelemovel {
     fun estaEmAlarme(): Boolean = emAlarme
 
     fun toca(context: Context) {
+        // RingtoneManager e Vibrator precisam de correr na main thread.
+        // executaLista() é chamado em Dispatchers.IO -- postar para main.
+        Handler(Looper.getMainLooper()).post { tocaMainThread(context) }
+    }
+
+    private fun tocaMainThread(context: Context) {
         if (emAlarme) return
         emAlarme = true
         val ctx = context.applicationContext
