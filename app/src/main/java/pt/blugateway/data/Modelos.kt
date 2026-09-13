@@ -5,10 +5,9 @@ import org.json.JSONObject
 
 /**
  * Tipo de ação disparada por um clique.
- * CENARIO             -> cenário Shelly Cloud (GET manual_run)
- * URL                 -> endereço livre, GET ou POST, com marcadores
- * NTFY                -> tópico ntfy.sh, GET ou POST, com mensagem opcional e marcadores
- * ENCONTRAR_TELEMOVEL -> toca alarme no telemóvel até ser dispensado
+ * CENARIO -> cenário Shelly Cloud (GET manual_run)
+ * URL     -> endereço livre, GET ou POST, com marcadores
+ * NTFY    -> tópico ntfy.sh, GET ou POST, com mensagem opcional e marcadores
  */
 enum class TipoAcao(val codigo: Int) {
     CENARIO(0), URL(1), NTFY(2), ENCONTRAR_TELEMOVEL(3);
