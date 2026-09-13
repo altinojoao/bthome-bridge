@@ -83,6 +83,12 @@ object ExecutorAcoes {
     }
 
     private fun executaAcao(context: Context, acao: pt.blugateway.data.Acao, ctx: ContextoClique) {
+        // ENCONTRAR_TELEMOVEL não tem campo valor -- tratar antes do guard
+        if (acao.tipo == TipoAcao.ENCONTRAR_TELEMOVEL) {
+            GestorEncontrarTelemovel.toca(context)
+            return
+        }
+
         val valor = acao.valor.trim()
         if (valor.isEmpty()) return
 
