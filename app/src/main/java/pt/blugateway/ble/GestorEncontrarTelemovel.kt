@@ -13,7 +13,6 @@ import android.net.Uri
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
-import android.os.PowerManager
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -28,8 +27,9 @@ object GestorEncontrarTelemovel {
     private const val DURACAO_MAX_MS = 60_000L
 
     @Volatile private var emAlarme = false
-    private var mediaPlayer: MediaPlayer? = null
-    private var audioFocusRequest: Any? = null  // AudioFocusRequest em API 26+
+    private var ringtoneAtivo: android.media.Ringtone? = null
+    private var mediaPlayer: MediaPlayer? = null  // não usado, manter para compatibilidade
+    private var audioFocusRequest: Any? = null
     private val mainHandler = Handler(Looper.getMainLooper())
     private val pararAutomatico = Runnable { para(null) }
 
@@ -76,36 +76,42 @@ object GestorEncontrarTelemovel {
         am.setStreamVolume(AudioManager.STREAM_ALARM, maxVol, 0)
         Log.d(TAG, "[encontrar] volume alarme=$maxVol")
 
-        // MediaPlayer com wake lock -- garante que toca mesmo com ecrã apagado
+        // Ringtone de alarme do sistema com AudioAttributes ALARM
+        // Mais fiável que MediaPlayer: não precisa de prepare() e funciona
+        // em todos os fabricantes sem permissões extra de ficheiro
         try {
             val uri: Uri = android.media.RingtoneManager.getDefaultUri(
                 android.media.RingtoneManager.TYPE_ALARM
-            ) ?: android.provider.Settings.System.DEFAULT_ALARM_ALERT_URI
-
+            ) ?: android.media.RingtoneManager.getDefaultUri(
+                android.media.RingtoneManager.TYPE_RINGTONE
+            )
             Log.d(TAG, "[encontrar] URI alarme=$uri")
 
-            val mp = MediaPlayer().apply {
-                setAudioAttributes(
-                    AudioAttributes.Builder()
-                        .setUsage(AudioAttributes.USAGE_ALARM)
-                        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                        .setLegacyStreamType(AudioManager.STREAM_ALARM)
-                        .build()
-                )
-                setWakeMode(ctx, PowerManager.PARTIAL_WAKE_LOCK)
-                setDataSource(ctx, uri)
-                isLooping = true
-                prepare()  // síncrono -- URI local, não tem problema
-                start()
+            val ringtone = android.media.RingtoneManager.getRingtone(ctx, uri)
+            if (ringtone != null) {
+                ringtone.audioAttributes = AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_ALARM)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .setLegacyStreamType(AudioManager.STREAM_ALARM)
+                    .build()
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    ringtone.isLooping = true
+                }
+                ringtone.play()
+                // Guardar referência para poder parar depois
+                mediaPlayer = MediaPlayer()  // usado apenas como marcador de estado
+                // Guardar o ringtone para parar
+                ringtoneAtivo = ringtone
+                Log.d(TAG, "[encontrar] Ringtone a tocar: ${ringtone.isPlaying}")
+            } else {
+                Log.e(TAG, "[encontrar] Ringtone null -- sem URI de alarme")
             }
-            mediaPlayer = mp
-            Log.d(TAG, "[encontrar] MediaPlayer a tocar: ${mp.isPlaying}")
         } catch (e: Exception) {
-            Log.e(TAG, "[encontrar] MediaPlayer falhou: ${e.message}")
-            // Fallback: ToneGenerator no stream ALARM
+            Log.e(TAG, "[encontrar] Ringtone falhou: ${e.message}")
+            // Fallback: ToneGenerator
             try {
                 val tg = android.media.ToneGenerator(AudioManager.STREAM_ALARM, 100)
-                tg.startTone(android.media.ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD, DURACAO_MAX_MS.toInt())
+                tg.startTone(android.media.ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD, 60_000)
                 Log.d(TAG, "[encontrar] ToneGenerator fallback iniciado")
             } catch (e2: Exception) {
                 Log.e(TAG, "[encontrar] ToneGenerator também falhou: ${e2.message}")
@@ -143,6 +149,8 @@ object GestorEncontrarTelemovel {
         mainHandler.removeCallbacks(pararAutomatico)
         Log.d(TAG, "[encontrar] para()")
 
+        try { ringtoneAtivo?.stop() } catch (e: Exception) {}
+        ringtoneAtivo = null
         try { mediaPlayer?.stop(); mediaPlayer?.release() } catch (e: Exception) {}
         mediaPlayer = null
 
