@@ -3,6 +3,7 @@ package pt.blugateway.ble
 import android.content.Context
 import pt.blugateway.data.CenarioTrajeto
 import pt.blugateway.data.PontoTemplate
+import pt.blugateway.data.OrigemPonto
 import pt.blugateway.data.PontoTrajeto
 import pt.blugateway.data.Repositorio
 import pt.blugateway.net.ExecutorAcoes
