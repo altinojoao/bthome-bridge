@@ -77,7 +77,7 @@ object ProcessadorClique {
 
                     if (perfil != null && perfil.modoCombinacao) {
                         val combinacaoDisparada = GestorCombinacoes.acumula(
-                            mac, perfil.combinacoes, perfil.janelaCombinacaoMs, indice
+                            context, mac, perfil.combinacoes, perfil.janelaCombinacaoMs, indice
                         )
                         if (combinacaoDisparada != null) {
                             RegistoEventos.adicionaCombinacao(combinacaoDisparada.nome)

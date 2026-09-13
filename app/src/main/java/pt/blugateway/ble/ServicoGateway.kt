@@ -63,6 +63,7 @@ class ServicoGateway : Service() {
             startForeground(ID_NOTIFICACAO, notificacao)
         }
 
+        GestorCombinacoes.inicializa(applicationContext)
         GestorScan.iniciaEscuta(applicationContext)
         GestorScan.iniciaVigilante(applicationContext)
         GestorAlcance.inicia(applicationContext)
