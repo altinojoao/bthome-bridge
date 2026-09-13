@@ -85,6 +85,14 @@
              processo da app morto (ecrã apagado, app fechada). -->
         <receiver android:name=".ble.ScanReceiver" android:exported="false" />
 
+        <!-- Recebe o alarme periódico do AlarmManager para reiniciar o scan BLE.
+             O AlarmManager acorda o processo mesmo com ecrã bloqueado. -->
+        <receiver android:name=".ble.ReiniciaReceiver" android:exported="false">
+            <intent-filter>
+                <action android:name="pt.blugateway.REINICIA_SCAN" />
+            </intent-filter>
+        </receiver>
+
         <receiver android:name=".ble.RecetorPararAlarme" android:exported="false">
             <intent-filter><action android:name="pt.blugateway.PARAR_ALARME_TELEMOVEL" /></intent-filter>
         </receiver>

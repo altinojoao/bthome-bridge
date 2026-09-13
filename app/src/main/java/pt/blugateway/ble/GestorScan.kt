@@ -1,81 +1,68 @@
 package pt.blugateway.ble
 
+import android.app.AlarmManager
 import android.app.PendingIntent
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanSettings
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import android.os.ParcelUuid
 import android.util.Log
+import pt.blugateway.data.Repositorio
 
 /**
- * Liga/desliga o scan BLE em modo PendingIntent.
- *
- * Ao contrário de um ScanCallback normal, este scan sobrevive ao
- * fecho da app: o sistema entrega os resultados ao ScanReceiver
- * mesmo que o processo já não exista, recriando-o só para esse fim.
- * É esta característica que faz a app funcionar com o ecrã apagado.
- *
- * A escuta arranca automaticamente ao abrir a app (chamamos
- * iniciaEscuta no arranque, tal como a versão web chama
- * iniciaEscuta() no fim do script) e nunca precisa de ser desligada
- * manualmente — só o MODO DE EMPARELHAMENTO (aceitar candidatos
- * novos) é que o botão de procura liga/desliga.
+ * Gere o scan BLE via PendingIntent (sobrevive ao processo ser morto)
+ * e um AlarmManager que reinicia o scan periodicamente com o ecrã
+ * bloqueado -- o Handler da main thread não dispara quando o processo
+ * está suspenso, mas o AlarmManager acorda o processo garantidamente.
  */
 object GestorScan {
 
     private const val TAG = "GestorScan"
-    @Volatile private var scanAtivo = false
+    private const val INTERVALO_ALARME_MS = 45_000L  // reiniciar scan de 45 em 45s
+    private const val ACTION_REINICIA_SCAN = "pt.blugateway.REINICIA_SCAN"
 
-    // Segunda linha de defesa contra o Bluetooth parar de responder
-    // em silencio -- o mesmo problema ja diagnosticado e corrigido na
-    // versao web (ver GestorScan da app: aqui ja usamos ScanFilter em
-    // vez de scan sem filtro, o que evita a causa mais comum, mas o
-    // radio pode falhar por outras razoes). Se houver comandos
-    // associados e nenhum anuncio BLE chegar durante muito tempo,
-    // presumimos que o scan morreu e reiniciamo-lo.
-    @Volatile private var ultimaAtividade = System.currentTimeMillis()
-    private var handlerVigilante: android.os.Handler? = null
-    private val vigilanteRunnable = object : Runnable {
-        override fun run() {
-            val inatividade = System.currentTimeMillis() - ultimaAtividade
-            if (inatividade > TEMPO_INATIVIDADE_MS && contextoVigiado != null) {
-                val repo = pt.blugateway.data.Repositorio(contextoVigiado!!)
-                if (repo.comandos.value.isNotEmpty()) {
-                    Log.w(TAG, "sem atividade de scan há ${inatividade}ms, a reiniciar")
-                    RegistoEventos.adicionaResultado(
-                        contextoVigiado!!.getString(pt.blugateway.R.string.scan_reiniciado), false, ""
-                    )
-                    reinicia(contextoVigiado!!)
-                }
-            }
-            handlerVigilante?.postDelayed(this, INTERVALO_VERIFICACAO_MS)
-        }
-    }
+    @Volatile private var scanAtivo = false
     @Volatile private var contextoVigiado: Context? = null
 
-    private const val TEMPO_INATIVIDADE_MS = 60_000L   // 60s sem anúncios → reiniciar scan
-    private const val INTERVALO_VERIFICACAO_MS = 30_000L // verificar de 30 em 30s
-
-    /** Chamado pelo ScanReceiver sempre que qualquer anúncio BLE
-     *  chega — sinal de que o scan continua vivo. */
-    fun marcaAtividade() {
-        ultimaAtividade = System.currentTimeMillis()
-    }
+    fun marcaAtividade() { /* mantido por compatibilidade */ }
 
     fun iniciaVigilante(context: Context) {
         contextoVigiado = context.applicationContext
-        if (handlerVigilante != null) return
-        handlerVigilante = android.os.Handler(android.os.Looper.getMainLooper())
-        handlerVigilante?.postDelayed(vigilanteRunnable, INTERVALO_VERIFICACAO_MS)
+        agendaProximoAlarme(context.applicationContext)
     }
 
-    private fun reinicia(context: Context) {
+    /** Chamado pelo ReiniciaReceiver via AlarmManager. */
+    fun reiniciaSeNecessario(context: Context) {
+        val repo = Repositorio(context)
+        if (repo.comandos.value.isEmpty()) {
+            agendaProximoAlarme(context)
+            return
+        }
+        Log.d(TAG, "[scan] AlarmManager: a reiniciar scan BLE")
+        RegistoEventos.adicionaResultado(
+            context.getString(pt.blugateway.R.string.scan_reiniciado), false, ""
+        )
         paraEscuta(context)
-        ultimaAtividade = System.currentTimeMillis()
         iniciaEscuta(context)
+        agendaProximoAlarme(context)
+    }
+
+    private fun agendaProximoAlarme(context: Context) {
+        val am = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val intent = Intent(context, ReiniciaReceiver::class.java)
+            .setAction(ACTION_REINICIA_SCAN)
+        val pi = PendingIntent.getBroadcast(
+            context, 0, intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        // SET_AND_ALLOW_WHILE_IDLE acorda o processo mesmo em Doze mode
+        am.setAndAllowWhileIdle(
+            AlarmManager.RTC_WAKEUP,
+            System.currentTimeMillis() + INTERVALO_ALARME_MS,
+            pi
+        )
     }
 
     fun suportaBLE(): Boolean {
@@ -83,85 +70,45 @@ object GestorScan {
         return adapter.bluetoothLeScanner != null
     }
 
-    fun bluetoothLigado(): Boolean {
-        val adapter = BluetoothAdapter.getDefaultAdapter() ?: return false
-        return adapter.isEnabled
-    }
+    fun estaAtivo(): Boolean = scanAtivo
 
-    /** Arranca a escuta em fundo. Idempotente — chamar várias vezes não duplica o registo. */
+    @Synchronized
     fun iniciaEscuta(context: Context) {
         if (scanAtivo) return
         val adapter = BluetoothAdapter.getDefaultAdapter() ?: return
         if (!adapter.isEnabled) return
         val scanner = adapter.bluetoothLeScanner ?: return
 
+        val filtro = ScanFilter.Builder()
+            .setServiceUuid(ParcelUuid.fromString(BTHome.SERVICE_UUID_STR))
+            .build()
+        val settings = ScanSettings.Builder()
+            .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
+            .build()
+
         try {
-            // IMPORTANTE: ao contrário da versão web (onde filtros de
-            // serviço de 16-bit não disparavam advertisementreceived de
-            // forma fiável no Chrome), aqui usamos um ScanFilter real
-            // pelo serviço BTHome. Isto não é só uma otimização: um scan
-            // SEM filtros é parado automaticamente pelo sistema quando o
-            // ecrã se apaga, e só retoma quando o ecrã volta a ligar --
-            // o que quebraria exatamente o requisito de funcionar com o
-            // ecrã apagado. Com um filtro ativo, o Android mantém o scan
-            // vivo mesmo de ecrã apagado.
-            //
-            // SCAN_MODE_LOW_LATENCY em vez de LOW_POWER, e SEM
-            // reportDelay: o utilizador quer resposta rápida sempre,
-            // não só em primeiro plano. LOW_POWER escuta em ciclos
-            // curtos (~0.5s) com longas pausas de rádio desligado
-            // (vários segundos) entre eles -- um clique que aconteça
-            // durante a pausa só é apanhado no ciclo seguinte, o que
-            // explica atrasos variáveis de vários segundos. reportDelay
-            // agrupava resultados em lotes antes de os entregar, o que
-            // também atrasava tudo mesmo com o rádio já a ouvir.
-            // O compromisso: se algum fabricante suspender este scan em
-            // segundo plano por não termos reportDelay, o vigilante
-            // (iniciaVigilante) já deteta e reinicia -- é preferível a
-            // ter sempre alguns segundos de atraso mesmo em primeiro
-            // plano.
-            val filtro = ScanFilter.Builder()
-                .setServiceData(
-                    ParcelUuid.fromString(BTHome.SERVICE_UUID_STR),
-                    byteArrayOf(), byteArrayOf() // mascara vazia: aceita qualquer conteudo do serviço, só filtra pelo UUID
-                )
-                .build()
-
-            val settings = ScanSettings.Builder()
-                .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
-                .apply {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
-                    }
-                }
-                .build()
-
             scanner.startScan(listOf(filtro), settings, pendingIntent(context))
             scanAtivo = true
-        } catch (e: SecurityException) {
-            Log.w(TAG, "sem permissão de Bluetooth ao arrancar escuta", e)
+            Log.d(TAG, "[scan] scan iniciado")
         } catch (e: Exception) {
-            Log.w(TAG, "falha ao arrancar escuta", e)
+            Log.e(TAG, "[scan] erro ao iniciar scan: ${e.message}")
         }
     }
 
+    @Synchronized
     fun paraEscuta(context: Context) {
+        if (!scanAtivo) return
         val adapter = BluetoothAdapter.getDefaultAdapter() ?: return
         val scanner = adapter.bluetoothLeScanner ?: return
         try {
             scanner.stopScan(pendingIntent(context))
-        } catch (e: Exception) {
-            Log.w(TAG, "falha ao parar escuta", e)
-        }
+        } catch (e: Exception) { /* ignorar */ }
         scanAtivo = false
+        Log.d(TAG, "[scan] scan parado")
     }
 
-    fun estaAtiva(): Boolean = scanAtivo
-
     private fun pendingIntent(context: Context): PendingIntent {
-        val intent = Intent(context, ScanReceiver::class.java).apply {
-            action = "pt.blugateway.SCAN_RESULT"
-        }
+        val intent = Intent(context, ScanReceiver::class.java)
         val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
         return PendingIntent.getBroadcast(context, 0, intent, flags)
     }
