@@ -83,8 +83,11 @@ object ExecutorAcoes {
     }
 
     private fun executaAcao(context: Context, acao: pt.blugateway.data.Acao, ctx: ContextoClique) {
+        android.util.Log.d("BluGateway", "[executor] tipo=${acao.tipo} valor='${acao.valor}'")
+
         // ENCONTRAR_TELEMOVEL não tem campo valor -- tratar antes do guard
         if (acao.tipo == TipoAcao.ENCONTRAR_TELEMOVEL) {
+            android.util.Log.d("BluGateway", "[executor] a chamar GestorEncontrarTelemovel.toca()")
             GestorEncontrarTelemovel.toca(context)
             return
         }
