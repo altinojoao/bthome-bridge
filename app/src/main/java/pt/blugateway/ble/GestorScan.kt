@@ -70,6 +70,10 @@ object GestorScan {
         return adapter.bluetoothLeScanner != null
     }
 
+    fun bluetoothLigado(): Boolean {
+        return BluetoothAdapter.getDefaultAdapter()?.isEnabled == true
+    }
+
     fun estaAtivo(): Boolean = scanAtivo
 
     @Synchronized
