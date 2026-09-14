@@ -193,10 +193,35 @@ object GestorAlcance {
         return agendaAtivaAgora(comando.agendaDias, diaDaSemanaAtual0(), horaAtualEmMinutos())
     }
 
+    // Detecta se o PROCESSO esteve suspenso (não só sem sinal do
+    // beacon) -- com o ecrã bloqueado, o Android pode suspender o
+    // processo inteiro durante minutos; quando acorda, ultimoSinalEm
+    // reflecte o momento em que o processo adormeceu, não uma falha
+    // real do beacon. O RSSI actual (mais recente, chegou já depois
+    // do processo acordar) é a prova definitiva: se for bom, o beacon
+    // nunca esteve fora de alcance -- foi o telemóvel que dormiu.
+    private var ultimaExecucaoVerificaTodos = 0L
+
+    private fun processoEsteveSuspenso(agora: Long): Boolean {
+        if (ultimaExecucaoVerificaTodos == 0L) return false  // primeira execução
+        val hiato = agora - ultimaExecucaoVerificaTodos
+        // Hiato muito maior que o intervalo esperado (15s) indica que
+        // o Handler não correu durante esse tempo -- processo suspenso,
+        // não falha de agendamento normal (que teria no máximo alguns
+        // segundos de atraso, nunca minutos).
+        return hiato > INTERVALO_VERIFICACAO_MS * 3
+    }
+
     private fun verificaTodos() {
         val ctx = contexto ?: return
         val repo = Repositorio(ctx)
         val agora = System.currentTimeMillis()
+        val processoSuspenso = processoEsteveSuspenso(agora)
+        ultimaExecucaoVerificaTodos = agora
+
+        if (processoSuspenso) {
+            Log.i(TAG, "processo esteve suspenso -- concedendo janela de recuperação a todos os comandos")
+        }
 
         for (comando in repo.comandos.value) {
             if (!comando.alertaAlcance) continue
@@ -226,7 +251,23 @@ object GestorAlcance {
             val mediana = medianaRssi(comando.mac) ?: comando.rssi
             val presente = mediana?.let { decidePresencaComHisterese(comando.mac, it, comando.rssiLimite) } ?: true
             val sinalFraco = !presente
-            val foraDeAlcanceAgora = ultimoSinal != null && (semSinalDemasiadoTempo || sinalFraco)
+            var foraDeAlcanceAgora = ultimoSinal != null && (semSinalDemasiadoTempo || sinalFraco)
+
+            // Janela de recuperação: se o processo esteve suspenso
+            // (não o beacon), e o RSSI mais recente conhecido é bom
+            // (>= limiar de presente), o "sem sinal há muito tempo"
+            // não reflecte uma falha real do beacon -- foi o telemóvel
+            // que esteve incontactável. O comando.rssi é sempre
+            // actualizado a cada anúncio processado (ver atualizaSinal),
+            // incluindo o que acordou o processo agora mesmo.
+            if (processoSuspenso && semSinalDemasiadoTempo && comando.rssi != null &&
+                comando.rssi!! >= LIMIAR_RSSI_PRESENTE_DBM) {
+                RegistoDiagnostico.regista(
+                    ctx,
+                    "alcance[${comando.mac}]: processo esteve suspenso, RSSI actual=${comando.rssi} bom -- ignorando falso 'sem sinal'"
+                )
+                foraDeAlcanceAgora = sinalFraco  // ainda pode disparar por RSSI fraco, só não por "sem sinal"
+            }
 
             // diagnostico temporario: grava o estado exato de cada
             // verificacao, para investigar disparos do alarme sem
