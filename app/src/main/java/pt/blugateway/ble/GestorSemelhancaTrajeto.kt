@@ -236,9 +236,50 @@ object GestorSemelhancaTrajeto {
     }
 
     /**
-     * Devolve o sinal do produto vetorial (p1->p2) x (p1->p3): usado
-     * para saber de que lado de uma linha um ponto esta.
+     * Verifica se o utilizador está PARADO AGORA, olhando apenas para
+     * os últimos pontos recentes do trajeto (não o histórico completo
+     * desde o início da viagem). Usado como guarda antes de avaliar
+     * checkpoints: se o utilizador está parado (dentro de um raio
+     * pequeno nos últimos minutos), a navegação não está em curso, e
+     * qualquer cruzamento geométrico de uma barreira é jitter de GPS,
+     * não deslocação real -- ver caso confirmado em produção: 480
+     * pontos de ruído GPS indoor ao longo de 4h parado em casa
+     * cruzaram as 4 barreiras de um template curto (697m) por puro
+     * acaso estatístico, mesmo sem o utilizador se ter deslocado.
      */
+    private fun utilizadorParadoAgora(
+        trajetoAtual: List<PontoTrajeto>,
+        raioMetros: Double = 100.0,
+        janelaMs: Long = 3 * 60_000L
+    ): Boolean {
+        if (trajetoAtual.size < 2) return false
+        val ultimoTs = trajetoAtual.last().timestamp
+        val recentes = trajetoAtual.filter { ultimoTs - it.timestamp <= janelaMs }
+        if (recentes.size < 2) return false
+        val centro = recentes.first()
+        return recentes.all {
+            distanciaMetros(centro.latitude, centro.longitude, it.latitude, it.longitude) <= raioMetros
+        }
+    }
+
+    /**
+     * Migração automática: cenários gravados antes dos checkpoints
+     * existirem ainda só têm o template denso -- gerar os checkpoints
+     * agora e guardar, sem obrigar a regravar o cenário.
+     */
+    private fun checkpointsDoCenario(
+        context: Context,
+        repo: Repositorio,
+        cenario: CenarioTrajeto
+    ): List<BarreiraCheckpoint> {
+        if (cenario.checkpoints.isNotEmpty()) return cenario.checkpoints
+        val gerados = geraCheckpoints(cenario.template)
+        if (gerados.isNotEmpty()) {
+            repo.atualizaCenarioTrajeto(cenario.copy(checkpoints = gerados))
+        }
+        return gerados
+    }
+
     private fun ladoDaLinha(p1x: Double, p1y: Double, p2x: Double, p2y: Double, p3x: Double, p3y: Double): Double =
         (p2x - p1x) * (p3y - p1y) - (p2y - p1y) * (p3x - p1x)
 
@@ -495,21 +536,24 @@ object GestorSemelhancaTrajeto {
             // checkpoints existirem ainda só têm o template denso --
             // gerar os checkpoints agora e guardar, sem obrigar a
             // regravar o cenário.
-            val checkpoints = if (cenario.checkpoints.isNotEmpty()) {
-                cenario.checkpoints
-            } else {
-                val gerados = geraCheckpoints(cenario.template)
-                if (gerados.isNotEmpty()) {
-                    repo.atualizaCenarioTrajeto(cenario.copy(checkpoints = gerados))
-                }
-                gerados
-            }
+            val checkpoints = checkpointsDoCenario(context, repo, cenario)
             if (checkpoints.isEmpty()) {
                 RegistoDiagnostico.regista(context, "[D-cenarios] cenario='${cenario.nome}' sem checkpoints válidos, ignorado")
                 continue
             }
 
             val indiceAntes = repo.proximoCheckpointEsperado(cenario.id, inicio)
+
+            // Guarda contra jitter de GPS: se o utilizador está parado
+            // agora (últimos minutos dentro de um raio pequeno), não
+            // avaliar checkpoints -- não há navegação em curso, e
+            // qualquer cruzamento geométrico seria ruído acumulado,
+            // não deslocação real.
+            if (utilizadorParadoAgora(trajetoComPosAtual)) {
+                RegistoDiagnostico.regista(context, "[D-cenarios] cenario='${cenario.nome}' utilizador parado -- avaliação de checkpoints suspensa")
+                continue
+            }
+
             val indiceDepois = avaliaCheckpoints(trajetoComPosAtual, checkpoints, indiceAntes)
             if (indiceDepois != indiceAntes) {
                 repo.avancaCheckpoint(cenario.id, inicio, indiceDepois)
