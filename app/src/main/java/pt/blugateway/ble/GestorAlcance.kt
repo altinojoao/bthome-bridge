@@ -82,6 +82,18 @@ object GestorAlcance {
         }
     }
 
+    /**
+     * Indica se o beacon está actualmente considerado presente (RSSI
+     * válido e acima do limiar, com histerese). Usado por outros
+     * gestores (ex: GestorSemelhancaTrajeto) para exigir confirmação
+     * de presença real do beacon antes de avaliar cenários de trajeto
+     * -- evita avaliar contra pontos GPS que não têm nenhum sinal BLE
+     * recente a confirmá-los.
+     * Por omissão (sem leituras ainda) devolve true, coerente com o
+     * valor inicial de presencaAtual.
+     */
+    fun estaPresente(mac: String): Boolean = presencaAtual[mac] ?: true
+
     fun inicia(context: Context) {
         contexto = context.applicationContext
         if (handler != null) return
