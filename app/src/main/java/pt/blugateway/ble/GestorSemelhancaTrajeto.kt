@@ -246,7 +246,14 @@ object GestorSemelhancaTrajeto {
         }
 
         val cobertura = pontosAceites.toDouble() / trajetoAtual.size
-        val semMM = if (cobertura >= 0.4) (maxProgMetros / total).coerceIn(0.0, 1.0) else 0.0
+        // Mínimo absoluto de pontos GPS, não apenas fracção: com 1-2
+        // pontos, qualquer ponto "perto" de um segmento do template
+        // cobre trivialmente 100% de si mesmo, mesmo estando a vários
+        // km de distância real do percurso -- confirmado em produção:
+        // 1 ponto a 5.6km do template mais próximo disparou com 95%.
+        val MINIMO_PONTOS_GPS = 5
+        val semMM = if (cobertura >= 0.4 && trajetoAtual.size >= MINIMO_PONTOS_GPS)
+            (maxProgMetros / total).coerceIn(0.0, 1.0) else 0.0
 
         // --- LCSS melhorado (fallback e complemento) ---
         val saltoIdeal = if (dAvgTemplate > 0)
@@ -304,12 +311,14 @@ object GestorSemelhancaTrajeto {
             val avanco = (totalAvancos.toDouble() / nAvancos) / template.size
             if (avanco > 0.25) maxOf(0.2, 1.0 - (avanco - 0.25) * 3.0) else 1.0
         } else 1.0
-        val semLcss = (semLcssRaw * factorDireccao * factorSaltos).coerceIn(0.0, 1.0)
+        val semLcss = if (trajetoAtual.size >= MINIMO_PONTOS_GPS)
+            (semLcssRaw * factorDireccao * factorSaltos).coerceIn(0.0, 1.0) else 0.0
 
         // Resultado final com factorDireccao aplicado a ambos:
         // map matching tem prioridade quando tem boa cobertura
         val semMMComDir = (semMM * factorDireccao).coerceIn(0.0, 1.0)
-        return if (cobertura >= 0.6) maxOf(semMMComDir, semLcss * 0.8)
+        return if (trajetoAtual.size < MINIMO_PONTOS_GPS) 0.0
+        else if (cobertura >= 0.6) maxOf(semMMComDir, semLcss * 0.8)
         else maxOf(semMMComDir, semLcss)
     }
 
