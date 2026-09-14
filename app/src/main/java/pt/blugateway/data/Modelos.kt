@@ -427,7 +427,7 @@ enum class ModoRetencaoTrajeto {
  * geraCheckpoints), mas ajustável na UI arrastando os extremos A/B
  * da barreira, ou o ponto médio para deslocar a barreira inteira.
  */
-data class Checkpoint(
+data class BarreiraCheckpoint(
     var ordem: Int,
     var latA: Double, var lonA: Double,
     var latB: Double, var lonB: Double,
@@ -441,9 +441,9 @@ data class Checkpoint(
     }
 
     companion object {
-        fun deJson(o: JSONObject): Checkpoint? {
+        fun deJson(o: JSONObject): BarreiraCheckpoint? {
             if (!o.has("latA") || !o.has("lonA") || !o.has("latB") || !o.has("lonB")) return null
-            return Checkpoint(
+            return BarreiraCheckpoint(
                 ordem = o.optInt("ordem", 0),
                 latA = o.optDouble("latA"), lonA = o.optDouble("lonA"),
                 latB = o.optDouble("latB"), lonB = o.optDouble("lonB"),
@@ -492,14 +492,14 @@ data class CenarioTrajeto(
     // Lista vazia em cenarios criados antes deste campo existir.
     var macsAdicionais: List<String> = emptyList(),
     var template: List<PontoTemplate>,
-    // Barreiras numeradas derivadas do template (ver Checkpoint) --
+    // Barreiras numeradas derivadas do template (ver BarreiraCheckpoint) --
     // a avaliação do cenário passa a ser "atravessou os checkpoints
     // por ordem", não a comparação contínua de trajecto. Vazio em
     // cenários gravados antes deste campo existir -- gerado
     // automaticamente na primeira leitura (ver GestorSemelhancaTrajeto.
     // garanteCheckpoints) a partir do template já existente, para não
     // obrigar a regravar cenários antigos.
-    var checkpoints: List<Checkpoint> = emptyList(),
+    var checkpoints: List<BarreiraCheckpoint> = emptyList(),
     // MAC do comando de onde o template foi IMPORTADO -- so
     // informativo (mostrado na UI, "template importado de X"), nunca
     // usado na avaliacao: o cenario compara sempre o historico de
@@ -603,7 +603,7 @@ data class CenarioTrajeto(
                 },
                 template = template,
                 checkpoints = o.optJSONArray("checkpoints")?.let { arr ->
-                    (0 until arr.length()).mapNotNull { Checkpoint.deJson(arr.getJSONObject(it)) }
+                    (0 until arr.length()).mapNotNull { BarreiraCheckpoint.deJson(arr.getJSONObject(it)) }
                 } ?: emptyList(),
                 macOrigemTemplate = if (o.has("macOrigemTemplate")) o.optString("macOrigemTemplate") else null,
                 limiarPercentagem = o.optInt("limiarPercentagem", 80),
