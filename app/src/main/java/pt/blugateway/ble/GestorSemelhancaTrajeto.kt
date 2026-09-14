@@ -169,26 +169,6 @@ object GestorSemelhancaTrajeto {
         if (template.isEmpty() || trajetoAtual.isEmpty()) return 0.0
         if (template.size < 2) return 0.0
 
-        // Validação de continuidade física: rejeita saltos de posição
-        // implausíveis entre pontos GPS consecutivos (> 200 km/h),
-        // sinal de que os pontos não representam uma navegação real
-        // contínua -- podem ser leituras isoladas de GPS com erro
-        // grande, ou combinação de pontos de sessões/beacons diferentes
-        // que não formam de facto um percurso seguido.
-        if (trajetoAtual.size >= 2) {
-            val VELOCIDADE_MAXIMA_MS = 200.0 / 3.6  // 200 km/h em m/s
-            for (i in 0 until trajetoAtual.size - 1) {
-                val d = distanciaMetros(
-                    trajetoAtual[i].latitude, trajetoAtual[i].longitude,
-                    trajetoAtual[i + 1].latitude, trajetoAtual[i + 1].longitude
-                )
-                val dtSegundos = (trajetoAtual[i + 1].timestamp - trajetoAtual[i].timestamp) / 1000.0
-                if (dtSegundos > 0.5 && d / dtSegundos > VELOCIDADE_MAXIMA_MS) {
-                    return 0.0  // salto implausível -- não é uma trajectória contínua real
-                }
-            }
-        }
-
         // --- Geometria do template ---
         val distancias = (0 until template.size - 1).map { i ->
             distanciaMetros(template[i].lat, template[i].lon, template[i+1].lat, template[i+1].lon)
