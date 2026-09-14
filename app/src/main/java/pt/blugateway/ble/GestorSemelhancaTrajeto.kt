@@ -1,6 +1,7 @@
 package pt.blugateway.ble
 
 import android.content.Context
+import kotlinx.coroutines.sync.withLock
 import pt.blugateway.data.CenarioTrajeto
 import pt.blugateway.data.PontoTemplate
 import pt.blugateway.data.OrigemPonto
@@ -374,7 +375,13 @@ object GestorSemelhancaTrajeto {
     @Volatile
     var pontoGravadoNestaSessao: Boolean = false
 
-    suspend fun verificaCenarios(context: Context, mac: String) {
+    private val mutexVerificacao = kotlinx.coroutines.sync.Mutex()
+
+    suspend fun verificaCenarios(context: Context, mac: String) = mutexVerificacao.withLock {
+        verificaCenariosInterno(context, mac)
+    }
+
+    private suspend fun verificaCenariosInterno(context: Context, mac: String) {
         // Não avaliar cenários até ter pelo menos 1 ponto GPS gravado
         // nesta sessão. Ao reiniciar a app (update, reboot, crash),
         // o histórico acumulado de viagens anteriores já pode ter
@@ -407,7 +414,7 @@ object GestorSemelhancaTrajeto {
 
         for (cenario in cenarios) {
             val jaDisparado = repo.jaDisparadoNestaViagem(cenario.id, inicio)
-            RegistoDiagnostico.regista(context, "[D-cenarios] cenario='${cenario.nome}' template=${cenario.template.size}pts jaDisparado=$jaDisparado limiar=${cenario.limiarPercentagem}%")
+            RegistoDiagnostico.regista(context, "[D-cenarios] cenario='${cenario.nome}' id=${cenario.id.take(8)} template=${cenario.template.size}pts jaDisparado=$jaDisparado limiar=${cenario.limiarPercentagem}%")
             if (jaDisparado) continue
 
             // Agregar historico de todos os MACs do cenario -- o MAC
