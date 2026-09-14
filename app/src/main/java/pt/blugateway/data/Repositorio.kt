@@ -290,51 +290,40 @@ class Repositorio private constructor(context: Context) {
      * diretamente) para simplificar; o volume e' minimo (um par
      * id->timestamp por cenario).
      */
-    private fun mapaBloqueioDisparo(): MutableMap<String, String> {
-        val raw = prefs.getString("cenarios_disparados", null) ?: return mutableMapOf()
-        return try {
-            val obj = JSONObject(raw)
-            val mapa = mutableMapOf<String, String>()
-            obj.keys().forEach { chave -> mapa[chave] = obj.optString(chave) }
-            mapa
-        } catch (e: Exception) {
-            mutableMapOf()
-        }
-    }
-
-    private fun guardaMapaBloqueioDisparo(mapa: Map<String, String>) {
-        val obj = JSONObject()
-        mapa.forEach { (chave, valor) -> obj.put(chave, valor) }
-        prefs.edit().putString("cenarios_disparados", obj.toString()).apply()
-    }
-
     /**
      * Verifica se o cenário já disparou nesta viagem específica.
-     * Guarda "tsDisparo:inicioViagem" -- o inicioViagem activo no
-     * momento do disparo (calculado com o geofence do cenário).
-     * Se o inicioViagem mudar (nova saída do geofence = nova viagem),
-     * o bloqueio é automaticamente levantado.
+     * Guarda duas chaves separadas: disparo_ts_<id> (timestamp real do
+     * disparo) e disparo_iv_<id> (inicioViagem activo nesse momento).
+     * Chaves separadas em vez de uma string composta "ts:iv" -- elimina
+     * qualquer ambiguidade de parsing e é imune a dados de formatos
+     * antigos incompatíveis (getLong com valor por omissão -1 trata
+     * dados ausentes/corrompidos como "nunca disparado", nunca como
+     * um erro que bloqueia o disparo actual).
      * Tolerância de 5min para variações do algoritmo ao reiniciar.
      */
     fun jaDisparadoNestaViagem(cenarioId: String, inicioViagem: Long): Boolean {
-        val entrada = mapaBloqueioDisparo()[cenarioId] ?: return false
-        val partes = entrada.toString().split(":")
-        if (partes.size != 2) return false
-        val inicioViagemNoDisparo = partes[1].toLongOrNull() ?: return false
+        val inicioViagemNoDisparo = prefs.getLong("disparo_iv_$cenarioId", -1L)
+        if (inicioViagemNoDisparo == -1L) return false
         val diff = Math.abs(inicioViagemNoDisparo - inicioViagem)
         return diff < 5 * 60 * 1000L
     }
 
     fun marcaDisparado(cenarioId: String, inicioViagem: Long) {
-        val mapa = mapaBloqueioDisparo()
-        mapa[cenarioId] = "${System.currentTimeMillis()}:$inicioViagem"
-        guardaMapaBloqueioDisparo(mapa)
+        // commit() síncrono: garante que o bloqueio está em disco antes
+        // de continuar -- importante porque o AlarmManager pode reiniciar
+        // o scan (e nalguns casos o processo) logo a seguir a um disparo.
+        prefs.edit()
+            .putLong("disparo_ts_$cenarioId", System.currentTimeMillis())
+            .putLong("disparo_iv_$cenarioId", inicioViagem)
+            .commit()
     }
 
     private fun limpaBloqueioDisparo(cenarioId: String) {
-        val mapa = mapaBloqueioDisparo()
-        mapa.remove(cenarioId)
-        guardaMapaBloqueioDisparo(mapa)
+        prefs.edit()
+            .remove("disparo_ts_$cenarioId")
+            .remove("disparo_iv_$cenarioId")
+            .remove("cenarios_disparados")  // limpar também o formato antigo, se existir
+            .apply()
     }
 
     fun associaComando(mac: String, nome: String, perfilId: String) {
