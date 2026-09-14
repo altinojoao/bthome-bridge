@@ -414,6 +414,45 @@ enum class ModoRetencaoTrajeto {
  *  template e uma forma geometrica de referencia, nao um historico
  *  temporal). A ORDEM na lista e' que importa -- representa a
  *  sequencia do inicio ao fim do percurso de referencia. */
+/**
+ * Uma barreira numerada ao longo do percurso: um segmento de recta
+ * perpendicular à direcção local do trajeto, que o utilizador deve
+ * atravessar, por ordem (ordem 1, depois 2, etc.), para o cenário
+ * disparar. Substitui a comparação contínua de trajecto (map
+ * matching) por uma verificação simples e robusta: "o GPS cruzou
+ * esta linha, na direcção certa?" -- sem projecções, sem janelas
+ * adaptativas, sem cálculo de percentagem de progresso.
+ *
+ * Gerada automaticamente a partir do template denso (ver
+ * geraCheckpoints), mas ajustável na UI arrastando os extremos A/B
+ * da barreira, ou o ponto médio para deslocar a barreira inteira.
+ */
+data class Checkpoint(
+    var ordem: Int,
+    var latA: Double, var lonA: Double,
+    var latB: Double, var lonB: Double,
+    var nome: String = ""
+) {
+    fun paraJson(): JSONObject = JSONObject().apply {
+        put("ordem", ordem)
+        put("latA", latA); put("lonA", lonA)
+        put("latB", latB); put("lonB", lonB)
+        if (nome.isNotBlank()) put("nome", nome)
+    }
+
+    companion object {
+        fun deJson(o: JSONObject): Checkpoint? {
+            if (!o.has("latA") || !o.has("lonA") || !o.has("latB") || !o.has("lonB")) return null
+            return Checkpoint(
+                ordem = o.optInt("ordem", 0),
+                latA = o.optDouble("latA"), lonA = o.optDouble("lonA"),
+                latB = o.optDouble("latB"), lonB = o.optDouble("lonB"),
+                nome = o.optString("nome", "")
+            )
+        }
+    }
+}
+
 data class PontoTemplate(val lat: Double, val lon: Double) {
     fun paraJson(): JSONObject = JSONObject().apply {
         put("lat", lat)
@@ -453,6 +492,14 @@ data class CenarioTrajeto(
     // Lista vazia em cenarios criados antes deste campo existir.
     var macsAdicionais: List<String> = emptyList(),
     var template: List<PontoTemplate>,
+    // Barreiras numeradas derivadas do template (ver Checkpoint) --
+    // a avaliação do cenário passa a ser "atravessou os checkpoints
+    // por ordem", não a comparação contínua de trajecto. Vazio em
+    // cenários gravados antes deste campo existir -- gerado
+    // automaticamente na primeira leitura (ver GestorSemelhancaTrajeto.
+    // garanteCheckpoints) a partir do template já existente, para não
+    // obrigar a regravar cenários antigos.
+    var checkpoints: List<Checkpoint> = emptyList(),
     // MAC do comando de onde o template foi IMPORTADO -- so
     // informativo (mostrado na UI, "template importado de X"), nunca
     // usado na avaliacao: o cenario compara sempre o historico de
@@ -508,6 +555,9 @@ data class CenarioTrajeto(
             put("macsAdicionais", JSONArray().apply { macsAdicionais.forEach { put(it) } })
         }
         put("template", JSONArray().apply { template.forEach { put(it.paraJson()) } })
+        if (checkpoints.isNotEmpty()) {
+            put("checkpoints", JSONArray().apply { checkpoints.forEach { put(it.paraJson()) } })
+        }
         macOrigemTemplate?.let { put("macOrigemTemplate", it) }
         put("limiarPercentagem", limiarPercentagem)
         put("raioMetros", raioMetros)
@@ -552,6 +602,9 @@ data class CenarioTrajeto(
                     else emptyList()
                 },
                 template = template,
+                checkpoints = o.optJSONArray("checkpoints")?.let { arr ->
+                    (0 until arr.length()).mapNotNull { Checkpoint.deJson(arr.getJSONObject(it)) }
+                } ?: emptyList(),
                 macOrigemTemplate = if (o.has("macOrigemTemplate")) o.optString("macOrigemTemplate") else null,
                 limiarPercentagem = o.optInt("limiarPercentagem", 80),
                 raioMetros = o.optInt("raioMetros", 40),

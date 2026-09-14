@@ -26,16 +26,6 @@ object GestorSemelhancaTrajeto {
     // Os cenários usam os seus próprios raioGeofenceMetros e minutosParaNovaViagem
     internal const val RAIO_PARAGEM_METROS_PADRAO = 150.0
     internal const val TEMPO_MIN_PARAGEM_MS_PADRAO = 15L * 60 * 1000
-    // Fracao maxima do template que o cursor pode saltar entre dois
-    // pontos reais consecutivos. Era 0.15 (15%); aumentado para 0.40
-    // (40%) porque com intervalos de GPS de 5s a velocidades de carro
-    // (30km/h = ~42m entre pontos), o cursor precisa de saltar zonas
-    // do template sem cobertura GPS. Com 40%, um unico ponto real pode
-    // "cobrir" ate 40% do template se o proximo ponto correspondente
-    // estiver dentro do raio -- evita bloquear em lacunas inevitaveis
-    // a alta velocidade. Validado em Python para varios cenarios de
-    // velocidade e intervalo antes de implementar.
-    private const val SALTO_MAXIMO_FRACAO = 0.40
 
     fun distanciaMetros(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
         val r = 6371000.0
@@ -161,182 +151,152 @@ object GestorSemelhancaTrajeto {
         return tc to distanciaMetros(px, py, ax + tc * dx, ay + tc * dy)
     }
 
-    fun calculaSemelhanca(
-        trajetoAtual: List<PontoTrajeto>,
-        template: List<PontoTemplate>,
-        raioMetros: Int
-    ): Double {
-        if (template.isEmpty() || trajetoAtual.isEmpty()) return 0.0
-        if (template.size < 2) return 0.0
+    // Comprimento por omissao de cada barreira de checkpoint, em metros.
+    // Suficientemente largo para cobrir a rua/via toda incluindo erro
+    // normal de GPS (10-20m), sem ser tao largo que duas barreiras
+    // vizinhas se sobreponham num percurso com curvas apertadas.
+    private const val COMPRIMENTO_BARREIRA_METROS = 90.0
 
-        // --- Geometria do template ---
+    // Numero de checkpoints gerados automaticamente a partir de um
+    // template denso -- 4 da uma cobertura razoavel (inicio, dois
+    // intermedios, fim) sem sobrecarregar a UI de edicao.
+    private const val NUM_CHECKPOINTS_OMISSAO = 4
+
+    /**
+     * Gera checkpoints (barreiras numeradas) a partir de um template
+     * denso, espacados por DISTANCIA PERCORRIDA (nao por indice) --
+     * um template com pontos irregularmente espacados (GPS mais denso
+     * nas curvas, mais esparso em troços rectos) ainda produz
+     * checkpoints uniformemente distribuidos ao longo do percurso
+     * real. O ultimo checkpoint fica sempre no ultimo ponto do
+     * template (o destino).
+     *
+     * Em cada ponto escolhido, a barreira e tracada PERPENDICULAR a
+     * direcao local do percurso (vetor entre o ponto anterior e o
+     * seguinte no template), centrada nesse ponto, com comprimento
+     * COMPRIMENTO_BARREIRA_METROS.
+     */
+    fun geraCheckpoints(
+        template: List<PontoTemplate>,
+        numCheckpoints: Int = NUM_CHECKPOINTS_OMISSAO
+    ): List<pt.blugateway.data.Checkpoint> {
+        if (template.size < 2 || numCheckpoints < 1) return emptyList()
+
         val distancias = (0 until template.size - 1).map { i ->
-            distanciaMetros(template[i].lat, template[i].lon, template[i+1].lat, template[i+1].lon)
+            distanciaMetros(template[i].lat, template[i].lon, template[i + 1].lat, template[i + 1].lon)
         }
         val total = distancias.sum()
-        if (total == 0.0) return 0.0
-        val distAcum = DoubleArray(distancias.size)
-        for (i in 1 until distancias.size) distAcum[i] = distAcum[i-1] + distancias[i-1]
-        val dAvgTemplate = total / distancias.size
+        if (total <= 0.0) return emptyList()
+        val distAcum = DoubleArray(template.size)
+        for (i in 1 until template.size) distAcum[i] = distAcum[i - 1] + distancias[i - 1]
 
-        // Raio: min configurado ou 1.5x espaçamento médio do template
-        val raio = maxOf(raioMetros.toDouble(), dAvgTemplate * 1.5)
+        // indice do ponto do template mais proximo de uma dada
+        // distancia acumulada ao longo do percurso
+        fun indicePara(distAlvo: Double): Int {
+            var melhor = 0; var melhorDif = Double.MAX_VALUE
+            for (i in template.indices) {
+                val dif = Math.abs(distAcum[i] - distAlvo)
+                if (dif < melhorDif) { melhorDif = dif; melhor = i }
+            }
+            return melhor
+        }
 
-        // Velocidade GPS estimada (distância média entre pontos GPS consecutivos)
-        val dMediaGps = if (trajetoAtual.size >= 2) {
-            (0 until trajetoAtual.size - 1).map { i ->
-                distanciaMetros(trajetoAtual[i].latitude, trajetoAtual[i].longitude,
-                                trajetoAtual[i+1].latitude, trajetoAtual[i+1].longitude)
-            }.average()
-        } else 50.0
-
-        // Janela de map matching: quantos segmentos do template cobrem
-        // a distância que o GPS percorre entre duas leituras consecutivas.
-        // Adaptativa: a velocidades altas (GPS espaçado), a janela é maior.
-        val janela = if (dAvgTemplate > 0)
-            (dMediaGps / dAvgTemplate * 1.5).toInt().coerceIn(3, distancias.size)
-        else distancias.size
-
-        // Ponto de entrada: segmento do template mais próximo do
-        // primeiro ponto GPS real, pesquisado em TODO o template.
-        // A limitação anterior de 50% impedia encontrar o ponto
-        // de entrada quando o beacon só entrava em alcance na segunda
-        // metade da rota (ex: rota de 7km mas beacon só em alcance
-        // nos últimos 3km -- o cursor ficava bloqueado na primeira
-        // metade que estava a 5km do GPS real).
-        val p0 = trajetoAtual.first()
-        var segEntrada = 0; var melhorDEntrada = Double.MAX_VALUE
-        for (i in 0 until distancias.size) {
-            val iNext = (i + 1).coerceAtMost(template.size - 1)
-            val (_, dp) = projectaNoSegmento(
-                p0.latitude, p0.longitude,
-                template[i].lat, template[i].lon,
-                template[iNext].lat, template[iNext].lon
+        fun tracaBarreira(indice: Int, ordem: Int): pt.blugateway.data.Checkpoint {
+            val ptCentro = template[indice]
+            val ptAntes = template[(indice - 1).coerceAtLeast(0)]
+            val ptDepois = template[(indice + 1).coerceAtMost(template.size - 1)]
+            // direcao local do percurso (vetor antes -> depois)
+            var dLat = ptDepois.lat - ptAntes.lat
+            var dLon = ptDepois.lon - ptAntes.lon
+            val mag = Math.sqrt(dLat * dLat + dLon * dLon)
+            if (mag > 0) { dLat /= mag; dLon /= mag } else { dLat = 0.0; dLon = 1.0 }
+            // perpendicular: roda 90 graus (-dLon, dLat)
+            val perpLat = -dLon; val perpLon = dLat
+            // metros -> graus aproximados (suficiente para uma barreira curta)
+            val metrosParaGrausLat = COMPRIMENTO_BARREIRA_METROS / 2.0 / 111_320.0
+            val metrosParaGrausLon = COMPRIMENTO_BARREIRA_METROS / 2.0 /
+                (111_320.0 * Math.cos(Math.toRadians(ptCentro.lat)).coerceAtLeast(0.01))
+            return pt.blugateway.data.Checkpoint(
+                ordem = ordem,
+                latA = ptCentro.lat + perpLat * metrosParaGrausLat,
+                lonA = ptCentro.lon + perpLon * metrosParaGrausLon,
+                latB = ptCentro.lat - perpLat * metrosParaGrausLat,
+                lonB = ptCentro.lon - perpLon * metrosParaGrausLon
             )
-            if (dp < melhorDEntrada) { melhorDEntrada = dp; segEntrada = i }
         }
 
-        // Rejeitar se mesmo o melhor ponto de entrada está demasiado
-        // longe do template -- sem este limite, o algoritmo "entra"
-        // sempre no segmento menos mau disponível, mesmo que esteja a
-        // vários km de distância. Confirmado em produção: entrada a
-        // 5556m num template de apenas 697m (8x o seu comprimento)
-        // ainda produziu 100% de semelhança, porque pontos GPS
-        // posteriores calhavam perto desse mesmo segmento distante.
-        // Limite: o maior de (raio de correspondência x 10) ou 25% do
-        // comprimento total do template -- generoso o suficiente para
-        // não recusar entradas legítimas em templates curtos, mas
-        // rejeita entradas que estão claramente fora de qualquer
-        // proximidade razoável com o percurso definido.
-        val distanciaMaximaEntrada = maxOf(raio * 10.0, total * 0.25)
-        if (melhorDEntrada > distanciaMaximaEntrada) {
-            return 0.0
+        val checkpoints = mutableListOf<pt.blugateway.data.Checkpoint>()
+        for (k in 1..numCheckpoints) {
+            val distAlvo = total * k / numCheckpoints.toDouble()
+            val indice = if (k == numCheckpoints) template.size - 1 else indicePara(distAlvo)
+            checkpoints.add(tracaBarreira(indice, k))
         }
+        return checkpoints
+    }
 
-        // --- MAP MATCHING ---
-        // Para cada ponto GPS, projecta no segmento mais próximo dentro
-        // da janela à frente do segmento actual. O progresso em metros
-        // só avança (nunca recua mais de 5% do total).
-        var segActual = segEntrada
-        var maxProgMetros = distAcum[segEntrada]
-        var pontosAceites = 0
+    /**
+     * Devolve o sinal do produto vetorial (p1->p2) x (p1->p3): usado
+     * para saber de que lado de uma linha um ponto esta.
+     */
+    private fun ladoDaLinha(p1x: Double, p1y: Double, p2x: Double, p2y: Double, p3x: Double, p3y: Double): Double =
+        (p2x - p1x) * (p3y - p1y) - (p2y - p1y) * (p3x - p1x)
 
-        for (pt in trajetoAtual) {
-            val segFim = (segActual + janela).coerceAtMost(distancias.size)
-            var melhorProj = -1.0; var melhorDp = Double.MAX_VALUE; var melhorSeg = segActual
-            for (i in segActual until segFim) {
-                val (t, dp) = projectaNoSegmento(
-                    pt.latitude, pt.longitude,
-                    template[i].lat, template[i].lon,
-                    template[i+1].lat, template[i+1].lon
-                )
-                if (dp <= raio && dp < melhorDp) {
-                    melhorDp = dp
-                    melhorProj = distAcum[i] + t * distancias[i]
-                    melhorSeg = i
-                }
-            }
-            if (melhorProj >= 0 && melhorProj > maxProgMetros - total * 0.05) {
-                if (melhorProj > maxProgMetros) { maxProgMetros = melhorProj; segActual = melhorSeg }
-                pontosAceites++
-            }
-        }
+    /**
+     * Verifica se o segmento GPS (pAx,pAy)-(pBx,pBy) cruza a barreira
+     * do checkpoint (segmento cA-cB). Interseccao classica de dois
+     * segmentos via sinais de produto vetorial: os extremos de cada
+     * segmento tem de estar em lados opostos do outro segmento.
+     */
+    private fun segmentosIntersectam(
+        pAx: Double, pAy: Double, pBx: Double, pBy: Double,
+        cAx: Double, cAy: Double, cBx: Double, cBy: Double
+    ): Boolean {
+        val d1 = ladoDaLinha(cAx, cAy, cBx, cBy, pAx, pAy)
+        val d2 = ladoDaLinha(cAx, cAy, cBx, cBy, pBx, pBy)
+        val d3 = ladoDaLinha(pAx, pAy, pBx, pBy, cAx, cAy)
+        val d4 = ladoDaLinha(pAx, pAy, pBx, pBy, cBx, cBy)
+        return ((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0)) &&
+               ((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0))
+    }
 
-        val cobertura = pontosAceites.toDouble() / trajetoAtual.size
-        // Mínimo absoluto de pontos GPS, não apenas fracção: com 1-2
-        // pontos, qualquer ponto "perto" de um segmento do template
-        // cobre trivialmente 100% de si mesmo, mesmo estando a vários
-        // km de distância real do percurso -- confirmado em produção:
-        // 1 ponto a 5.6km do template mais próximo disparou com 95%.
-        val MINIMO_PONTOS_GPS = 5
-        val semMM = if (cobertura >= 0.4 && trajetoAtual.size >= MINIMO_PONTOS_GPS)
-            (maxProgMetros / total).coerceIn(0.0, 1.0) else 0.0
+    /**
+     * Avalia os checkpoints de um cenario contra o trajeto atual,
+     * a partir do proximo checkpoint esperado (progresso persistido
+     * no Repositorio, por viagem). Substitui a comparacao continua
+     * de trajeto (map matching / LCSS) por uma verificacao simples e
+     * robusta: "o GPS cruzou esta barreira, por ordem?"
+     *
+     * Sem projecoes em segmentos do template, sem janela adaptativa,
+     * sem calculo de percentagem de progresso, sem vetor de direcao
+     * separado -- a ordem sequencial das barreiras E a verificacao
+     * de direcao: andar ao contrario nunca cruza os checkpoints na
+     * ordem certa.
+     *
+     * Devolve o novo indice do proximo checkpoint esperado (>=
+     * indiceAtual). Se igual a checkpoints.size, todos foram
+     * atravessados -- o cenario deve disparar.
+     */
+    fun avaliaCheckpoints(
+        trajetoAtual: List<PontoTrajeto>,
+        checkpoints: List<pt.blugateway.data.Checkpoint>,
+        indiceAtual: Int
+    ): Int {
+        if (checkpoints.isEmpty() || indiceAtual >= checkpoints.size) return indiceAtual
+        if (trajetoAtual.size < 2) return indiceAtual
 
-        // --- LCSS melhorado (fallback e complemento) ---
-        val saltoIdeal = if (dAvgTemplate > 0)
-            ((raioMetros * 2.0) / dAvgTemplate).toInt().coerceAtLeast(1) else 1
-        val saltoMaximo = saltoIdeal.coerceIn(
-            (template.size * SALTO_MAXIMO_FRACAO).toInt().coerceAtLeast(1),
-            (template.size * 0.50).toInt().coerceAtLeast(1)
-        )
-
-        // Verificação de direcção LOCAL ao ponto de entrada:
-        // compara a direcção do trajeto com a direcção do template
-        // NOS PONTOS SEGUINTES AO PONTO DE ENTRADA (não no início do
-        // template). Essencial quando o beacon entra em alcance a meio
-        // ou no fim da rota -- a direcção do início do template pode
-        // ser completamente diferente da zona onde o GPS está.
-        // Aplicada a AMBOS os algoritmos (map matching e LCSS) --
-        // antes só era aplicada ao LCSS, o que permitia disparos
-        // no sentido inverso via o map matching.
-        val factorDireccao: Double = if (trajetoAtual.size >= 2 && segEntrada + 2 < template.size) {
-            val dtLat = trajetoAtual[1].latitude - trajetoAtual[0].latitude
-            val dtLon = trajetoAtual[1].longitude - trajetoAtual[0].longitude
-            val fim = (segEntrada + 3).coerceAtMost(template.size - 1)
-            val dmLat = template[fim].lat - template[segEntrada].lat
-            val dmLon = template[fim].lon - template[segEntrada].lon
-            val magT = Math.sqrt(dtLat * dtLat + dtLon * dtLon)
-            val magM = Math.sqrt(dmLat * dmLat + dmLon * dmLon)
-            if (magT > 0.0 && magM > 0.0) {
-                val produto = (dtLat * dmLat + dtLon * dmLon) / (magT * magM)
-                // Se a entrada é nos últimos 30% do template E a direcção
-                // é oposta, é quase certamente sentido inverso
-                val entradaTardia = segEntrada.toDouble() / distancias.size > 0.70
-                when {
-                    produto < -0.5 && entradaTardia -> 0.05  // sentido inverso claro
-                    produto < -0.5 -> 0.20
-                    produto < -0.2 -> 0.40
-                    produto < 0.0  -> 0.70
-                    else           -> 1.0
-                }
-            } else 1.0
-        } else 1.0
-
-        var cursor = segEntrada; var totalAvancos = 0; var nAvancos = 0
-        for (pt in trajetoAtual) {
-            val cursorAntes = cursor
-            val lim = (cursor + saltoMaximo).coerceAtMost(template.size)
-            var i = cursor
-            while (i < lim) {
-                val d = distanciaMetros(pt.latitude, pt.longitude, template[i].lat, template[i].lon)
-                if (d <= raio) { totalAvancos += (i - cursorAntes + 1); nAvancos++; cursor = i + 1; break }
-                i++
+        var indice = indiceAtual
+        for (i in 0 until trajetoAtual.size - 1) {
+            if (indice >= checkpoints.size) break
+            val p1 = trajetoAtual[i]; val p2 = trajetoAtual[i + 1]
+            val cp = checkpoints[indice]
+            if (segmentosIntersectam(
+                    p1.latitude, p1.longitude, p2.latitude, p2.longitude,
+                    cp.latA, cp.lonA, cp.latB, cp.lonB
+                )) {
+                indice++
             }
         }
-        val semLcssRaw = cursor.toDouble() / template.size
-        val factorSaltos = if (nAvancos > 0) {
-            val avanco = (totalAvancos.toDouble() / nAvancos) / template.size
-            if (avanco > 0.25) maxOf(0.2, 1.0 - (avanco - 0.25) * 3.0) else 1.0
-        } else 1.0
-        val semLcss = if (trajetoAtual.size >= MINIMO_PONTOS_GPS)
-            (semLcssRaw * factorDireccao * factorSaltos).coerceIn(0.0, 1.0) else 0.0
-
-        // Resultado final com factorDireccao aplicado a ambos:
-        // map matching tem prioridade quando tem boa cobertura
-        val semMMComDir = (semMM * factorDireccao).coerceIn(0.0, 1.0)
-        return if (trajetoAtual.size < MINIMO_PONTOS_GPS) 0.0
-        else if (cobertura >= 0.6) maxOf(semMMComDir, semLcss * 0.8)
-        else maxOf(semMMComDir, semLcss)
+        return indice
     }
 
 
@@ -530,21 +490,47 @@ object GestorSemelhancaTrajeto {
                 }
             }
 
-            val semelhanca = calculaSemelhanca(trajetoComPosAtual, cenario.template, cenario.raioMetros)
-            RegistoDiagnostico.regista(context, "[D-cenarios] semelhanca=${(semelhanca*100).toInt()}% (precisa>=${cenario.limiarPercentagem}%)")
-            if (semelhanca * 100 >= cenario.limiarPercentagem && !repo.jaDisparadoNestaViagem(cenario.id, inicio)) {
+            // Migração automática: cenários gravados antes dos
+            // checkpoints existirem ainda só têm o template denso --
+            // gerar os checkpoints agora e guardar, sem obrigar a
+            // regravar o cenário.
+            val checkpoints = if (cenario.checkpoints.isNotEmpty()) {
+                cenario.checkpoints
+            } else {
+                val gerados = geraCheckpoints(cenario.template)
+                if (gerados.isNotEmpty()) {
+                    repo.atualizaCenarioTrajeto(cenario.copy(checkpoints = gerados))
+                }
+                gerados
+            }
+            if (checkpoints.isEmpty()) {
+                RegistoDiagnostico.regista(context, "[D-cenarios] cenario='${cenario.nome}' sem checkpoints válidos, ignorado")
+                continue
+            }
+
+            val indiceAntes = repo.proximoCheckpointEsperado(cenario.id, inicio)
+            val indiceDepois = avaliaCheckpoints(trajetoComPosAtual, checkpoints, indiceAntes)
+            if (indiceDepois != indiceAntes) {
+                repo.avancaCheckpoint(cenario.id, inicio, indiceDepois)
+            }
+            RegistoDiagnostico.regista(
+                context,
+                "[D-cenarios] cenario='${cenario.nome}' checkpoint ${indiceDepois}/${checkpoints.size}" +
+                    if (indiceDepois < checkpoints.size) " (falta atravessar barreira ${indiceDepois + 1})" else " (todos atravessados)"
+            )
+
+            if (indiceDepois >= checkpoints.size && !repo.jaDisparadoNestaViagem(cenario.id, inicio)) {
                 repo.marcaDisparado(cenario.id, inicio)
                 repo.atualizaUltimoDisparoCenario(cenario.id, System.currentTimeMillis())
 
                 // Notificar no CartaoRegisto (UI em tempo real) e no
                 // ecrã de Diagnóstico do Trajeto
-                val pctFinal = (semelhanca * 100).toInt()
                 val tsDisparo = java.text.SimpleDateFormat("HH:mm:ss dd/MM", java.util.Locale.getDefault())
                     .format(java.util.Date())
                 RegistoDiagnostico.regista(context,
-                    "✅ CENÁRIO DISPARADO: '${cenario.nome}' ($pctFinal% >= ${cenario.limiarPercentagem}%) às $tsDisparo | sessao=$pontoGravadoNestaSessao"
+                    "✅ CENÁRIO DISPARADO: '${cenario.nome}' (${checkpoints.size}/${checkpoints.size} checkpoints) às $tsDisparo | sessao=$pontoGravadoNestaSessao"
                 )
-                RegistoEventos.adicionaTrajeto(cenario.nome, pctFinal)
+                RegistoEventos.adicionaTrajeto(cenario.nome, 100)
 
                 ExecutorAcoes.executaLista(
                     context = context,

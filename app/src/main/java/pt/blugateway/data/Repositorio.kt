@@ -335,12 +335,39 @@ class Repositorio private constructor(context: Context) {
         prefs.edit()
             .putLong("disparo_ts_$cenarioId", System.currentTimeMillis())
             .commit()
+        limpaProgressoCheckpoints(cenarioId)
+    }
+
+    /**
+     * Próximo checkpoint (0-based) que o cenário espera atravessar
+     * nesta viagem. Guardado como par "inicioViagem:indice" -- se o
+     * inicioViagem mudar (nova viagem detectada), o progresso reinicia
+     * automaticamente do zero em vez de continuar da viagem anterior.
+     */
+    fun proximoCheckpointEsperado(cenarioId: String, inicioViagem: Long): Int {
+        val guardado = prefs.getString("checkpoint_progresso_$cenarioId", null) ?: return 0
+        val partes = guardado.split(":")
+        if (partes.size != 2) return 0
+        val ivGuardado = partes[0].toLongOrNull() ?: return 0
+        if (ivGuardado != inicioViagem) return 0  // viagem diferente -- reinicia
+        return partes[1].toIntOrNull() ?: 0
+    }
+
+    fun avancaCheckpoint(cenarioId: String, inicioViagem: Long, novoIndice: Int) {
+        prefs.edit()
+            .putString("checkpoint_progresso_$cenarioId", "$inicioViagem:$novoIndice")
+            .apply()
+    }
+
+    private fun limpaProgressoCheckpoints(cenarioId: String) {
+        prefs.edit().remove("checkpoint_progresso_$cenarioId").apply()
     }
 
     private fun limpaBloqueioDisparo(cenarioId: String) {
         prefs.edit()
             .remove("disparo_ts_$cenarioId")
             .remove("disparo_iv_$cenarioId")
+            .remove("checkpoint_progresso_$cenarioId")
             .remove("cenarios_disparados")  // limpar também o formato antigo, se existir
             .apply()
     }
