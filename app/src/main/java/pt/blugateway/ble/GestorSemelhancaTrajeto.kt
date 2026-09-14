@@ -1,7 +1,6 @@
 package pt.blugateway.ble
 
 import android.content.Context
-import kotlinx.coroutines.sync.withLock
 import pt.blugateway.data.CenarioTrajeto
 import pt.blugateway.data.PontoTemplate
 import pt.blugateway.data.OrigemPonto
@@ -375,10 +374,30 @@ object GestorSemelhancaTrajeto {
     @Volatile
     var pontoGravadoNestaSessao: Boolean = false
 
-    private val mutexVerificacao = kotlinx.coroutines.sync.Mutex()
-
-    suspend fun verificaCenarios(context: Context, mac: String) = mutexVerificacao.withLock {
-        verificaCenariosInterno(context, mac)
+    suspend fun verificaCenarios(context: Context, mac: String) {
+        // FileLock em vez de Mutex: com o ecrã bloqueado, o Android
+        // pode matar e recriar o processo a cada anúncio BLE recebido
+        // de beacons diferentes -- cada novo processo tem o seu próprio
+        // Mutex em memória (kotlinx.coroutines.sync.Mutex), que NUNCA
+        // serializa entre processos diferentes. Um FileLock no sistema
+        // de ficheiros é ao nível do SO e serializa correctamente
+        // mesmo quando cada beacon é processado num processo distinto.
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            val ficheiroLock = java.io.File(context.filesDir, "verifica_cenarios.lock")
+            var raf: java.io.RandomAccessFile? = null
+            var canal: java.nio.channels.FileChannel? = null
+            var lock: java.nio.channels.FileLock? = null
+            try {
+                raf = java.io.RandomAccessFile(ficheiroLock, "rw")
+                canal = raf.channel
+                lock = canal.lock()  // bloqueia a thread até obter o lock exclusivo
+                kotlinx.coroutines.runBlocking { verificaCenariosInterno(context, mac) }
+            } finally {
+                try { lock?.release() } catch (e: Exception) {}
+                try { canal?.close() } catch (e: Exception) {}
+                try { raf?.close() } catch (e: Exception) {}
+            }
+        }
     }
 
     private suspend fun verificaCenariosInterno(context: Context, mac: String) {
@@ -498,7 +517,7 @@ object GestorSemelhancaTrajeto {
 
             val semelhanca = calculaSemelhanca(trajetoComPosAtual, cenario.template, cenario.raioMetros)
             RegistoDiagnostico.regista(context, "[D-cenarios] semelhanca=${(semelhanca*100).toInt()}% (precisa>=${cenario.limiarPercentagem}%)")
-            if (semelhanca * 100 >= cenario.limiarPercentagem) {
+            if (semelhanca * 100 >= cenario.limiarPercentagem && !repo.jaDisparadoNestaViagem(cenario.id, inicio)) {
                 repo.marcaDisparado(cenario.id, inicio)
                 repo.atualizaUltimoDisparoCenario(cenario.id, System.currentTimeMillis())
 
