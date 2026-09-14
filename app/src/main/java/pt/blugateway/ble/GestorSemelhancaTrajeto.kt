@@ -216,6 +216,23 @@ object GestorSemelhancaTrajeto {
             if (dp < melhorDEntrada) { melhorDEntrada = dp; segEntrada = i }
         }
 
+        // Rejeitar se mesmo o melhor ponto de entrada está demasiado
+        // longe do template -- sem este limite, o algoritmo "entra"
+        // sempre no segmento menos mau disponível, mesmo que esteja a
+        // vários km de distância. Confirmado em produção: entrada a
+        // 5556m num template de apenas 697m (8x o seu comprimento)
+        // ainda produziu 100% de semelhança, porque pontos GPS
+        // posteriores calhavam perto desse mesmo segmento distante.
+        // Limite: o maior de (raio de correspondência x 10) ou 25% do
+        // comprimento total do template -- generoso o suficiente para
+        // não recusar entradas legítimas em templates curtos, mas
+        // rejeita entradas que estão claramente fora de qualquer
+        // proximidade razoável com o percurso definido.
+        val distanciaMaximaEntrada = maxOf(raio * 10.0, total * 0.25)
+        if (melhorDEntrada > distanciaMaximaEntrada) {
+            return 0.0
+        }
+
         // --- MAP MATCHING ---
         // Para cada ponto GPS, projecta no segmento mais próximo dentro
         // da janela à frente do segmento actual. O progresso em metros
