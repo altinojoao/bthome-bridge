@@ -3,6 +3,7 @@ package pt.blugateway.ble
 import android.content.Context
 import kotlinx.coroutines.sync.withLock
 import pt.blugateway.data.CenarioTrajeto
+import pt.blugateway.data.Checkpoint
 import pt.blugateway.data.PontoTemplate
 import pt.blugateway.data.OrigemPonto
 import pt.blugateway.data.PontoTrajeto
@@ -179,7 +180,7 @@ object GestorSemelhancaTrajeto {
     fun geraCheckpoints(
         template: List<PontoTemplate>,
         numCheckpoints: Int = NUM_CHECKPOINTS_OMISSAO
-    ): List<pt.blugateway.data.Checkpoint> {
+    ): List<Checkpoint> {
         if (template.size < 2 || numCheckpoints < 1) return emptyList()
 
         val distancias = (0 until template.size - 1).map { i ->
@@ -201,7 +202,7 @@ object GestorSemelhancaTrajeto {
             return melhor
         }
 
-        fun tracaBarreira(indice: Int, ordem: Int): pt.blugateway.data.Checkpoint {
+        fun tracaBarreira(indice: Int, ordem: Int): Checkpoint {
             val ptCentro = template[indice]
             val ptAntes = template[(indice - 1).coerceAtLeast(0)]
             val ptDepois = template[(indice + 1).coerceAtMost(template.size - 1)]
@@ -216,7 +217,7 @@ object GestorSemelhancaTrajeto {
             val metrosParaGrausLat = COMPRIMENTO_BARREIRA_METROS / 2.0 / 111_320.0
             val metrosParaGrausLon = COMPRIMENTO_BARREIRA_METROS / 2.0 /
                 (111_320.0 * Math.cos(Math.toRadians(ptCentro.lat)).coerceAtLeast(0.01))
-            return pt.blugateway.data.Checkpoint(
+            return Checkpoint(
                 ordem = ordem,
                 latA = ptCentro.lat + perpLat * metrosParaGrausLat,
                 lonA = ptCentro.lon + perpLon * metrosParaGrausLon,
@@ -225,7 +226,7 @@ object GestorSemelhancaTrajeto {
             )
         }
 
-        val checkpoints = mutableListOf<pt.blugateway.data.Checkpoint>()
+        val checkpoints = mutableListOf<Checkpoint>()
         for (k in 1..numCheckpoints) {
             val distAlvo = total * k / numCheckpoints.toDouble()
             val indice = if (k == numCheckpoints) template.size - 1 else indicePara(distAlvo)
@@ -278,7 +279,7 @@ object GestorSemelhancaTrajeto {
      */
     fun avaliaCheckpoints(
         trajetoAtual: List<PontoTrajeto>,
-        checkpoints: List<pt.blugateway.data.Checkpoint>,
+        checkpoints: List<Checkpoint>,
         indiceAtual: Int
     ): Int {
         if (checkpoints.isEmpty() || indiceAtual >= checkpoints.size) return indiceAtual
