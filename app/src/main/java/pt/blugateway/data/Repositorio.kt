@@ -30,6 +30,10 @@ class Repositorio private constructor(context: Context) {
 
     companion object {
         const val TEMPO_DESTAQUE_COMBINACAO_MS = 6000L
+        // Bloqueio de re-disparo de cenários de trajeto: 2h cobre
+        // qualquer viagem realista (incluindo paragens no trânsito)
+        // sem bloquear indevidamente uma segunda viagem no mesmo dia.
+        const val TEMPO_BLOQUEIO_APOS_DISPARO_MS = 2 * 60 * 60 * 1000L
         // valores por omissao, usados so na primeira vez (antes do
         // utilizador escolher algo em Configuracao)
         const val DIAS_TRAJETO_OMISSAO = 30
@@ -301,20 +305,35 @@ class Repositorio private constructor(context: Context) {
      * um erro que bloqueia o disparo actual).
      * Tolerância de 5min para variações do algoritmo ao reiniciar.
      */
-    fun jaDisparadoNestaViagem(cenarioId: String, inicioViagem: Long): Boolean {
-        val inicioViagemNoDisparo = prefs.getLong("disparo_iv_$cenarioId", -1L)
-        if (inicioViagemNoDisparo == -1L) return false
-        val diff = Math.abs(inicioViagemNoDisparo - inicioViagem)
-        return diff < 5 * 60 * 1000L
+    /**
+     * Verifica se o cenário já disparou recentemente. Bloqueia durante
+     * TEMPO_BLOQUEIO_APOS_DISPARO_MS após o último disparo real.
+     *
+     * Não compara com inicioViagem: um cenário pode ter vários MACs
+     * associados (macComando + macsAdicionais) e cada MAC calcula o
+     * seu inicioViagem a partir do SEU PRÓPRIO histórico de pontos
+     * GPS -- valores que podem diferir em centenas de minutos entre
+     * MACs diferentes (confirmado: 706 min de diferença nos logs),
+     * tornando qualquer tolerância pequena inútil e causando disparos
+     * repetidos sempre que o beacon "chamador" mudava.
+     *
+     * O bloqueio por tempo fixo é robusto a isto porque não depende
+     * de qual MAC fez a chamada -- só depende de quando o cenário
+     * disparou pela última vez, que é um facto único e global ao
+     * cenário, independente de quem o desencadeou.
+     */
+    fun jaDisparadoNestaViagem(cenarioId: String, @Suppress("UNUSED_PARAMETER") inicioViagem: Long): Boolean {
+        val tsDisparo = prefs.getLong("disparo_ts_$cenarioId", -1L)
+        if (tsDisparo == -1L) return false
+        return (System.currentTimeMillis() - tsDisparo) < TEMPO_BLOQUEIO_APOS_DISPARO_MS
     }
 
-    fun marcaDisparado(cenarioId: String, inicioViagem: Long) {
+    fun marcaDisparado(cenarioId: String, @Suppress("UNUSED_PARAMETER") inicioViagem: Long) {
         // commit() síncrono: garante que o bloqueio está em disco antes
         // de continuar -- importante porque o AlarmManager pode reiniciar
         // o scan (e nalguns casos o processo) logo a seguir a um disparo.
         prefs.edit()
             .putLong("disparo_ts_$cenarioId", System.currentTimeMillis())
-            .putLong("disparo_iv_$cenarioId", inicioViagem)
             .commit()
     }
 

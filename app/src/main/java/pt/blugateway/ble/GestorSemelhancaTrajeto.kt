@@ -377,41 +377,8 @@ object GestorSemelhancaTrajeto {
 
     private val mutexProcesso = kotlinx.coroutines.sync.Mutex()
 
-    suspend fun verificaCenarios(context: Context, mac: String) {
-        // Duas camadas de lock:
-        // 1. Mutex de coroutines -- serializa chamadas DENTRO do mesmo
-        //    processo. Sem isto, duas coroutines do mesmo processo a
-        //    tentar obter o FileLock em simultâneo lançam
-        //    OverlappingFileLockException (a JVM não permite dois
-        //    locks sobre o mesmo ficheiro na mesma JVM).
-        // 2. FileLock -- serializa ENTRE processos diferentes. Com o
-        //    ecrã bloqueado, o Android pode matar e recriar o processo
-        //    a cada anúncio BLE de beacons diferentes; o Mutex por si
-        //    só não protege esse caso porque cada processo novo tem o
-        //    seu próprio Mutex em memória.
-        mutexProcesso.withLock {
-            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                val ficheiroLock = java.io.File(context.filesDir, "verifica_cenarios.lock")
-                var raf: java.io.RandomAccessFile? = null
-                var canal: java.nio.channels.FileChannel? = null
-                var lock: java.nio.channels.FileLock? = null
-                try {
-                    raf = java.io.RandomAccessFile(ficheiroLock, "rw")
-                    canal = raf.channel
-                    lock = canal.lock()  // bloqueia a thread até obter o lock exclusivo
-                    verificaCenariosInterno(context, mac)
-                } catch (e: java.nio.channels.OverlappingFileLockException) {
-                    // Já existe um lock deste processo sobre o ficheiro --
-                    // outra chamada está em curso, esta pode ser ignorada
-                    // com segurança (o Mutex deveria prevenir isto, mas
-                    // mantemos como defesa extra).
-                } finally {
-                    try { lock?.release() } catch (e: Exception) {}
-                    try { canal?.close() } catch (e: Exception) {}
-                    try { raf?.close() } catch (e: Exception) {}
-                }
-            }
-        }
+    suspend fun verificaCenarios(context: Context, mac: String) = mutexProcesso.withLock {
+        verificaCenariosInterno(context, mac)
     }
 
     private suspend fun verificaCenariosInterno(context: Context, mac: String) {
