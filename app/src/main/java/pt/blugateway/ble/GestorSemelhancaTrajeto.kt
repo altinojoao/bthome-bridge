@@ -558,13 +558,20 @@ object GestorSemelhancaTrajeto {
             if (indiceDepois != indiceAntes) {
                 repo.avancaCheckpoint(cenario.id, inicio, indiceDepois)
             }
+            // Percentagem de progresso = fracção de checkpoints já
+            // atravessados. Restaura o comportamento de "disparar aos
+            // X%" que existia com o map matching -- perdido na migração
+            // para checkpoints, que por omissão só disparava com 4/4
+            // (100%), obrigando a esperar até já estar quase parado no
+            // destino em vez de disparar durante a aproximação.
+            val progressoPercent = (indiceDepois * 100) / checkpoints.size
             RegistoDiagnostico.regista(
                 context,
-                "[D-cenarios] cenario='${cenario.nome}' checkpoint ${indiceDepois}/${checkpoints.size}" +
+                "[D-cenarios] cenario='${cenario.nome}' checkpoint ${indiceDepois}/${checkpoints.size} ($progressoPercent%, precisa>=${cenario.limiarPercentagem}%)" +
                     if (indiceDepois < checkpoints.size) " (falta atravessar barreira ${indiceDepois + 1})" else " (todos atravessados)"
             )
 
-            if (indiceDepois >= checkpoints.size && !repo.jaDisparadoNestaViagem(cenario.id, inicio)) {
+            if (progressoPercent >= cenario.limiarPercentagem && !repo.jaDisparadoNestaViagem(cenario.id, inicio)) {
                 repo.marcaDisparado(cenario.id, inicio)
                 repo.atualizaUltimoDisparoCenario(cenario.id, System.currentTimeMillis())
 
@@ -573,7 +580,7 @@ object GestorSemelhancaTrajeto {
                 val tsDisparo = java.text.SimpleDateFormat("HH:mm:ss dd/MM", java.util.Locale.getDefault())
                     .format(java.util.Date())
                 RegistoDiagnostico.regista(context,
-                    "✅ CENÁRIO DISPARADO: '${cenario.nome}' (${checkpoints.size}/${checkpoints.size} checkpoints) às $tsDisparo | sessao=$pontoGravadoNestaSessao"
+                    "✅ CENÁRIO DISPARADO: '${cenario.nome}' (${indiceDepois}/${checkpoints.size} checkpoints, $progressoPercent% >= ${cenario.limiarPercentagem}%) às $tsDisparo | sessao=$pontoGravadoNestaSessao"
                 )
                 RegistoEventos.adicionaTrajeto(cenario.nome, 100)
 
