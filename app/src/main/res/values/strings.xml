@@ -197,6 +197,8 @@
     <string name="raio_geofence">Geofence paragem (m)</string>
     <string name="minutos_nova_viagem">Min. para nova viagem</string>
     <string name="restringir_horario">Restringir a horário</string>
+    <string name="restringir_horario_ajuda">Sem nenhuma janela, o cenário dispara a qualquer hora. Adicione uma ou mais janelas independentes.</string>
+    <string name="adicionar_janela_horaria">Adicionar janela</string>
     <string name="hora_inicio">Início</string>
     <string name="hora_fim">Fim</string>
     <string name="dias_semana">Dias da semana (nenhum = todos)</string>

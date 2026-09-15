@@ -194,6 +194,8 @@
     <string name="novo_cenario_trajeto">Nouveau scénario de trajet</string>
         <string name="raio_correspondencia">Rayon GPS (m)</string>
     <string name="raio_geofence">Géofence arrêt (m)</string>
+    <string name="restringir_horario_ajuda">Sans aucune plage, le scénario se déclenche à tout moment. Ajoutez une ou plusieurs plages indépendantes.</string>
+    <string name="adicionar_janela_horaria">Ajouter une plage</string>
     <string name="restringir_horario">Limiter à un horaire</string>
     <string name="hora_inicio">Début</string>
     <string name="hora_fim">Fin</string>

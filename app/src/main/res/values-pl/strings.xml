@@ -194,6 +194,8 @@
     <string name="novo_cenario_trajeto">Nowy scenariusz trasy</string>
         <string name="raio_correspondencia">Promień GPS (m)</string>
     <string name="raio_geofence">Geofence postoju (m)</string>
+    <string name="restringir_horario_ajuda">Bez żadnego okna scenariusz uruchamia się o dowolnej porze. Dodaj jedno lub więcej niezależnych okien.</string>
+    <string name="adicionar_janela_horaria">Dodaj okno</string>
     <string name="restringir_horario">Ogranicz do godzin</string>
     <string name="hora_inicio">Początek</string>
     <string name="hora_fim">Koniec</string>

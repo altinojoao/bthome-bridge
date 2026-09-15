@@ -194,6 +194,8 @@
     <string name="novo_cenario_trajeto">Neues Streckenszenario</string>
         <string name="raio_correspondencia">GPS-Radius (m)</string>
     <string name="raio_geofence">Stopp-Geofence (m)</string>
+    <string name="restringir_horario_ajuda">Ohne Zeitfenster wird das Szenario jederzeit ausgelöst. Fügen Sie ein oder mehrere unabhängige Zeitfenster hinzu.</string>
+    <string name="adicionar_janela_horaria">Zeitfenster hinzufügen</string>
     <string name="restringir_horario">Auf Zeitfenster beschränken</string>
     <string name="hora_inicio">Beginn</string>
     <string name="hora_fim">Ende</string>

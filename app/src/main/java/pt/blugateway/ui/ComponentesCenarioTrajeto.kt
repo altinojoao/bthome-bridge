@@ -29,6 +29,7 @@ import pt.blugateway.R
 import pt.blugateway.data.Acao
 import pt.blugateway.data.CenarioTrajeto
 import pt.blugateway.data.Comando
+import pt.blugateway.data.JanelaHoraria
 import pt.blugateway.data.PontoTemplate
 import pt.blugateway.data.PontoTrajeto
 import pt.blugateway.ui.theme.LocalCoresGateway
@@ -83,14 +84,16 @@ fun LinhaCenarioTrajeto(
                 fontSize = 10.sp
             )
         }
-        if (cenario.restricaoHorarioAtiva) {
-            val h1 = cenario.horaInicioMinutos / 60; val m1 = cenario.horaInicioMinutos % 60
-            val h2 = cenario.horaFimMinutos / 60; val m2 = cenario.horaFimMinutos % 60
-            Text(
-                "\uD83D\uDD52 %02d:%02d - %02d:%02d".format(h1, m1, h2, m2),
-                color = cores.suave,
-                fontSize = 10.sp
-            )
+        if (cenario.janelasHorarias.isNotEmpty()) {
+            cenario.janelasHorarias.forEach { janela ->
+                val h1 = janela.horaInicioMinutos / 60; val m1 = janela.horaInicioMinutos % 60
+                val h2 = janela.horaFimMinutos / 60; val m2 = janela.horaFimMinutos % 60
+                Text(
+                    "\uD83D\uDD52 %02d:%02d - %02d:%02d".format(h1, m1, h2, m2),
+                    color = cores.suave,
+                    fontSize = 10.sp
+                )
+            }
         }
         cenario.ultimoDisparoEm?.let { ts ->
             Text(
@@ -198,11 +201,8 @@ fun CriadorOuEditorCenario(
     var raioGeofenceTexto by remember { mutableStateOf((cenarioExistente?.raioGeofenceMetros ?: 150).toString()) }
     var minutosParaNovaViagemTexto by remember { mutableStateOf((cenarioExistente?.minutosParaNovaViagem ?: 15).toString()) }
     var acoes by remember { mutableStateOf(cenarioExistente?.acoes?.toList() ?: listOf(Acao())) }
-    var restricaoHorarioAtiva by remember { mutableStateOf(cenarioExistente?.restricaoHorarioAtiva ?: false) }
-    var horaInicioMinutos by remember { mutableStateOf(cenarioExistente?.horaInicioMinutos ?: 7 * 60) }
-    var horaFimMinutos by remember { mutableStateOf(cenarioExistente?.horaFimMinutos ?: 20 * 60) }
-    var diasSemanaAtivos by remember {
-        mutableStateOf(cenarioExistente?.diasSemanaAtivos?.toSet() ?: emptySet<Int>())
+    var janelasHorarias by remember {
+        mutableStateOf(cenarioExistente?.janelasHorarias ?: emptyList())
     }
     // MACs adicionais selecionados (checkboxes) -- qualquer beacon
     // aqui tambem contribui com pontos GPS para o historio do cenario
@@ -338,52 +338,33 @@ fun CriadorOuEditorCenario(
             }
         }
 
-        Row(
-            Modifier.fillMaxWidth().padding(top = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                stringResource(R.string.restringir_horario),
-                color = cores.tinta,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Medium,
-                modifier = Modifier.weight(1f)
-            )
-            Switch(
-                checked = restricaoHorarioAtiva,
-                onCheckedChange = { restricaoHorarioAtiva = it }
+        Text(
+            stringResource(R.string.restringir_horario),
+            color = cores.tinta,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.padding(top = 12.dp)
+        )
+        Text(
+            stringResource(R.string.restringir_horario_ajuda),
+            color = cores.suave,
+            fontSize = 10.sp,
+            modifier = Modifier.padding(top = 2.dp, bottom = 4.dp)
+        )
+        janelasHorarias.forEachIndexed { indice, janela ->
+            LinhaJanelaHoraria(
+                janela = janela,
+                onAtualiza = { transforma ->
+                    janelasHorarias = janelasHorarias.toMutableList().apply { this[indice] = transforma(janela) }
+                },
+                onRemove = { janelasHorarias = janelasHorarias.toMutableList().apply { removeAt(indice) } }
             )
         }
-
-        if (restricaoHorarioAtiva) {
-            Row(Modifier.fillMaxWidth().padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Box(Modifier.weight(1f)) {
-                    SeletorHora(
-                        rotulo = stringResource(R.string.hora_inicio),
-                        minutos = horaInicioMinutos,
-                        onMinutos = { horaInicioMinutos = it }
-                    )
-                }
-                Box(Modifier.weight(1f)) {
-                    SeletorHora(
-                        rotulo = stringResource(R.string.hora_fim),
-                        minutos = horaFimMinutos,
-                        onMinutos = { horaFimMinutos = it }
-                    )
-                }
-            }
-            Text(
-                stringResource(R.string.dias_semana),
-                color = cores.suave,
-                fontSize = 11.sp,
-                modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
-            )
-            SeletorDiasSemana(
-                selecionados = diasSemanaAtivos,
-                onMuda = { dia, activo ->
-                    diasSemanaAtivos = if (activo) diasSemanaAtivos + dia else diasSemanaAtivos - dia
-                }
-            )
+        TextButton(
+            onClick = { janelasHorarias = janelasHorarias + JanelaHoraria() },
+            modifier = Modifier.padding(top = 4.dp)
+        ) {
+            Text("+ " + stringResource(R.string.adicionar_janela_horaria), color = cores.azul, fontSize = 11.sp)
         }
 
         Text(
@@ -455,10 +436,7 @@ fun CriadorOuEditorCenario(
                             waypointsLat = waypointsRota.map { it.lat },
                             waypointsLon = waypointsRota.map { it.lon },
                             ultimoDisparoEm = cenarioExistente?.ultimoDisparoEm,
-                            restricaoHorarioAtiva = restricaoHorarioAtiva,
-                            horaInicioMinutos = horaInicioMinutos,
-                            horaFimMinutos = horaFimMinutos,
-                            diasSemanaAtivos = diasSemanaAtivos.toList()
+                            janelasHorarias = janelasHorarias
                         )
                     )
                 }
@@ -470,6 +448,62 @@ fun CriadorOuEditorCenario(
                 )
             }
         }
+    }
+}
+
+/**
+ * Uma linha editável para uma janela horária: início/fim + dias da
+ * semana + botão de remover. Várias linhas destas compõem a lista
+ * de janelas independentes de um cenário.
+ */
+@Composable
+private fun LinhaJanelaHoraria(
+    janela: JanelaHoraria,
+    onAtualiza: ((JanelaHoraria) -> JanelaHoraria) -> Unit,
+    onRemove: () -> Unit
+) {
+    val cores = LocalCoresGateway.current
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .padding(top = 6.dp)
+            .clip(RoundedCornerShape(9.dp))
+            .background(cores.elevado)
+            .padding(10.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.weight(1f)) {
+                SeletorHora(
+                    rotulo = stringResource(R.string.hora_inicio),
+                    minutos = janela.horaInicioMinutos,
+                    onMinutos = { m -> onAtualiza { it.copy(horaInicioMinutos = m) } }
+                )
+            }
+            Box(Modifier.weight(1f).padding(start = 6.dp)) {
+                SeletorHora(
+                    rotulo = stringResource(R.string.hora_fim),
+                    minutos = janela.horaFimMinutos,
+                    onMinutos = { m -> onAtualiza { it.copy(horaFimMinutos = m) } }
+                )
+            }
+            IconButton(onClick = onRemove, modifier = Modifier.size(24.dp)) {
+                Text("\u00d7", color = cores.avisoTinta, fontSize = 14.sp)
+            }
+        }
+        Text(
+            stringResource(R.string.dias_semana),
+            color = cores.suave,
+            fontSize = 10.sp,
+            modifier = Modifier.padding(top = 6.dp, bottom = 4.dp)
+        )
+        SeletorDiasSemana(
+            selecionados = janela.diasSemanaAtivos.toSet(),
+            onMuda = { dia, activo ->
+                onAtualiza {
+                    it.copy(diasSemanaAtivos = if (activo) it.diasSemanaAtivos + dia else it.diasSemanaAtivos - dia)
+                }
+            }
+        )
     }
 }
 

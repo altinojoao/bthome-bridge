@@ -194,6 +194,8 @@
     <string name="novo_cenario_trajeto">Nuevo escenario de trayecto</string>
         <string name="raio_correspondencia">Radio GPS (m)</string>
     <string name="raio_geofence">Geovalla parada (m)</string>
+    <string name="restringir_horario_ajuda">Sin ninguna ventana, el escenario se activa en cualquier momento. Añada una o más ventanas independientes.</string>
+    <string name="adicionar_janela_horaria">Añadir ventana</string>
     <string name="restringir_horario">Restringir a horario</string>
     <string name="hora_inicio">Inicio</string>
     <string name="hora_fim">Fin</string>

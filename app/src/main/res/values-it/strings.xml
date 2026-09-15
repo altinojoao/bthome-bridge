@@ -194,6 +194,8 @@
     <string name="novo_cenario_trajeto">Nuovo scenario di percorso</string>
         <string name="raio_correspondencia">Raggio GPS (m)</string>
     <string name="raio_geofence">Geofence sosta (m)</string>
+    <string name="restringir_horario_ajuda">Senza nessuna finestra, lo scenario si attiva in qualsiasi momento. Aggiungi una o più finestre indipendenti.</string>
+    <string name="adicionar_janela_horaria">Aggiungi finestra</string>
     <string name="restringir_horario">Limita a fascia oraria</string>
     <string name="hora_inicio">Inizio</string>
     <string name="hora_fim">Fine</string>

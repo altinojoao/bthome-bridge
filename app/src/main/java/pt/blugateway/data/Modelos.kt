@@ -480,6 +480,53 @@ data class PontoTemplate(val lat: Double, val lon: Double) {
  * de comparacao e sensivel a ordem, um trajeto no sentido inverso
  * nao consegue avancar o cursor de correspondencia).
  */
+
+/**
+ * Uma janela horária independente: início/fim em minutos desde a
+ * meia-noite, e dias da semana em que se aplica. Um cenário pode ter
+ * várias janelas -- o disparo é permitido se o instante actual cair
+ * dentro de QUALQUER UMA delas (união, não interseção). Permite, por
+ * exemplo, "Arriving Work" disparar de manhã (7h-10h) em dias úteis
+ * E à tarde (13h-14h) depois de uma pausa para almoço em casa,
+ * configurados como duas janelas separadas.
+ */
+data class JanelaHoraria(
+    var horaInicioMinutos: Int = 7 * 60,
+    var horaFimMinutos: Int = 20 * 60,
+    // 1=Domingo .. 7=Sábado (Calendar.DAY_OF_WEEK); vazio = todos os dias
+    var diasSemanaAtivos: List<Int> = emptyList()
+) {
+    fun contemAgora(agora: java.util.Calendar): Boolean {
+        val diaSemana = agora.get(java.util.Calendar.DAY_OF_WEEK)
+        if (diasSemanaAtivos.isNotEmpty() && diaSemana !in diasSemanaAtivos) return false
+        val minutosAgora = agora.get(java.util.Calendar.HOUR_OF_DAY) * 60 + agora.get(java.util.Calendar.MINUTE)
+        return if (horaFimMinutos >= horaInicioMinutos) {
+            minutosAgora in horaInicioMinutos..horaFimMinutos
+        } else {
+            // janela atravessa a meia-noite (ex: 22:00-06:00)
+            minutosAgora >= horaInicioMinutos || minutosAgora <= horaFimMinutos
+        }
+    }
+
+    fun paraJson(): JSONObject = JSONObject().apply {
+        put("horaInicioMinutos", horaInicioMinutos)
+        put("horaFimMinutos", horaFimMinutos)
+        if (diasSemanaAtivos.isNotEmpty()) {
+            put("diasSemanaAtivos", JSONArray().apply { diasSemanaAtivos.forEach { put(it) } })
+        }
+    }
+
+    companion object {
+        fun deJson(o: JSONObject): JanelaHoraria = JanelaHoraria(
+            horaInicioMinutos = o.optInt("horaInicioMinutos", 0),
+            horaFimMinutos = o.optInt("horaFimMinutos", 1439),
+            diasSemanaAtivos = o.optJSONArray("diasSemanaAtivos")?.let { arr ->
+                (0 until arr.length()).map { arr.optInt(it) }
+            } ?: emptyList()
+        )
+    }
+}
+
 data class CenarioTrajeto(
     var id: String,
     var nome: String,
@@ -546,35 +593,19 @@ data class CenarioTrajeto(
     // bloqueio (essa fica no Repositorio, associada ao MAC + inicio
     // da viagem atual, ver jaDisparadoNestaViagem)
     var ultimoDisparoEm: Long? = null,
-    // Restrição horária: o cenário só pode disparar dentro desta
-    // janela. horaInicioMinutos/horaFimMinutos em minutos desde a
-    // meia-noite (0-1439), ex: 7h30 = 450. Se horaFimMinutos < horaInicioMinutos,
-    // a janela atravessa a meia-noite (ex: 22:00-06:00).
-    // restricaoHorarioAtiva=false (omissão) = sem restrição, dispara
-    // a qualquer hora -- retrocompatível com cenários existentes.
-    // diasSemanaAtivos: 1=Domingo .. 7=Sábado (convenção Calendar.DAY_OF_WEEK
-    // do Android); vazio = todos os dias.
-    var restricaoHorarioAtiva: Boolean = false,
-    var horaInicioMinutos: Int = 0,
-    var horaFimMinutos: Int = 1439,
-    var diasSemanaAtivos: List<Int> = emptyList()
+    // Restrição horária: lista de janelas independentes -- o disparo
+    // é permitido se o instante actual estiver dentro de QUALQUER UMA
+    // delas (união). Lista vazia = sem restrição, dispara a qualquer
+    // hora -- retrocompatível com cenários existentes.
+    var janelasHorarias: List<JanelaHoraria> = emptyList()
 ) {
     /**
-     * Verifica se o cenário pode disparar neste instante, de acordo
-     * com a restrição horária configurada. Sem restrição activa,
-     * devolve sempre true.
+     * Verifica se o cenário pode disparar neste instante. Sem nenhuma
+     * janela configurada, devolve sempre true (sem restrição).
      */
     fun dentroDaJanelaHoraria(agora: java.util.Calendar = java.util.Calendar.getInstance()): Boolean {
-        if (!restricaoHorarioAtiva) return true
-        val diaSemana = agora.get(java.util.Calendar.DAY_OF_WEEK)
-        if (diasSemanaAtivos.isNotEmpty() && diaSemana !in diasSemanaAtivos) return false
-        val minutosAgora = agora.get(java.util.Calendar.HOUR_OF_DAY) * 60 + agora.get(java.util.Calendar.MINUTE)
-        return if (horaFimMinutos >= horaInicioMinutos) {
-            minutosAgora in horaInicioMinutos..horaFimMinutos
-        } else {
-            // janela atravessa a meia-noite (ex: 22:00-06:00)
-            minutosAgora >= horaInicioMinutos || minutosAgora <= horaFimMinutos
-        }
+        if (janelasHorarias.isEmpty()) return true
+        return janelasHorarias.any { it.contemAgora(agora) }
     }
 
     fun paraJson(): JSONObject = JSONObject().apply {
@@ -588,13 +619,8 @@ data class CenarioTrajeto(
         if (checkpoints.isNotEmpty()) {
             put("checkpoints", JSONArray().apply { checkpoints.forEach { put(it.paraJson()) } })
         }
-        if (restricaoHorarioAtiva) {
-            put("restricaoHorarioAtiva", true)
-            put("horaInicioMinutos", horaInicioMinutos)
-            put("horaFimMinutos", horaFimMinutos)
-            if (diasSemanaAtivos.isNotEmpty()) {
-                put("diasSemanaAtivos", JSONArray().apply { diasSemanaAtivos.forEach { put(it) } })
-            }
+        if (janelasHorarias.isNotEmpty()) {
+            put("janelasHorarias", JSONArray().apply { janelasHorarias.forEach { put(it.paraJson()) } })
         }
         macOrigemTemplate?.let { put("macOrigemTemplate", it) }
         put("limiarPercentagem", limiarPercentagem)
@@ -658,12 +684,24 @@ data class CenarioTrajeto(
                 waypointsLat = o.optJSONArray("waypointsLat")?.let { arr -> (0 until arr.length()).map { arr.getDouble(it) } } ?: emptyList(),
                 waypointsLon = o.optJSONArray("waypointsLon")?.let { arr -> (0 until arr.length()).map { arr.getDouble(it) } } ?: emptyList(),
                 ultimoDisparoEm = if (o.has("ultimoDisparoEm")) o.optLong("ultimoDisparoEm") else null,
-                restricaoHorarioAtiva = o.optBoolean("restricaoHorarioAtiva", false),
-                horaInicioMinutos = o.optInt("horaInicioMinutos", 0),
-                horaFimMinutos = o.optInt("horaFimMinutos", 1439),
-                diasSemanaAtivos = o.optJSONArray("diasSemanaAtivos")?.let { arr ->
-                    (0 until arr.length()).map { arr.optInt(it) }
-                } ?: emptyList()
+                janelasHorarias = when {
+                    o.has("janelasHorarias") -> o.optJSONArray("janelasHorarias")?.let { arr ->
+                        (0 until arr.length()).map { JanelaHoraria.deJson(arr.getJSONObject(it)) }
+                    } ?: emptyList()
+                    // Retrocompatibilidade: formato antigo (v1.3.0) tinha
+                    // uma única janela em campos soltos -- migrar para a
+                    // nova lista na primeira leitura.
+                    o.optBoolean("restricaoHorarioAtiva", false) -> listOf(
+                        JanelaHoraria(
+                            horaInicioMinutos = o.optInt("horaInicioMinutos", 0),
+                            horaFimMinutos = o.optInt("horaFimMinutos", 1439),
+                            diasSemanaAtivos = o.optJSONArray("diasSemanaAtivos")?.let { arr ->
+                                (0 until arr.length()).map { arr.optInt(it) }
+                            } ?: emptyList()
+                        )
+                    )
+                    else -> emptyList()
+                }
             )
         }
     }
