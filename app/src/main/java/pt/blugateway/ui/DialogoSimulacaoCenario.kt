@@ -63,9 +63,12 @@ fun DialogoSimulacaoCenario(
                 put(JSONObject().apply { put("lat", p.lat); put("lon", p.lon) })
             }
         }.toString()
-        val jsonCheckpoints = if (cenario.checkpoints.isNotEmpty()) {
+        val checkpointsParaEnviar = cenario.checkpoints.ifEmpty {
+            pt.blugateway.ble.GestorSemelhancaTrajeto.geraCheckpoints(cenario.template)
+        }
+        val jsonCheckpoints = if (checkpointsParaEnviar.isNotEmpty()) {
             JSONArray().apply {
-                cenario.checkpoints.forEach { cp ->
+                checkpointsParaEnviar.forEach { cp ->
                     put(JSONObject().apply {
                         put("latA", cp.latA); put("lonA", cp.lonA)
                         put("latB", cp.latB); put("lonB", cp.lonB)

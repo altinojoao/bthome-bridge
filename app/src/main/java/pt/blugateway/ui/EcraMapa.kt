@@ -106,13 +106,17 @@ fun EcraMapa(
     val jsonCheckpointsAtivos = remember(cenarios, comandosComHistorico) {
         val indicePorMac = comandosComHistorico.mapIndexed { i, (c, _) -> c.mac to i }.toMap()
         val arr = JSONArray()
-        cenarios.filter { it.ativo && it.checkpoints.isNotEmpty() && it.macComando in indicePorMac }
+        cenarios.filter { it.ativo && it.template.size >= 2 && it.macComando in indicePorMac }
             .forEach { cenario ->
+                val checkpointsParaEnviar = cenario.checkpoints.ifEmpty {
+                    pt.blugateway.ble.GestorSemelhancaTrajeto.geraCheckpoints(cenario.template)
+                }
+                if (checkpointsParaEnviar.isEmpty()) return@forEach
                 val obj = JSONObject()
                 obj.put("nome", cenario.nome)
                 obj.put("cor", CORES_TRAJETO[(indicePorMac[cenario.macComando] ?: 0) % CORES_TRAJETO.size])
                 obj.put("checkpoints", JSONArray().apply {
-                    cenario.checkpoints.forEach { cp ->
+                    checkpointsParaEnviar.forEach { cp ->
                         put(JSONObject().apply {
                             put("latA", cp.latA); put("lonA", cp.lonA)
                             put("latB", cp.latB); put("lonB", cp.lonB)
@@ -320,9 +324,12 @@ fun EcraMapa(
                                                 })
                                             }
                                         }.toString()
-                                        val jsonCheckpoints = if (c.checkpoints.isNotEmpty()) {
+                                        val checkpointsParaEnviar = c.checkpoints.ifEmpty {
+                                            pt.blugateway.ble.GestorSemelhancaTrajeto.geraCheckpoints(c.template)
+                                        }
+                                        val jsonCheckpoints = if (checkpointsParaEnviar.isNotEmpty()) {
                                             org.json.JSONArray().apply {
-                                                c.checkpoints.forEach { cp ->
+                                                checkpointsParaEnviar.forEach { cp ->
                                                     put(org.json.JSONObject().apply {
                                                         put("latA", cp.latA); put("lonA", cp.lonA)
                                                         put("latB", cp.latB); put("lonB", cp.lonB)
