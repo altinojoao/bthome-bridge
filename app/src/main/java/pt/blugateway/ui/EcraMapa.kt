@@ -196,9 +196,16 @@ fun EcraMapa(
                     },
                     onUrlSimulacao = { host, url ->
                         when (host) {
-                            "pct" -> simPct = url.getQueryParameter("v")?.toIntOrNull() ?: simPct
-                            "limiar" -> simLimiarAtingido = true
-                            "concluido" -> { simEmExecucao = false; simConcluido = true }
+                            "progresso" -> {
+                                simPct = url.getQueryParameter("v")?.toIntOrNull() ?: simPct
+                                if (url.getQueryParameter("limiar") == "1") simLimiarAtingido = true
+                            }
+                            "concluido" -> {
+                                simEmExecucao = false
+                                simConcluido = true
+                                simPct = url.getQueryParameter("pct")?.toIntOrNull() ?: simPct
+                                if (url.getQueryParameter("atingiu") == "1") simLimiarAtingido = true
+                            }
                         }
                     }
                 )

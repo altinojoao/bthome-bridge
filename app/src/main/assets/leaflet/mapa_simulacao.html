@@ -176,7 +176,8 @@
     function passaSimulacao() {
       if (template.length === 0 || indiceSimulacao >= template.length) {
         document.getElementById('estado').textContent = 'Simulação concluída.';
-        window.location.href = 'blugateway-sim://concluido';
+        var pctFinal = checkpoints.length > 0 ? Math.floor((indiceEsperado * 100) / checkpoints.length) : 0;
+        window.location.href = 'blugateway-sim://concluido?pct=' + pctFinal + '&atingiu=' + (limiarJaAtingido ? 1 : 0);
         return;
       }
 
@@ -206,11 +207,12 @@
       // Dispara assim que a percentagem atingir o limiar configurado
       // no cenário real -- não apenas ao completar 100% dos
       // checkpoints. Reporta só uma vez por simulação.
+      var disparouAgora = false;
       if (!limiarJaAtingido && pct >= limiarPercentagem) {
         limiarJaAtingido = true;
+        disparouAgora = true;
         document.getElementById('estado').textContent =
           'Ação disparada aqui! (' + pct + '% >= limiar ' + limiarPercentagem + '%)';
-        window.location.href = 'blugateway-sim://limiar?indice=' + indiceSimulacao + '&pct=' + pct;
       }
 
       document.getElementById('percentagem').textContent = pct + '%';
@@ -223,7 +225,12 @@
       }
 
       indiceSimulacao++;
-      window.location.href = 'blugateway-sim://progresso?pct=' + pct + '&i=' + indiceSimulacao;
+      // Um único redireccionamento por chamada -- evita que dois
+      // window.location.href na mesma função se sobreponham no
+      // WebView antes do Kotlin processar o primeiro (confirmado:
+      // causava perda do evento 'limiar' e a simulação terminava
+      // reportando 0%, mesmo tendo atingido o limiar a meio).
+      window.location.href = 'blugateway-sim://progresso?pct=' + pct + '&i=' + indiceSimulacao + '&limiar=' + (disparouAgora ? 1 : 0);
     }
 
     function reiniciaSimulacao() {

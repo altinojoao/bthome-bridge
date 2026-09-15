@@ -461,7 +461,7 @@
     function passoSimulacao() {
       if(simIndice >= simTemplate.length) {
         var pctFim = simCheckpoints.length>0 ? Math.floor(simIndiceEsperado*100/simCheckpoints.length) : 0;
-        window.location.href='blugateway-sim://concluido?pct='+pctFim;
+        window.location.href='blugateway-sim://concluido?pct='+pctFim+'&atingiu='+(simLimiarJaAtingido?1:0);
         return;
       }
       var pt = simTemplate[simIndice];
@@ -483,13 +483,17 @@
 
       // Dispara ao atingir o limiar configurado no cenário real, não
       // apenas ao completar 100% dos checkpoints. Reporta uma só vez.
+      var disparouAgora = false;
       if(!simLimiarJaAtingido && pct >= simLimiarPercentagem){
         simLimiarJaAtingido = true;
-        window.location.href='blugateway-sim://limiar?pct='+pct+'&i='+simIndice;
+        disparouAgora = true;
       }
 
       simIndice++;
-      window.location.href='blugateway-sim://pct?v='+pct;
+      // Um único redireccionamento por chamada -- dois window.location.href
+      // na mesma função sobrepunham-se no WebView, perdendo o evento
+      // de limiar atingido (a simulação terminava reportando 0%).
+      window.location.href='blugateway-sim://progresso?v='+pct+'&limiar='+(disparouAgora?1:0);
     }
 
     function reiniciaSimulacao() {

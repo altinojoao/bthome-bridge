@@ -148,9 +148,16 @@ fun DialogoSimulacaoCenario(
                                     val url = request?.url ?: return false
                                     if (url.scheme != "blugateway-sim") return false
                                     when (url.host) {
-                                        "progresso" -> pct = url.getQueryParameter("pct")?.toIntOrNull() ?: pct
-                                        "limiar" -> limiarAtingido = true
-                                        "concluido" -> { emExecucao = false; concluido = true }
+                                        "progresso" -> {
+                                            pct = url.getQueryParameter("pct")?.toIntOrNull() ?: pct
+                                            if (url.getQueryParameter("limiar") == "1") limiarAtingido = true
+                                        }
+                                        "concluido" -> {
+                                            emExecucao = false
+                                            concluido = true
+                                            pct = url.getQueryParameter("pct")?.toIntOrNull() ?: pct
+                                            if (url.getQueryParameter("atingiu") == "1") limiarAtingido = true
+                                        }
                                     }
                                     return true
                                 }
