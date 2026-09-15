@@ -159,9 +159,15 @@ object GestorSemelhancaTrajeto {
     private const val COMPRIMENTO_BARREIRA_METROS = 90.0
 
     // Numero de checkpoints gerados automaticamente a partir de um
-    // template denso -- 4 da uma cobertura razoavel (inicio, dois
-    // intermedios, fim) sem sobrecarregar a UI de edicao.
-    private const val NUM_CHECKPOINTS_OMISSAO = 4
+    // template denso. Determina a granularidade do progresso: com N
+    // checkpoints, a percentagem só pode assumir múltiplos de 100/N.
+    // Com 4 (valor antigo), a granularidade era de 25% -- qualquer
+    // limiarPercentagem que não fosse múltiplo de 25 (ex: 70%, 75%,
+    // 76%, 80%) só conseguia disparar aos 100%, porque o próximo
+    // múltiplo abaixo (75%) ficava sempre aquém do limiar configurado.
+    // Com 10 checkpoints a granularidade passa a ser de 10%, cobrindo
+    // correctamente a esmagadora maioria dos limiares configuráveis.
+    private const val NUM_CHECKPOINTS_OMISSAO = 10
 
     /**
      * Gera checkpoints (barreiras numeradas) a partir de um template
@@ -272,7 +278,36 @@ object GestorSemelhancaTrajeto {
         repo: Repositorio,
         cenario: CenarioTrajeto
     ): List<BarreiraCheckpoint> {
-        if (cenario.checkpoints.isNotEmpty()) return cenario.checkpoints
+        val existentes = cenario.checkpoints
+        if (existentes.isNotEmpty()) {
+            // Verificar se a granularidade actual permite atingir o
+            // limiar configurado. Com N checkpoints, os múltiplos de
+            // progresso possíveis são 0, 100/N, 200/N, ..., 100 -- se
+            // nenhum desses valores (abaixo de 100) for >= limiar, o
+            // cenário só consegue disparar aos 100%, mesmo que o
+            // utilizador tenha configurado um limiar menor (ex: 4
+            // checkpoints = saltos de 25% em 25%; um limiar de 76%
+            // cai sempre entre o 75% do 3º checkpoint e o 100% do 4º
+            // -- matematicamente impossível de atingir com só 4
+            // checkpoints). Regenerar com mais checkpoints (a UI
+            // actual não permite edição manual de checkpoints
+            // individuais, só a geração automática, por isso isto
+            // não descarta nenhum ajuste feito pelo utilizador).
+            val algumAbaixoDoLimiar = (1 until existentes.size).any { i ->
+                (i * 100 / existentes.size) >= cenario.limiarPercentagem
+            }
+            if (algumAbaixoDoLimiar || existentes.size >= NUM_CHECKPOINTS_OMISSAO) return existentes
+            val regenerados = geraCheckpoints(cenario.template, NUM_CHECKPOINTS_OMISSAO)
+            if (regenerados.isNotEmpty()) {
+                RegistoDiagnostico.regista(
+                    context,
+                    "[D-cenarios] cenario='${cenario.nome}' checkpoints regenerados (${existentes.size}->${regenerados.size}) -- ${existentes.size} checkpoints não permitiam atingir o limiar de ${cenario.limiarPercentagem}%"
+                )
+                repo.atualizaCenarioTrajeto(cenario.copy(checkpoints = regenerados))
+                return regenerados
+            }
+            return existentes
+        }
         val gerados = geraCheckpoints(cenario.template)
         if (gerados.isNotEmpty()) {
             repo.atualizaCenarioTrajeto(cenario.copy(checkpoints = gerados))
