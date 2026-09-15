@@ -92,8 +92,15 @@
       var d2 = lado(cAx, cAy, cBx, cBy, pBx, pBy);
       var d3 = lado(pAx, pAy, pBx, pBy, cAx, cAy);
       var d4 = lado(pAx, pAy, pBx, pBy, cBx, cBy);
-      return ((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0)) &&
-             ((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0));
+      // Segmentos exactamente colineares (ambos os lados = 0) são um
+      // caso ambíguo -- não contar como cruzamento.
+      if (d1 === 0 && d2 === 0) return false;
+      // >=/<= (não >/<) para incluir o ponto cair EXACTAMENTE sobre a
+      // linha da barreira (d=0) -- caso comum no simulador, que
+      // percorre os próprios pontos do template usados para gerar
+      // cada barreira (centrada nesse mesmo ponto por construção).
+      return ((d1 >= 0 && d2 <= 0) || (d1 <= 0 && d2 >= 0)) &&
+             ((d3 >= 0 && d4 <= 0) || (d3 <= 0 && d4 >= 0));
     }
 
     /**

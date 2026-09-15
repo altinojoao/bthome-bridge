@@ -418,7 +418,12 @@
     function segmentosIntersectamSim(pAx,pAy,pBx,pBy,cAx,cAy,cBx,cBy){
       var d1=ladoSim(cAx,cAy,cBx,cBy,pAx,pAy), d2=ladoSim(cAx,cAy,cBx,cBy,pBx,pBy);
       var d3=ladoSim(pAx,pAy,pBx,pBy,cAx,cAy), d4=ladoSim(pAx,pAy,pBx,pBy,cBx,cBy);
-      return ((d1>0&&d2<0)||(d1<0&&d2>0)) && ((d3>0&&d4<0)||(d3<0&&d4>0));
+      // Colinear em ambos os pontos -- caso ambíguo, não conta.
+      if (d1 === 0 && d2 === 0) return false;
+      // >=/<= para incluir o ponto cair exactamente sobre a barreira
+      // (caso comum: o simulador percorre os próprios pontos do
+      // template usados para gerar cada barreira).
+      return ((d1>=0&&d2<=0)||(d1<=0&&d2>=0)) && ((d3>=0&&d4<=0)||(d3<=0&&d4>=0));
     }
 
     function desenhaSimCheckpoints() {

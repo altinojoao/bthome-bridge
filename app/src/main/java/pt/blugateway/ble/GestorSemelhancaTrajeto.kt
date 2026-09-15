@@ -332,8 +332,18 @@ object GestorSemelhancaTrajeto {
         val d2 = ladoDaLinha(cAx, cAy, cBx, cBy, pBx, pBy)
         val d3 = ladoDaLinha(pAx, pAy, pBx, pBy, cAx, cAy)
         val d4 = ladoDaLinha(pAx, pAy, pBx, pBy, cBx, cBy)
-        return ((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0)) &&
-               ((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0))
+        // Segmentos exactamente colineares (ambos os lados = 0) são
+        // um caso ambíguo -- não contar como cruzamento para evitar
+        // falsos positivos com segmentos paralelos à barreira.
+        if (d1 == 0.0 && d2 == 0.0) return false
+        // Usar >=/<= (não >/<) para incluir o caso em que um ponto do
+        // segmento cai EXACTAMENTE sobre a linha da barreira (d=0) --
+        // situação legítima e comum quando o ponto de origem coincide
+        // com o próprio ponto usado para gerar a barreira (ex: o
+        // simulador percorre os pontos do template, e cada barreira é
+        // centrada num desses pontos por construção).
+        return ((d1 >= 0 && d2 <= 0) || (d1 <= 0 && d2 >= 0)) &&
+               ((d3 >= 0 && d4 <= 0) || (d3 <= 0 && d4 >= 0))
     }
 
     /**
