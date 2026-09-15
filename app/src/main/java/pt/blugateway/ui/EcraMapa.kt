@@ -324,7 +324,7 @@ fun EcraMapa(
                                             }.toString()
                                         } else null
                                         webViewRef?.evaluateJavascript(
-                                            "iniciaSimulacao(${org.json.JSONObject.quote(json)}, ${if (jsonCheckpoints != null) org.json.JSONObject.quote(jsonCheckpoints) else "null"});",
+                                            "iniciaSimulacao(${org.json.JSONObject.quote(json)}, ${if (jsonCheckpoints != null) org.json.JSONObject.quote(jsonCheckpoints) else "null"}, ${c.limiarPercentagem});",
                                             null
                                         )
                                     }

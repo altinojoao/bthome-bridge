@@ -404,6 +404,8 @@
     var simLinhaTemplate = null;
     var simLinhaPercorrida = null;
     var simMarcadorPos = null;
+    var simLimiarPercentagem = 100;
+    var simLimiarJaAtingido = false;
 
     var ICONE_SIM_POS = L.divIcon({
       html: '<div style="width:14px;height:14px;border-radius:50%;background:#2BA6E0;border:2px solid white;box-shadow:0 1px 5px rgba(0,0,0,.6)"></div>',
@@ -436,9 +438,11 @@
       });
     }
 
-    function iniciaSimulacao(jsonTemplate, jsonCheckpoints) {
+    function iniciaSimulacao(jsonTemplate, jsonCheckpoints, limiar) {
       simTemplate = JSON.parse(jsonTemplate);
       simCheckpoints = jsonCheckpoints ? JSON.parse(jsonCheckpoints) : [];
+      simLimiarPercentagem = (typeof limiar === 'number') ? limiar : 100;
+      simLimiarJaAtingido = false;
       simIndiceEsperado = 0; simIndice = 0;
       simCamadasCheckpoints.forEach(function(c){ mapa.removeLayer(c); });
       simCamadasCheckpoints = [];
@@ -456,7 +460,7 @@
 
     function passoSimulacao() {
       if(simIndice >= simTemplate.length) {
-        var pctFim = simCheckpoints.length>0 ? Math.round(simIndiceEsperado*100/simCheckpoints.length) : 0;
+        var pctFim = simCheckpoints.length>0 ? Math.floor(simIndiceEsperado*100/simCheckpoints.length) : 0;
         window.location.href='blugateway-sim://concluido?pct='+pctFim;
         return;
       }
@@ -471,25 +475,32 @@
         if(segmentosIntersectamSim(anterior.lat,anterior.lon,pt.lat,pt.lon,cp.latA,cp.lonA,cp.latB,cp.lonB)){
           simIndiceEsperado++;
           desenhaSimCheckpoints();
-          if(simIndiceEsperado >= simCheckpoints.length){
-            window.location.href='blugateway-sim://limiar?pct=100&i='+simIndice;
-          }
         }
       }
-      var pct = simCheckpoints.length>0 ? Math.round(simIndiceEsperado*100/simCheckpoints.length) : 0;
+      // Percentagem = fracção de checkpoints atravessados, igual ao
+      // cálculo real (GestorSemelhancaTrajeto.verificaCenariosInterno).
+      var pct = simCheckpoints.length>0 ? Math.floor(simIndiceEsperado*100/simCheckpoints.length) : 0;
+
+      // Dispara ao atingir o limiar configurado no cenário real, não
+      // apenas ao completar 100% dos checkpoints. Reporta uma só vez.
+      if(!simLimiarJaAtingido && pct >= simLimiarPercentagem){
+        simLimiarJaAtingido = true;
+        window.location.href='blugateway-sim://limiar?pct='+pct+'&i='+simIndice;
+      }
+
       simIndice++;
       window.location.href='blugateway-sim://pct?v='+pct;
     }
 
     function reiniciaSimulacao() {
-      simIndice=0; simIndiceEsperado=0;
+      simIndice=0; simIndiceEsperado=0; simLimiarJaAtingido=false;
       if(simLinhaPercorrida) simLinhaPercorrida.setLatLngs([]);
       if(simMarcadorPos && simTemplate.length>0) simMarcadorPos.setLatLng([simTemplate[0].lat,simTemplate[0].lon]);
       desenhaSimCheckpoints();
     }
 
     function limpaSim() {
-      simIndice=0; simIndiceEsperado=0;
+      simIndice=0; simIndiceEsperado=0; simLimiarJaAtingido=false;
       if(simLinhaTemplate){ mapa.removeLayer(simLinhaTemplate); simLinhaTemplate=null; }
       if(simLinhaPercorrida){ mapa.removeLayer(simLinhaPercorrida); simLinhaPercorrida=null; }
       if(simMarcadorPos){ mapa.removeLayer(simMarcadorPos); simMarcadorPos=null; }

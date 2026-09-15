@@ -74,7 +74,7 @@ fun DialogoSimulacaoCenario(
             }.toString()
         } else null
         wv.evaluateJavascript(
-            "inicializaSimulacao(${JSONObject.quote(json)}, ${if (jsonCheckpoints != null) JSONObject.quote(jsonCheckpoints) else "null"});",
+            "inicializaSimulacao(${JSONObject.quote(json)}, ${if (jsonCheckpoints != null) JSONObject.quote(jsonCheckpoints) else "null"}, ${cenario.limiarPercentagem});",
             null
         )
     }

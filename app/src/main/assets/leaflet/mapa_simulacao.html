@@ -66,6 +66,8 @@
     setTimeout(function () { mapa.invalidateSize(); }, 100);
 
     var template = [];
+    var limiarPercentagem = 100;   // % de checkpoints necessária para disparar (do cenário real)
+    var limiarJaAtingido = false;  // evita reportar o disparo mais de uma vez por simulação
     var checkpoints = [];      // [{ordem, latA, lonA, latB, lonB}, ...]
     var indiceEsperado = 0;    // proximo checkpoint a atravessar (0-based)
 
@@ -129,11 +131,13 @@
      * carregar. jsonCheckpoints pode ser null/vazio em cenários
      * antigos ainda sem checkpoints gerados.
      */
-    function inicializaSimulacao(jsonTemplate, jsonCheckpoints) {
+    function inicializaSimulacao(jsonTemplate, jsonCheckpoints, limiar) {
       template = JSON.parse(jsonTemplate);
       checkpoints = jsonCheckpoints ? JSON.parse(jsonCheckpoints) : [];
+      limiarPercentagem = (typeof limiar === 'number') ? limiar : 100;
       indiceEsperado = 0;
       indiceSimulacao = 0;
+      limiarJaAtingido = false;
 
       if (template.length < 2) return;
 
@@ -191,20 +195,31 @@
             )) {
           indiceEsperado++;
           desenhaCheckpoints();
-          if (indiceEsperado >= checkpoints.length) {
-            document.getElementById('estado').textContent = 'Todos os checkpoints atravessados -- ação disparada aqui!';
-            window.location.href = 'blugateway-sim://limiar?indice=' + indiceSimulacao + '&pct=100';
-          }
         }
       }
 
-      var pct = checkpoints.length > 0 ? Math.round((indiceEsperado * 100) / checkpoints.length) : 0;
+      // Percentagem = fracção de checkpoints atravessados, igual ao
+      // cálculo real em GestorSemelhancaTrajeto.verificaCenariosInterno
+      // -- (indiceEsperado * 100) / checkpoints.length, truncado.
+      var pct = checkpoints.length > 0 ? Math.floor((indiceEsperado * 100) / checkpoints.length) : 0;
+
+      // Dispara assim que a percentagem atingir o limiar configurado
+      // no cenário real -- não apenas ao completar 100% dos
+      // checkpoints. Reporta só uma vez por simulação.
+      if (!limiarJaAtingido && pct >= limiarPercentagem) {
+        limiarJaAtingido = true;
+        document.getElementById('estado').textContent =
+          'Ação disparada aqui! (' + pct + '% >= limiar ' + limiarPercentagem + '%)';
+        window.location.href = 'blugateway-sim://limiar?indice=' + indiceSimulacao + '&pct=' + pct;
+      }
+
       document.getElementById('percentagem').textContent = pct + '%';
-      document.getElementById('percentagem').style.color = indiceEsperado >= checkpoints.length ? '#F0A500' : '#58D68D';
-      if (indiceEsperado < checkpoints.length) {
+      document.getElementById('percentagem').style.color = limiarJaAtingido ? '#F0A500' : '#58D68D';
+      if (!limiarJaAtingido) {
         document.getElementById('estado').textContent =
           'Ponto ' + (indiceSimulacao + 1) + '/' + template.length +
-          '  •  Checkpoint ' + indiceEsperado + '/' + checkpoints.length;
+          '  •  Checkpoint ' + indiceEsperado + '/' + checkpoints.length +
+          '  •  precisa >= ' + limiarPercentagem + '%';
       }
 
       indiceSimulacao++;
@@ -214,6 +229,7 @@
     function reiniciaSimulacao() {
       indiceSimulacao = 0;
       indiceEsperado = 0;
+      limiarJaAtingido = false;
       if (linhaPercorrida) linhaPercorrida.setLatLngs([]);
       if (marcadorPosicao && template.length > 0) {
         marcadorPosicao.setLatLng([template[0].lat, template[0].lon]);
