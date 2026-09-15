@@ -580,11 +580,30 @@ object GestorSemelhancaTrajeto {
             val indiceAntes = repo.proximoCheckpointEsperado(cenario.id, inicio)
 
             // Guarda contra jitter de GPS: se o utilizador está parado
-            // agora (últimos minutos dentro de um raio pequeno), não
-            // avaliar checkpoints -- não há navegação em curso, e
-            // qualquer cruzamento geométrico seria ruído acumulado,
-            // não deslocação real.
-            if (utilizadorParadoAgora(trajetoComPosAtual)) {
+            // agora (últimos minutos dentro de um raio pequeno) E
+            // ainda está LONGE do próximo checkpoint pendente, suspende
+            // a avaliação -- não há navegação em curso, e qualquer
+            // cruzamento geométrico seria ruído acumulado, não
+            // deslocação real (caso confirmado: jitter GPS indoor ao
+            // longo de horas, longe de qualquer checkpoint).
+            //
+            // Mas se o utilizador já está parado PERTO do próximo
+            // checkpoint pendente, isso é exactamente a situação de
+            // "acabei de chegar e estou a abrandar/estacionar" -- não
+            // suspender, porque é aí que os últimos checkpoints
+            // precisam de ser atravessados para completar o limiar
+            // (confirmado: disparo perdido com o utilizador a 22m de
+            // casa, guarda suspendeu por estar parado nos últimos
+            // metros ao estacionar).
+            val proximoCp = checkpoints.getOrNull(indiceAntes)
+            val pertoDoProximoCheckpoint = proximoCp != null && trajetoComPosAtual.isNotEmpty() &&
+                run {
+                    val ultimo = trajetoComPosAtual.last()
+                    val meioLat = (proximoCp.latA + proximoCp.latB) / 2
+                    val meioLon = (proximoCp.lonA + proximoCp.lonB) / 2
+                    distanciaMetros(ultimo.latitude, ultimo.longitude, meioLat, meioLon) <= 150.0
+                }
+            if (!pertoDoProximoCheckpoint && utilizadorParadoAgora(trajetoComPosAtual)) {
                 RegistoDiagnostico.regista(context, "[D-cenarios] cenario='${cenario.nome}' utilizador parado -- avaliação de checkpoints suspensa")
                 continue
             }
