@@ -196,6 +196,10 @@
     <string name="raio_correspondencia">Raio GPS (m)</string>
     <string name="raio_geofence">Geofence paragem (m)</string>
     <string name="minutos_nova_viagem">Min. para nova viagem</string>
+    <string name="restringir_horario">Restringir a horário</string>
+    <string name="hora_inicio">Início</string>
+    <string name="hora_fim">Fim</string>
+    <string name="dias_semana">Dias da semana (nenhum = todos)</string>
     <string name="ultimo_disparo">Último disparo: %1$s</string>
     <string name="template_atual_mantido">Mantém o template atual (%1$d pontos)</string>
     <string name="editar_cenario">Editar</string>

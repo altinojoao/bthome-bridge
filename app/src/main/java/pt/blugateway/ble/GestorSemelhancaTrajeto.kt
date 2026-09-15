@@ -572,6 +572,10 @@ object GestorSemelhancaTrajeto {
             )
 
             if (progressoPercent >= cenario.limiarPercentagem && !repo.jaDisparadoNestaViagem(cenario.id, inicio)) {
+                if (!cenario.dentroDaJanelaHoraria()) {
+                    RegistoDiagnostico.regista(context, "[D-cenarios] cenario='${cenario.nome}' fora da janela horária configurada -- disparo suprimido")
+                    continue
+                }
                 repo.marcaDisparado(cenario.id, inicio)
                 repo.atualizaUltimoDisparoCenario(cenario.id, System.currentTimeMillis())
 

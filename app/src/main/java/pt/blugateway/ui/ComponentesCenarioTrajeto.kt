@@ -83,6 +83,15 @@ fun LinhaCenarioTrajeto(
                 fontSize = 10.sp
             )
         }
+        if (cenario.restricaoHorarioAtiva) {
+            val h1 = cenario.horaInicioMinutos / 60; val m1 = cenario.horaInicioMinutos % 60
+            val h2 = cenario.horaFimMinutos / 60; val m2 = cenario.horaFimMinutos % 60
+            Text(
+                "\uD83D\uDD52 %02d:%02d - %02d:%02d".format(h1, m1, h2, m2),
+                color = cores.suave,
+                fontSize = 10.sp
+            )
+        }
         cenario.ultimoDisparoEm?.let { ts ->
             Text(
                 stringResource(R.string.ultimo_disparo, formato.format(Date(ts))),
@@ -189,6 +198,12 @@ fun CriadorOuEditorCenario(
     var raioGeofenceTexto by remember { mutableStateOf((cenarioExistente?.raioGeofenceMetros ?: 150).toString()) }
     var minutosParaNovaViagemTexto by remember { mutableStateOf((cenarioExistente?.minutosParaNovaViagem ?: 15).toString()) }
     var acoes by remember { mutableStateOf(cenarioExistente?.acoes?.toList() ?: listOf(Acao())) }
+    var restricaoHorarioAtiva by remember { mutableStateOf(cenarioExistente?.restricaoHorarioAtiva ?: false) }
+    var horaInicioMinutos by remember { mutableStateOf(cenarioExistente?.horaInicioMinutos ?: 7 * 60) }
+    var horaFimMinutos by remember { mutableStateOf(cenarioExistente?.horaFimMinutos ?: 20 * 60) }
+    var diasSemanaAtivos by remember {
+        mutableStateOf(cenarioExistente?.diasSemanaAtivos?.toSet() ?: emptySet<Int>())
+    }
     // MACs adicionais selecionados (checkboxes) -- qualquer beacon
     // aqui tambem contribui com pontos GPS para o historio do cenario
     var macsAdicionais by remember {
@@ -323,6 +338,54 @@ fun CriadorOuEditorCenario(
             }
         }
 
+        Row(
+            Modifier.fillMaxWidth().padding(top = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                stringResource(R.string.restringir_horario),
+                color = cores.tinta,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.weight(1f)
+            )
+            Switch(
+                checked = restricaoHorarioAtiva,
+                onCheckedChange = { restricaoHorarioAtiva = it }
+            )
+        }
+
+        if (restricaoHorarioAtiva) {
+            Row(Modifier.fillMaxWidth().padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Box(Modifier.weight(1f)) {
+                    SeletorHora(
+                        rotulo = stringResource(R.string.hora_inicio),
+                        minutos = horaInicioMinutos,
+                        onMinutos = { horaInicioMinutos = it }
+                    )
+                }
+                Box(Modifier.weight(1f)) {
+                    SeletorHora(
+                        rotulo = stringResource(R.string.hora_fim),
+                        minutos = horaFimMinutos,
+                        onMinutos = { horaFimMinutos = it }
+                    )
+                }
+            }
+            Text(
+                stringResource(R.string.dias_semana),
+                color = cores.suave,
+                fontSize = 11.sp,
+                modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+            )
+            SeletorDiasSemana(
+                selecionados = diasSemanaAtivos,
+                onMuda = { dia, activo ->
+                    diasSemanaAtivos = if (activo) diasSemanaAtivos + dia else diasSemanaAtivos - dia
+                }
+            )
+        }
+
         Text(
             stringResource(R.string.acoes_do_cenario),
             color = cores.tinta,
@@ -391,7 +454,11 @@ fun CriadorOuEditorCenario(
                             destinoExatoLon = destinoRotaExato?.lon ?: cenarioExistente?.destinoExatoLon,
                             waypointsLat = waypointsRota.map { it.lat },
                             waypointsLon = waypointsRota.map { it.lon },
-                            ultimoDisparoEm = cenarioExistente?.ultimoDisparoEm
+                            ultimoDisparoEm = cenarioExistente?.ultimoDisparoEm,
+                            restricaoHorarioAtiva = restricaoHorarioAtiva,
+                            horaInicioMinutos = horaInicioMinutos,
+                            horaFimMinutos = horaFimMinutos,
+                            diasSemanaAtivos = diasSemanaAtivos.toList()
                         )
                     )
                 }
@@ -401,6 +468,75 @@ fun CriadorOuEditorCenario(
                     color = cores.azul,
                     fontSize = 12.sp
                 )
+            }
+        }
+    }
+}
+
+/**
+ * Seletor de hora simples: dois campos numéricos (hora, minuto)
+ * editáveis, guardados internamente como minutos desde a meia-noite.
+ */
+@Composable
+private fun SeletorHora(rotulo: String, minutos: Int, onMinutos: (Int) -> Unit) {
+    val cores = LocalCoresGateway.current
+    var horaTexto by remember(minutos) { mutableStateOf((minutos / 60).toString().padStart(2, '0')) }
+    var minTexto by remember(minutos) { mutableStateOf((minutos % 60).toString().padStart(2, '0')) }
+    Column {
+        Text(rotulo, color = cores.suave, fontSize = 10.sp)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.width(64.dp)) {
+                CampoTexto(
+                    rotulo = "",
+                    valor = horaTexto,
+                    placeholder = "07",
+                    onValor = { v ->
+                        horaTexto = v
+                        val h = v.toIntOrNull()?.coerceIn(0, 23) ?: 0
+                        val m = minTexto.toIntOrNull()?.coerceIn(0, 59) ?: 0
+                        onMinutos(h * 60 + m)
+                    }
+                )
+            }
+            Text(":", color = cores.suave, fontSize = 14.sp, modifier = Modifier.padding(horizontal = 4.dp))
+            Box(Modifier.width(64.dp)) {
+                CampoTexto(
+                    rotulo = "",
+                    valor = minTexto,
+                    placeholder = "00",
+                    onValor = { v ->
+                        minTexto = v
+                        val h = horaTexto.toIntOrNull()?.coerceIn(0, 23) ?: 0
+                        val m = v.toIntOrNull()?.coerceIn(0, 59) ?: 0
+                        onMinutos(h * 60 + m)
+                    }
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Seletor de dias da semana: 7 checkboxes numa linha, usando a
+ * convenção Calendar.DAY_OF_WEEK do Android (1=Domingo .. 7=Sábado).
+ * Nenhum selecionado = todos os dias (sem restrição de dia).
+ */
+@Composable
+private fun SeletorDiasSemana(selecionados: Set<Int>, onMuda: (Int, Boolean) -> Unit) {
+    val cores = LocalCoresGateway.current
+    val dias = listOf(1 to "D", 2 to "S", 3 to "T", 4 to "Q", 5 to "Q", 6 to "S", 7 to "S")
+    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        dias.forEach { (numero, letra) ->
+            val ativo = numero in selecionados
+            Box(
+                Modifier
+                    .size(32.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(if (ativo) cores.azul else cores.cartao)
+                    .then(clickableSemSplash { onMuda(numero, !ativo) }),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(letra, color = if (ativo) cores.fundo else cores.suave, fontSize = 12.sp)
             }
         }
     }

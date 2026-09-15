@@ -194,6 +194,10 @@
     <string name="novo_cenario_trajeto">Nouveau scénario de trajet</string>
         <string name="raio_correspondencia">Rayon GPS (m)</string>
     <string name="raio_geofence">Géofence arrêt (m)</string>
+    <string name="restringir_horario">Limiter à un horaire</string>
+    <string name="hora_inicio">Début</string>
+    <string name="hora_fim">Fin</string>
+    <string name="dias_semana">Jours de la semaine (aucun = tous)</string>
     <string name="minutos_nova_viagem">Min. pour nouveau trajet</string>
     <string name="ultimo_disparo">Dernier déclenchement : %1$s</string>
     <string name="template_atual_mantido">Conserve le modèle actuel (%1$d points)</string>

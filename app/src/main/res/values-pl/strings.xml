@@ -194,6 +194,10 @@
     <string name="novo_cenario_trajeto">Nowy scenariusz trasy</string>
         <string name="raio_correspondencia">Promień GPS (m)</string>
     <string name="raio_geofence">Geofence postoju (m)</string>
+    <string name="restringir_horario">Ogranicz do godzin</string>
+    <string name="hora_inicio">Początek</string>
+    <string name="hora_fim">Koniec</string>
+    <string name="dias_semana">Dni tygodnia (żaden = wszystkie)</string>
     <string name="minutos_nova_viagem">Min. dla nowej podróży</string>
     <string name="ultimo_disparo">Ostatnie uruchomienie: %1$s</string>
     <string name="template_atual_mantido">Zachowuje bieżący szablon (%1$d punktów)</string>

@@ -545,8 +545,38 @@ data class CenarioTrajeto(
     // para mostrar na UI quando foi a ultima vez, nao para logica de
     // bloqueio (essa fica no Repositorio, associada ao MAC + inicio
     // da viagem atual, ver jaDisparadoNestaViagem)
-    var ultimoDisparoEm: Long? = null
+    var ultimoDisparoEm: Long? = null,
+    // Restrição horária: o cenário só pode disparar dentro desta
+    // janela. horaInicioMinutos/horaFimMinutos em minutos desde a
+    // meia-noite (0-1439), ex: 7h30 = 450. Se horaFimMinutos < horaInicioMinutos,
+    // a janela atravessa a meia-noite (ex: 22:00-06:00).
+    // restricaoHorarioAtiva=false (omissão) = sem restrição, dispara
+    // a qualquer hora -- retrocompatível com cenários existentes.
+    // diasSemanaAtivos: 1=Domingo .. 7=Sábado (convenção Calendar.DAY_OF_WEEK
+    // do Android); vazio = todos os dias.
+    var restricaoHorarioAtiva: Boolean = false,
+    var horaInicioMinutos: Int = 0,
+    var horaFimMinutos: Int = 1439,
+    var diasSemanaAtivos: List<Int> = emptyList()
 ) {
+    /**
+     * Verifica se o cenário pode disparar neste instante, de acordo
+     * com a restrição horária configurada. Sem restrição activa,
+     * devolve sempre true.
+     */
+    fun dentroDaJanelaHoraria(agora: java.util.Calendar = java.util.Calendar.getInstance()): Boolean {
+        if (!restricaoHorarioAtiva) return true
+        val diaSemana = agora.get(java.util.Calendar.DAY_OF_WEEK)
+        if (diasSemanaAtivos.isNotEmpty() && diaSemana !in diasSemanaAtivos) return false
+        val minutosAgora = agora.get(java.util.Calendar.HOUR_OF_DAY) * 60 + agora.get(java.util.Calendar.MINUTE)
+        return if (horaFimMinutos >= horaInicioMinutos) {
+            minutosAgora in horaInicioMinutos..horaFimMinutos
+        } else {
+            // janela atravessa a meia-noite (ex: 22:00-06:00)
+            minutosAgora >= horaInicioMinutos || minutosAgora <= horaFimMinutos
+        }
+    }
+
     fun paraJson(): JSONObject = JSONObject().apply {
         put("id", id)
         put("nome", nome)
@@ -557,6 +587,14 @@ data class CenarioTrajeto(
         put("template", JSONArray().apply { template.forEach { put(it.paraJson()) } })
         if (checkpoints.isNotEmpty()) {
             put("checkpoints", JSONArray().apply { checkpoints.forEach { put(it.paraJson()) } })
+        }
+        if (restricaoHorarioAtiva) {
+            put("restricaoHorarioAtiva", true)
+            put("horaInicioMinutos", horaInicioMinutos)
+            put("horaFimMinutos", horaFimMinutos)
+            if (diasSemanaAtivos.isNotEmpty()) {
+                put("diasSemanaAtivos", JSONArray().apply { diasSemanaAtivos.forEach { put(it) } })
+            }
         }
         macOrigemTemplate?.let { put("macOrigemTemplate", it) }
         put("limiarPercentagem", limiarPercentagem)
@@ -619,7 +657,13 @@ data class CenarioTrajeto(
                 destinoExatoLon = if (o.has("destinoExatoLon")) o.getDouble("destinoExatoLon") else null,
                 waypointsLat = o.optJSONArray("waypointsLat")?.let { arr -> (0 until arr.length()).map { arr.getDouble(it) } } ?: emptyList(),
                 waypointsLon = o.optJSONArray("waypointsLon")?.let { arr -> (0 until arr.length()).map { arr.getDouble(it) } } ?: emptyList(),
-                ultimoDisparoEm = if (o.has("ultimoDisparoEm")) o.optLong("ultimoDisparoEm") else null
+                ultimoDisparoEm = if (o.has("ultimoDisparoEm")) o.optLong("ultimoDisparoEm") else null,
+                restricaoHorarioAtiva = o.optBoolean("restricaoHorarioAtiva", false),
+                horaInicioMinutos = o.optInt("horaInicioMinutos", 0),
+                horaFimMinutos = o.optInt("horaFimMinutos", 1439),
+                diasSemanaAtivos = o.optJSONArray("diasSemanaAtivos")?.let { arr ->
+                    (0 until arr.length()).map { arr.optInt(it) }
+                } ?: emptyList()
             )
         }
     }
