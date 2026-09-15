@@ -63,8 +63,18 @@ fun DialogoSimulacaoCenario(
                 put(JSONObject().apply { put("lat", p.lat); put("lon", p.lon) })
             }
         }.toString()
+        val jsonCheckpoints = if (cenario.checkpoints.isNotEmpty()) {
+            JSONArray().apply {
+                cenario.checkpoints.forEach { cp ->
+                    put(JSONObject().apply {
+                        put("latA", cp.latA); put("lonA", cp.lonA)
+                        put("latB", cp.latB); put("lonB", cp.lonB)
+                    })
+                }
+            }.toString()
+        } else null
         wv.evaluateJavascript(
-            "inicializaSimulacao(${JSONObject.quote(json)}, ${cenario.raioMetros}, ${cenario.limiarPercentagem});",
+            "inicializaSimulacao(${JSONObject.quote(json)}, ${if (jsonCheckpoints != null) JSONObject.quote(jsonCheckpoints) else "null"});",
             null
         )
     }

@@ -32,12 +32,22 @@
       color: #8B9AB0;
       margin-top: 2px;
     }
-    #marcador-limiar-label {
-      font-size: 11px;
+    .rotulo-checkpoint {
+      background: #F0A500;
+      color: #0D1117;
       font-weight: bold;
-      color: #F0A500;
-      white-space: nowrap;
-      margin-top: 4px;
+      font-size: 12px;
+      border-radius: 50%;
+      width: 22px;
+      height: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid white;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.6);
+    }
+    .rotulo-checkpoint.atravessado {
+      background: #3FB950;
     }
   </style>
 </head>
@@ -46,7 +56,6 @@
   <div id="painel">
     <div id="percentagem">0%</div>
     <div id="estado">A aguardar simulação…</div>
-    <div id="marcador-limiar-label"></div>
   </div>
   <script src="leaflet.js"></script>
   <script>
@@ -57,99 +66,108 @@
     setTimeout(function () { mapa.invalidateSize(); }, 100);
 
     var template = [];
-    var raioMetros = 40;
-    var limiar = 80;
+    var checkpoints = [];      // [{ordem, latA, lonA, latB, lonB}, ...]
+    var indiceEsperado = 0;    // proximo checkpoint a atravessar (0-based)
 
     // Camadas
-    var linhaTemplate = null;      // azul -- trajeto completo
-    var linhaPrevisto = null;      // azul tracejado -- por percorrer
-    var linhaPercorrida = null;    // verde -- ja "percorrido"
-    var marcadorPosicao = null;    // ponto atual da simulacao
-    var marcadorLimiar = null;     // onde o limiar foi atingido
-    var limiarAtingidoIndice = -1;
-    var simTimer = null;
+    var linhaTemplate = null;       // azul tracejado -- template completo
+    var linhaPercorrida = null;     // verde -- percurso ja simulado
+    var marcadorPosicao = null;     // ponto atual da simulacao
+    var camadasCheckpoints = [];    // linhas + rotulos das barreiras
     var indiceSimulacao = 0;
-    var cursor = 0;                // cursor do algoritmo LCSS
 
     var ICONE_POS = L.divIcon({
       html: '<div style="width:12px;height:12px;border-radius:50%;background:#2BA6E0;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.6)"></div>',
       className: '', iconSize: [12, 12], iconAnchor: [6, 6]
     });
-    var ICONE_LIMIAR = L.divIcon({
-      html: '<div style="width:14px;height:14px;border-radius:50%;background:#F0A500;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.6)"></div>',
-      className: '', iconSize: [14, 14], iconAnchor: [7, 7]
-    });
 
-    function distanciaMetros(lat1, lon1, lat2, lon2) {
-      var R = 6371000;
-      var toRad = function(g) { return g * Math.PI / 180; };
-      var dLat = toRad(lat2 - lat1), dLon = toRad(lon2 - lon1);
-      var a = Math.sin(dLat/2)*Math.sin(dLat/2) +
-              Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLon/2)*Math.sin(dLon/2);
-      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    function lado(p1x, p1y, p2x, p2y, p3x, p3y) {
+      return (p2x - p1x) * (p3y - p1y) - (p2y - p1y) * (p3x - p1x);
     }
 
-    function calculaSemelhancaStep(pontoLat, pontoLon) {
-      var saltoMaximo = Math.max(1, Math.floor(template.length * 0.15));
-      var limite = Math.min(cursor + saltoMaximo, template.length);
-      for (var i = cursor; i < limite; i++) {
-        var d = distanciaMetros(pontoLat, pontoLon, template[i].lat, template[i].lon);
-        if (d <= raioMetros) {
-          cursor = i + 1;
-          break;
-        }
-      }
-      return template.length > 0 ? cursor / template.length : 0;
+    function segmentosIntersectam(pAx, pAy, pBx, pBy, cAx, cAy, cBx, cBy) {
+      var d1 = lado(cAx, cAy, cBx, cBy, pAx, pAy);
+      var d2 = lado(cAx, cAy, cBx, cBy, pBx, pBy);
+      var d3 = lado(pAx, pAy, pBx, pBy, cAx, cAy);
+      var d4 = lado(pAx, pAy, pBx, pBy, cBx, cBy);
+      return ((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0)) &&
+             ((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0));
     }
 
     /**
-     * Inicializa o mapa com o template e prepara a simulacao.
-     * Chamado pelo Kotlin depois de a pagina carregar.
+     * Desenha as barreiras numeradas dos checkpoints no mapa -- uma
+     * linha perpendicular ao percurso por checkpoint, com um rótulo
+     * numerado no ponto médio. A cor muda para verde quando o
+     * checkpoint já foi atravessado na simulação em curso.
      */
-    function inicializaSimulacao(jsonTemplate, raio, limiarPct) {
+    function desenhaCheckpoints() {
+      camadasCheckpoints.forEach(function (c) { mapa.removeLayer(c); });
+      camadasCheckpoints = [];
+      checkpoints.forEach(function (cp, i) {
+        var atravessado = i < indiceEsperado;
+        var cor = atravessado ? '#3FB950' : '#F0A500';
+        var linha = L.polyline([[cp.latA, cp.lonA], [cp.latB, cp.lonB]], {
+          color: cor, weight: 4, opacity: 0.9
+        }).addTo(mapa);
+        camadasCheckpoints.push(linha);
+
+        var meioLat = (cp.latA + cp.latB) / 2;
+        var meioLon = (cp.lonA + cp.lonB) / 2;
+        var rotulo = L.marker([meioLat, meioLon], {
+          icon: L.divIcon({
+            html: '<div class="rotulo-checkpoint' + (atravessado ? ' atravessado' : '') + '">' + (i + 1) + '</div>',
+            className: '', iconSize: [22, 22], iconAnchor: [11, 11]
+          })
+        }).addTo(mapa);
+        camadasCheckpoints.push(rotulo);
+      });
+    }
+
+    /**
+     * Inicializa o mapa com o template, as barreiras de checkpoint,
+     * e prepara a simulação. Chamado pelo Kotlin depois de a página
+     * carregar. jsonCheckpoints pode ser null/vazio em cenários
+     * antigos ainda sem checkpoints gerados.
+     */
+    function inicializaSimulacao(jsonTemplate, jsonCheckpoints) {
       template = JSON.parse(jsonTemplate);
-      raioMetros = raio || 40;
-      limiar = limiarPct || 80;
-      cursor = 0;
+      checkpoints = jsonCheckpoints ? JSON.parse(jsonCheckpoints) : [];
+      indiceEsperado = 0;
       indiceSimulacao = 0;
-      limiarAtingidoIndice = -1;
 
       if (template.length < 2) return;
 
-      // Desenhar o template completo a azul
-      var latLngs = template.map(function(p) { return [p.lat, p.lon]; });
+      var latLngs = template.map(function (p) { return [p.lat, p.lon]; });
       if (linhaTemplate) mapa.removeLayer(linhaTemplate);
       linhaTemplate = L.polyline(latLngs, {
-        color: '#2B5ED0', weight: 4, opacity: 0.5, dashArray: '6,4'
+        color: '#2B5ED0', weight: 3, opacity: 0.4, dashArray: '6,4'
       }).addTo(mapa);
 
-      if (linhaPrevisto) mapa.removeLayer(linhaPrevisto);
       if (linhaPercorrida) mapa.removeLayer(linhaPercorrida);
-      if (marcadorPosicao) mapa.removeLayer(marcadorPosicao);
-      if (marcadorLimiar) mapa.removeLayer(marcadorLimiar);
-
-      linhaPrevisto = L.polyline(latLngs, {
-        color: '#1A6BC4', weight: 3, opacity: 0.35, dashArray: '4,6'
-      }).addTo(mapa);
-
       linhaPercorrida = L.polyline([], {
         color: '#3FB950', weight: 5, opacity: 0.9
       }).addTo(mapa);
 
+      if (marcadorPosicao) mapa.removeLayer(marcadorPosicao);
       marcadorPosicao = L.marker(latLngs[0], { icon: ICONE_POS }).addTo(mapa);
+
+      desenhaCheckpoints();
 
       mapa.fitBounds(latLngs, { padding: [30, 30] });
 
       document.getElementById('percentagem').textContent = '0%';
       document.getElementById('percentagem').style.color = '#58D68D';
-      document.getElementById('estado').textContent = 'A simular…';
-      document.getElementById('marcador-limiar-label').textContent = '';
+      document.getElementById('estado').textContent = checkpoints.length > 0
+        ? ('A simular… (0/' + checkpoints.length + ' checkpoints)')
+        : 'A simular…';
     }
 
     /**
-     * Avança a simulacao num passo -- chamado pelo Kotlin num
-     * intervalo configuravel (ex: 200ms por ponto, para poder ver
-     * a linha a crescer).
+     * Avança a simulação num passo -- percorre o próximo ponto do
+     * template e verifica se o segmento (ponto anterior -> ponto
+     * atual) cruza a barreira do checkpoint actualmente esperado --
+     * exactamente o mesmo algoritmo usado em produção
+     * (GestorSemelhancaTrajeto.avaliaCheckpoints).
      */
     function passaSimulacao() {
       if (template.length === 0 || indiceSimulacao >= template.length) {
@@ -159,57 +177,51 @@
       }
 
       var pt = template[indiceSimulacao];
-      var sem = calculaSemelhancaStep(pt.lat, pt.lon);
-      var pct = Math.round(sem * 100);
-
-      // Atualizar marcador de posicao
       marcadorPosicao.setLatLng([pt.lat, pt.lon]);
 
-      // Atualizar linha percorrida (todos os pontos ate ao cursor do template)
-      var percorridos = template.slice(0, cursor).map(function(p) { return [p.lat, p.lon]; });
+      var percorridos = template.slice(0, indiceSimulacao + 1).map(function (p) { return [p.lat, p.lon]; });
       linhaPercorrida.setLatLngs(percorridos);
 
-      // Atualizar painel
-      document.getElementById('percentagem').textContent = pct + '%';
-      var cor = pct >= limiar ? '#F0A500' : (pct > limiar * 0.6 ? '#E8C733' : '#58D68D');
-      document.getElementById('percentagem').style.color = cor;
+      if (indiceSimulacao > 0 && indiceEsperado < checkpoints.length) {
+        var anterior = template[indiceSimulacao - 1];
+        var cp = checkpoints[indiceEsperado];
+        if (segmentosIntersectam(
+              anterior.lat, anterior.lon, pt.lat, pt.lon,
+              cp.latA, cp.lonA, cp.latB, cp.lonB
+            )) {
+          indiceEsperado++;
+          desenhaCheckpoints();
+          if (indiceEsperado >= checkpoints.length) {
+            document.getElementById('estado').textContent = 'Todos os checkpoints atravessados -- ação disparada aqui!';
+            window.location.href = 'blugateway-sim://limiar?indice=' + indiceSimulacao + '&pct=100';
+          }
+        }
+      }
 
-      // Marcar onde o limiar foi atingido (primeira vez)
-      if (pct >= limiar && limiarAtingidoIndice < 0) {
-        limiarAtingidoIndice = indiceSimulacao;
-        if (marcadorLimiar) mapa.removeLayer(marcadorLimiar);
-        marcadorLimiar = L.marker([pt.lat, pt.lon], { icon: ICONE_LIMIAR }).addTo(mapa);
-        marcadorLimiar.bindPopup('⚡ ' + limiar + '% atingido!').openPopup();
-        document.getElementById('marcador-limiar-label').textContent =
-          '⚡ Limiar ' + limiar + '% atingido no ponto ' + (indiceSimulacao + 1) + '/' + template.length;
-        document.getElementById('estado').textContent = 'Ação seria disparada aqui!';
-        window.location.href = 'blugateway-sim://limiar?indice=' + indiceSimulacao + '&pct=' + pct;
-      } else if (limiarAtingidoIndice < 0) {
-        var falta = template.length - indiceSimulacao - 1;
+      var pct = checkpoints.length > 0 ? Math.round((indiceEsperado * 100) / checkpoints.length) : 0;
+      document.getElementById('percentagem').textContent = pct + '%';
+      document.getElementById('percentagem').style.color = indiceEsperado >= checkpoints.length ? '#F0A500' : '#58D68D';
+      if (indiceEsperado < checkpoints.length) {
         document.getElementById('estado').textContent =
-          'Ponto ' + (indiceSimulacao + 1) + '/' + template.length + '  •  Faltam ' + falta;
+          'Ponto ' + (indiceSimulacao + 1) + '/' + template.length +
+          '  •  Checkpoint ' + indiceEsperado + '/' + checkpoints.length;
       }
 
       indiceSimulacao++;
-
-      // Notificar percentagem ao Kotlin para atualizar o UI nativo tambem
       window.location.href = 'blugateway-sim://progresso?pct=' + pct + '&i=' + indiceSimulacao;
     }
 
     function reiniciaSimulacao() {
-      if (simTimer) clearInterval(simTimer);
-      cursor = 0;
       indiceSimulacao = 0;
-      limiarAtingidoIndice = -1;
+      indiceEsperado = 0;
       if (linhaPercorrida) linhaPercorrida.setLatLngs([]);
       if (marcadorPosicao && template.length > 0) {
         marcadorPosicao.setLatLng([template[0].lat, template[0].lon]);
       }
-      if (marcadorLimiar) { mapa.removeLayer(marcadorLimiar); marcadorLimiar = null; }
+      desenhaCheckpoints();
       document.getElementById('percentagem').textContent = '0%';
       document.getElementById('percentagem').style.color = '#58D68D';
       document.getElementById('estado').textContent = 'Pronto para simular.';
-      document.getElementById('marcador-limiar-label').textContent = '';
     }
   </script>
 </body>

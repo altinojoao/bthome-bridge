@@ -28,6 +28,23 @@
       animation: radar-pulsar 1.6s ease-out infinite;
       pointer-events: none;
     }
+    .rotulo-checkpoint {
+      background: #F0A500;
+      color: #0D1117;
+      font-weight: bold;
+      font-size: 11px;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid white;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.6);
+    }
+    .rotulo-checkpoint.atravessado {
+      background: #3FB950;
+    }
   </style>
 </head>
 <body>
@@ -56,6 +73,52 @@
     setTimeout(function () { mapa.invalidateSize(); }, 100);
 
     var camadasAtuais = [];
+    var camadasCheckpointsAtivos = [];  // barreiras dos cenarios em uso
+
+    /**
+     * Desenha as barreiras numeradas dos checkpoints de todos os
+     * cenarios de trajeto ATIVOS que tenham checkpoints definidos --
+     * chamado a par de desenhaTrajetos() para sobrepor as barreiras
+     * na navegacao em tempo real. jsonCenarios: lista de
+     * {nome, cor, checkpoints: [{latA,lonA,latB,lonB}], progresso}
+     * -- progresso indica quantos checkpoints ja foram atravessados
+     * na viagem atual (0-based), usado so para colorir a barreira.
+     */
+    function desenhaCheckpointsCenarios(jsonTexto) {
+      camadasCheckpointsAtivos.forEach(function (c) { mapa.removeLayer(c); });
+      camadasCheckpointsAtivos = [];
+
+      var cenarios;
+      try {
+        cenarios = JSON.parse(jsonTexto);
+      } catch (e) {
+        return;
+      }
+
+      cenarios.forEach(function (cenario) {
+        if (!cenario.checkpoints || cenario.checkpoints.length === 0) return;
+        var progresso = cenario.progresso || 0;
+        cenario.checkpoints.forEach(function (cp, i) {
+          var atravessado = i < progresso;
+          var cor = atravessado ? '#3FB950' : (cenario.cor || '#F0A500');
+          var linha = L.polyline([[cp.latA, cp.lonA], [cp.latB, cp.lonB]], {
+            color: cor, weight: 4, opacity: 0.85
+          }).addTo(mapa);
+          camadasCheckpointsAtivos.push(linha);
+
+          var meioLat = (cp.latA + cp.latB) / 2;
+          var meioLon = (cp.lonA + cp.lonB) / 2;
+          var rotulo = L.marker([meioLat, meioLon], {
+            icon: L.divIcon({
+              html: '<div class="rotulo-checkpoint' + (atravessado ? ' atravessado' : '') + '">' + (i + 1) + '</div>',
+              className: '', iconSize: [20, 20], iconAnchor: [10, 10]
+            })
+          }).addTo(mapa);
+          rotulo.bindPopup('<b>' + cenario.nome + '</b><br>Checkpoint ' + (i + 1) + '/' + cenario.checkpoints.length);
+          camadasCheckpointsAtivos.push(rotulo);
+        });
+      });
+    }
 
     /**
      * Recebe um JSON com a forma:
@@ -331,93 +394,109 @@
     }
 
     // ---------------------------------------------------------------
-    // SIMULACAO DE CENARIO -- sobreposicao no mesmo mapa
+    // SIMULACAO DE CENARIO -- sobreposicao no mesmo mapa (checkpoints)
     // ---------------------------------------------------------------
     var simTemplate = [];
-    var simRaio = 40;
-    var simCursor = 0;
+    var simCheckpoints = [];
+    var simIndiceEsperado = 0;
     var simIndice = 0;
-    var simCamadasExtra = [];
+    var simCamadasCheckpoints = [];
     var simLinhaTemplate = null;
     var simLinhaPercorrida = null;
     var simMarcadorPos = null;
-    var simMarcadorLimiar = null;
-    var simLimiarIndice = -1;
 
     var ICONE_SIM_POS = L.divIcon({
       html: '<div style="width:14px;height:14px;border-radius:50%;background:#2BA6E0;border:2px solid white;box-shadow:0 1px 5px rgba(0,0,0,.6)"></div>',
       className: '', iconSize: [14,14], iconAnchor: [7,7]
     });
-    var ICONE_SIM_LIMIAR = L.divIcon({
-      html: '<div style="width:16px;height:16px;border-radius:50%;background:#F0A500;border:2px solid white;box-shadow:0 1px 5px rgba(0,0,0,.6)"></div>',
-      className: '', iconSize: [16,16], iconAnchor: [8,8]
-    });
 
-    function distSim(la1,lo1,la2,lo2){
-      var R=6371000,r=Math.PI/180;
-      var a=Math.sin((la2-la1)*r/2)**2+Math.cos(la1*r)*Math.cos(la2*r)*Math.sin((lo2-lo1)*r/2)**2;
-      return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+    function ladoSim(p1x,p1y,p2x,p2y,p3x,p3y){
+      return (p2x-p1x)*(p3y-p1y)-(p2y-p1y)*(p3x-p1x);
+    }
+    function segmentosIntersectamSim(pAx,pAy,pBx,pBy,cAx,cAy,cBx,cBy){
+      var d1=ladoSim(cAx,cAy,cBx,cBy,pAx,pAy), d2=ladoSim(cAx,cAy,cBx,cBy,pBx,pBy);
+      var d3=ladoSim(pAx,pAy,pBx,pBy,cAx,cAy), d4=ladoSim(pAx,pAy,pBx,pBy,cBx,cBy);
+      return ((d1>0&&d2<0)||(d1<0&&d2>0)) && ((d3>0&&d4<0)||(d3<0&&d4>0));
     }
 
-    function iniciaSimulacao(jsonTemplate, raio, limiar) {
+    function desenhaSimCheckpoints() {
+      simCamadasCheckpoints.forEach(function(c){ mapa.removeLayer(c); });
+      simCamadasCheckpoints = [];
+      simCheckpoints.forEach(function(cp, i){
+        var atravessado = i < simIndiceEsperado;
+        var cor = atravessado ? '#3FB950' : '#F0A500';
+        var linha = L.polyline([[cp.latA,cp.lonA],[cp.latB,cp.lonB]], {color:cor,weight:4,opacity:0.9}).addTo(mapa);
+        simCamadasCheckpoints.push(linha);
+        var meioLat=(cp.latA+cp.latB)/2, meioLon=(cp.lonA+cp.lonB)/2;
+        var rotulo = L.marker([meioLat,meioLon],{icon:L.divIcon({
+          html:'<div class="rotulo-checkpoint'+(atravessado?' atravessado':'')+'">'+(i+1)+'</div>',
+          className:'', iconSize:[20,20], iconAnchor:[10,10]
+        })}).addTo(mapa);
+        simCamadasCheckpoints.push(rotulo);
+      });
+    }
+
+    function iniciaSimulacao(jsonTemplate, jsonCheckpoints) {
       simTemplate = JSON.parse(jsonTemplate);
-      simRaio = raio; simCursor = 0; simIndice = 0; simLimiarIndice = -1;
-      simCamadasExtra.forEach(function(c){ mapa.removeLayer(c); });
-      simCamadasExtra = [];
+      simCheckpoints = jsonCheckpoints ? JSON.parse(jsonCheckpoints) : [];
+      simIndiceEsperado = 0; simIndice = 0;
+      simCamadasCheckpoints.forEach(function(c){ mapa.removeLayer(c); });
+      simCamadasCheckpoints = [];
       if(simLinhaTemplate){ mapa.removeLayer(simLinhaTemplate); }
       if(simLinhaPercorrida){ mapa.removeLayer(simLinhaPercorrida); }
       if(simMarcadorPos){ mapa.removeLayer(simMarcadorPos); }
-      if(simMarcadorLimiar){ mapa.removeLayer(simMarcadorLimiar); }
-      simMarcadorLimiar = null;
       if(simTemplate.length < 2) return;
       var latLngs = simTemplate.map(function(p){ return [p.lat, p.lon]; });
       simLinhaTemplate = L.polyline(latLngs,{color:'#1A6BC4',weight:4,opacity:0.4,dashArray:'6,5'}).addTo(mapa);
       simLinhaPercorrida = L.polyline([],{color:'#3FB950',weight:6,opacity:0.9}).addTo(mapa);
       simMarcadorPos = L.marker(latLngs[0],{icon:ICONE_SIM_POS}).addTo(mapa);
+      desenhaSimCheckpoints();
       mapa.fitBounds(latLngs,{padding:[30,30]});
     }
 
-    function passoSimulacao(limiar) {
+    function passoSimulacao() {
       if(simIndice >= simTemplate.length) {
-        window.location.href='blugateway-sim://concluido?pct='+Math.round(simCursor/simTemplate.length*100);
+        var pctFim = simCheckpoints.length>0 ? Math.round(simIndiceEsperado*100/simCheckpoints.length) : 0;
+        window.location.href='blugateway-sim://concluido?pct='+pctFim;
         return;
       }
       var pt = simTemplate[simIndice];
-      var salto = Math.max(1,Math.floor(simTemplate.length*0.15));
-      var lim = Math.min(simCursor+salto, simTemplate.length);
-      for(var i=simCursor;i<lim;i++){
-        if(distSim(pt.lat,pt.lon,simTemplate[i].lat,simTemplate[i].lon)<=simRaio){
-          simCursor=i+1; break;
+      simMarcadorPos.setLatLng([pt.lat,pt.lon]);
+      var perc = simTemplate.slice(0,simIndice+1).map(function(p){ return [p.lat,p.lon]; });
+      simLinhaPercorrida.setLatLngs(perc);
+
+      if(simIndice > 0 && simIndiceEsperado < simCheckpoints.length){
+        var anterior = simTemplate[simIndice-1];
+        var cp = simCheckpoints[simIndiceEsperado];
+        if(segmentosIntersectamSim(anterior.lat,anterior.lon,pt.lat,pt.lon,cp.latA,cp.lonA,cp.latB,cp.lonB)){
+          simIndiceEsperado++;
+          desenhaSimCheckpoints();
+          if(simIndiceEsperado >= simCheckpoints.length){
+            window.location.href='blugateway-sim://limiar?pct=100&i='+simIndice;
+          }
         }
       }
-      var pct = Math.round(simCursor/simTemplate.length*100);
-      simMarcadorPos.setLatLng([pt.lat,pt.lon]);
-      var perc = simTemplate.slice(0,simCursor).map(function(p){ return [p.lat,p.lon]; });
-      simLinhaPercorrida.setLatLngs(perc);
-      if(pct>=limiar && simLimiarIndice<0){
-        simLimiarIndice=simIndice;
-        simMarcadorLimiar=L.marker([pt.lat,pt.lon],{icon:ICONE_SIM_LIMIAR}).addTo(mapa);
-        simMarcadorLimiar.bindPopup('⚡ '+limiar+'% aqui!').openPopup();
-        window.location.href='blugateway-sim://limiar?pct='+pct+'&i='+simIndice;
-      }
+      var pct = simCheckpoints.length>0 ? Math.round(simIndiceEsperado*100/simCheckpoints.length) : 0;
       simIndice++;
       window.location.href='blugateway-sim://pct?v='+pct;
     }
 
     function reiniciaSimulacao() {
-      simCursor=0; simIndice=0; simLimiarIndice=-1;
+      simIndice=0; simIndiceEsperado=0;
       if(simLinhaPercorrida) simLinhaPercorrida.setLatLngs([]);
       if(simMarcadorPos && simTemplate.length>0) simMarcadorPos.setLatLng([simTemplate[0].lat,simTemplate[0].lon]);
-      if(simMarcadorLimiar){ mapa.removeLayer(simMarcadorLimiar); simMarcadorLimiar=null; }
+      desenhaSimCheckpoints();
     }
 
     function limpaSim() {
-      simCursor=0; simIndice=0; simLimiarIndice=-1;
+      simIndice=0; simIndiceEsperado=0;
       if(simLinhaTemplate){ mapa.removeLayer(simLinhaTemplate); simLinhaTemplate=null; }
       if(simLinhaPercorrida){ mapa.removeLayer(simLinhaPercorrida); simLinhaPercorrida=null; }
       if(simMarcadorPos){ mapa.removeLayer(simMarcadorPos); simMarcadorPos=null; }
-      if(simMarcadorLimiar){ mapa.removeLayer(simMarcadorLimiar); simMarcadorLimiar=null; }
+      simCamadasCheckpoints.forEach(function(c){ mapa.removeLayer(c); });
+      simCamadasCheckpoints = [];
     }
+
   </script>
 </body>
 </html>

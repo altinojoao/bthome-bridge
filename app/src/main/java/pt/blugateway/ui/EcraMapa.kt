@@ -85,7 +85,7 @@ fun EcraMapa(
         val c = cenarioSimulado ?: return@LaunchedEffect
         while (simEmExecucao && !simConcluido) {
             kotlinx.coroutines.delay(150L)
-            webViewRef?.evaluateJavascript("passoSimulacao(${c.limiarPercentagem});", null)
+            webViewRef?.evaluateJavascript("passoSimulacao();", null)
         }
     }
 
@@ -100,7 +100,31 @@ fun EcraMapa(
         construirJsonTrajetos(comandosComHistorico)
     }
 
-    LaunchedEffect(jsonTrajetos, paginaCarregada, soUltimaViagem) {
+    // Cenários com checkpoints já definidos, associados a um comando
+    // actualmente visível no mapa -- desenhados como barreiras
+    // numeradas sobrepostas ao trajecto em tempo real.
+    val jsonCheckpointsAtivos = remember(cenarios, comandosComHistorico) {
+        val indicePorMac = comandosComHistorico.mapIndexed { i, (c, _) -> c.mac to i }.toMap()
+        val arr = JSONArray()
+        cenarios.filter { it.ativo && it.checkpoints.isNotEmpty() && it.macComando in indicePorMac }
+            .forEach { cenario ->
+                val obj = JSONObject()
+                obj.put("nome", cenario.nome)
+                obj.put("cor", CORES_TRAJETO[(indicePorMac[cenario.macComando] ?: 0) % CORES_TRAJETO.size])
+                obj.put("checkpoints", JSONArray().apply {
+                    cenario.checkpoints.forEach { cp ->
+                        put(JSONObject().apply {
+                            put("latA", cp.latA); put("lonA", cp.lonA)
+                            put("latB", cp.latB); put("lonB", cp.lonB)
+                        })
+                    }
+                })
+                arr.put(obj)
+            }
+        arr.toString()
+    }
+
+    LaunchedEffect(jsonTrajetos, jsonCheckpointsAtivos, paginaCarregada, soUltimaViagem) {
         if (paginaCarregada) {
             val webView = webViewRef ?: return@LaunchedEffect
             webView.evaluateJavascript("defineMostrarSoUltimaViagem($soUltimaViagem);", null)
@@ -109,6 +133,10 @@ fun EcraMapa(
             // injetado cru como literal JavaScript -- daí o quote() aqui.
             val script = "desenhaTrajetos(${JSONObject.quote(jsonTrajetos)});"
             webView.evaluateJavascript(script, null)
+            webView.evaluateJavascript(
+                "desenhaCheckpointsCenarios(${JSONObject.quote(jsonCheckpointsAtivos)});",
+                null
+            )
         }
     }
 
@@ -285,8 +313,18 @@ fun EcraMapa(
                                                 })
                                             }
                                         }.toString()
+                                        val jsonCheckpoints = if (c.checkpoints.isNotEmpty()) {
+                                            org.json.JSONArray().apply {
+                                                c.checkpoints.forEach { cp ->
+                                                    put(org.json.JSONObject().apply {
+                                                        put("latA", cp.latA); put("lonA", cp.lonA)
+                                                        put("latB", cp.latB); put("lonB", cp.lonB)
+                                                    })
+                                                }
+                                            }.toString()
+                                        } else null
                                         webViewRef?.evaluateJavascript(
-                                            "iniciaSimulacao(${org.json.JSONObject.quote(json)}, ${c.raioMetros}, ${c.limiarPercentagem});",
+                                            "iniciaSimulacao(${org.json.JSONObject.quote(json)}, ${if (jsonCheckpoints != null) org.json.JSONObject.quote(jsonCheckpoints) else "null"});",
                                             null
                                         )
                                     }
