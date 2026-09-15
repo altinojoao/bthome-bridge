@@ -30,10 +30,22 @@ class Repositorio private constructor(context: Context) {
 
     companion object {
         const val TEMPO_DESTAQUE_COMBINACAO_MS = 6000L
-        // Bloqueio de re-disparo de cenários de trajeto: 2h cobre
-        // qualquer viagem realista (incluindo paragens no trânsito)
-        // sem bloquear indevidamente uma segunda viagem no mesmo dia.
-        const val TEMPO_BLOQUEIO_APOS_DISPARO_MS = 2 * 60 * 60 * 1000L
+        // Bloqueio de re-disparo: reduzido de 2h para 20min (v1.3.3).
+        // 2h bloqueava indevidamente uma segunda passagem legítima no
+        // mesmo dia -- ex: sair de casa de manhã, ir almoçar fora e
+        // voltar ao trabalho horas depois disparava correctamente,
+        // mas sair e voltar num intervalo mais curto (ex: ida a casa
+        // ao almoço e regresso ao trabalho) ficava bloqueado.
+        // 20min é suficiente para evitar disparo duplicado da MESMA
+        // passagem (ex: o utilizador andar de um lado para o outro
+        // perto do último checkpoint) sem bloquear viagens de ida-e-
+        // volta reais, que tipicamente demoram mais que isso.
+        // As restantes protecções contra falsos positivos (sequência
+        // ordenada de checkpoints, utilizadorParadoAgora, distancia-
+        // MaximaEntrada, presença confirmada do beacon) continuam
+        // activas e cobrem os casos que o bloqueio longo pretendia
+        // evitar por si só.
+        const val TEMPO_BLOQUEIO_APOS_DISPARO_MS = 20 * 60 * 1000L
         // valores por omissao, usados so na primeira vez (antes do
         // utilizador escolher algo em Configuracao)
         const val DIAS_TRAJETO_OMISSAO = 30
