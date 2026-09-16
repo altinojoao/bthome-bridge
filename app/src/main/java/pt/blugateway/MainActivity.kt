@@ -32,6 +32,44 @@ import pt.blugateway.ui.theme.TemaGateway
 
 class MainActivity : ComponentActivity() {
 
+    /**
+     * Aplica o idioma escolhido pelo utilizador (guardado em
+     * SharedPreferences) a TODA a Activity, antes de qualquer recurso
+     * ser resolvido -- em vez do mecanismo anterior, que envolvia só
+     * uma sub-árvore Compose (CompositionLocalProvider em
+     * EcraPrincipal) num Context derivado. Esse mecanismo funcionava
+     * para texto directamente na árvore principal, mas não alcançava
+     * diálogos (AlertDialog/Dialog abrem uma composição à parte, cujo
+     * LocalContext por vezes resolve para o Context original da
+     * Activity, não o localizado) nem o WebView do guia de ajuda (que
+     * não usa stringResource nenhuma).
+     *
+     * attachBaseContext corre ANTES de onCreate e da criação de
+     * qualquer View/composição -- ao mudar aqui a Configuration com o
+     * Locale certo, TODA a Activity (Resources, Context, e por
+     * herança todo o Compose e WebViews criados a partir dela) já
+     * nasce com o idioma correcto, sem excepções.
+     *
+     * Ler a preferência aqui exige SharedPreferences directamente
+     * (sem passar pelo Repositorio singleton, que só é inicializado
+     * mais tarde com o applicationContext) -- mesma chave ("idioma")
+     * já usada por Repositorio.idioma()/defineIdioma(), por isso lê o
+     * valor guardado por essas funções sem precisar de as duplicar.
+     */
+    override fun attachBaseContext(newBase: android.content.Context) {
+        val prefs = newBase.getSharedPreferences("blugateway", android.content.Context.MODE_PRIVATE)
+        val idiomaGuardado = prefs.getString("idioma", null)
+        if (idiomaGuardado.isNullOrBlank()) {
+            super.attachBaseContext(newBase)
+            return
+        }
+        val locale = java.util.Locale(idiomaGuardado)
+        val config = android.content.res.Configuration(newBase.resources.configuration)
+        config.setLocale(locale)
+        val contextoLocalizado = newBase.createConfigurationContext(config)
+        super.attachBaseContext(contextoLocalizado)
+    }
+
     private fun permissoesNecessarias(): Array<String> {
         val lista = mutableListOf<String>()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {

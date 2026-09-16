@@ -227,7 +227,16 @@ fun EcraPrincipal(vm: GatewayViewModel = viewModel()) {
             if (mostraSeletorIdioma) {
                 DialogoIdioma(
                     idiomaAtual = idiomaAtual,
-                    onEscolhe = { cod -> vm.escolheIdioma(cod); mostraSeletorIdioma = false },
+                    onEscolhe = { cod ->
+                        vm.escolheIdioma(cod)
+                        mostraSeletorIdioma = false
+                        // Recriar a Activity para que attachBaseContext (MainActivity)
+                        // aplique o novo idioma a TODA a app -- Resources, diálogos,
+                        // WebViews incluídos -- não apenas à sub-árvore Compose que o
+                        // CompositionLocalProvider abaixo já cobria antes. Sem isto, o
+                        // idioma só mudava numa parte da app (o problema reportado).
+                        (contextoBase as? android.app.Activity)?.recreate()
+                    },
                     onFecha = { mostraSeletorIdioma = false }
                 )
             }
