@@ -397,14 +397,26 @@ object GestorSemelhancaTrajeto {
         // Só avança para um checkpoint cuja distância seja
         // decisivamente menor (<30m) -- evita saltos por coincidência
         // geométrica com um checkpoint fisicamente próximo por acaso.
+        //
+        // Só se aplica quando JÁ HAVIA progresso guardado (indiceAtual
+        // > 0) -- nunca na primeira avaliação de um cenário (índice 0).
+        // Confirmado em produção: ao criar um cenário NOVO a partir de
+        // uma viagem já gravada, o trajetoAtual da primeira avaliação
+        // é o próprio histórico completo usado como template -- o seu
+        // último ponto está sempre exactamente no destino (onde a
+        // gravação terminou), por isso "recuperar" progresso aqui
+        // disparava o cenário instantaneamente, mesmo sem nenhuma
+        // navegação em tempo real ter ocorrido.
         val ultimo = trajetoAtual.last()
         var indice = indiceAtual
-        for (i in indiceAtual until checkpoints.size) {
-            val cp = checkpoints[i]
-            val meioLat = (cp.latA + cp.latB) / 2
-            val meioLon = (cp.lonA + cp.lonB) / 2
-            if (distanciaMetros(ultimo.latitude, ultimo.longitude, meioLat, meioLon) <= 30.0) {
-                indice = i + 1
+        if (indiceAtual > 0) {
+            for (i in indiceAtual until checkpoints.size) {
+                val cp = checkpoints[i]
+                val meioLat = (cp.latA + cp.latB) / 2
+                val meioLon = (cp.lonA + cp.lonB) / 2
+                if (distanciaMetros(ultimo.latitude, ultimo.longitude, meioLat, meioLon) <= 30.0) {
+                    indice = i + 1
+                }
             }
         }
 
@@ -679,6 +691,10 @@ object GestorSemelhancaTrajeto {
             )
 
             if (progressoPercent >= cenario.limiarPercentagem && !repo.jaDisparadoNestaViagem(cenario.id, inicio)) {
+                if (repo.editadoRecentemente(cenario.id)) {
+                    RegistoDiagnostico.regista(context, "[D-cenarios] cenario='${cenario.nome}' editado/criado recentemente -- disparo suprimido (carência)")
+                    continue
+                }
                 if (!cenario.dentroDaJanelaHoraria()) {
                     RegistoDiagnostico.regista(context, "[D-cenarios] cenario='${cenario.nome}' fora da janela horária configurada -- disparo suprimido")
                     continue

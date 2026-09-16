@@ -46,6 +46,14 @@ class Repositorio private constructor(context: Context) {
         // activas e cobrem os casos que o bloqueio longo pretendia
         // evitar por si só.
         const val TEMPO_BLOQUEIO_APOS_DISPARO_MS = 20 * 60 * 1000L
+        // Carência após criar/editar um cenário: bloqueia disparos
+        // durante 5 minutos depois de sair do editor. Sem isto, um
+        // cenário criado a partir de uma viagem já gravada podia
+        // disparar imediatamente -- o histórico usado como template
+        // termina sempre no destino, satisfazendo os checkpoints na
+        // primeiríssima avaliação, sem nenhuma navegação real ter
+        // ocorrido (confirmado em produção).
+        const val TEMPO_CARENCIA_APOS_EDICAO_MS = 5 * 60 * 1000L
         // valores por omissao, usados so na primeira vez (antes do
         // utilizador escolher algo em Configuracao)
         const val DIAS_TRAJETO_OMISSAO = 30
@@ -373,6 +381,29 @@ class Repositorio private constructor(context: Context) {
 
     fun reiniciaProgressoCheckpoints(cenarioId: String) {
         prefs.edit().remove("checkpoint_progresso_$cenarioId").apply()
+    }
+
+    /**
+     * Marca que o cenário acabou de ser criado/editado agora mesmo --
+     * usado para atrasar a primeira avaliação de checkpoints por um
+     * curto período depois de sair do editor. Sem isto, criar um
+     * cenário a partir de uma viagem já gravada disparava as suas
+     * acções IMEDIATAMENTE: o histórico usado como template termina
+     * sempre exactamente no destino, e tanto a intersecção sequencial
+     * de segmentos como a recuperação de progresso preso encontram aí
+     * uma correspondência perfeita na primeiríssima avaliação --
+     * mesmo sem nenhuma navegação em tempo real ter ocorrido
+     * (confirmado em produção: dois cenários dispararam "Cheguei a
+     * Casa" no mesmo segundo em que um deles foi criado no editor).
+     */
+    fun marcaCenarioEditadoAgora(cenarioId: String) {
+        prefs.edit().putLong("cenario_editado_em_$cenarioId", System.currentTimeMillis()).apply()
+    }
+
+    fun editadoRecentemente(cenarioId: String): Boolean {
+        val ts = prefs.getLong("cenario_editado_em_$cenarioId", -1L)
+        if (ts == -1L) return false
+        return (System.currentTimeMillis() - ts) < TEMPO_CARENCIA_APOS_EDICAO_MS
     }
 
     private fun limpaBloqueioDisparo(cenarioId: String) {

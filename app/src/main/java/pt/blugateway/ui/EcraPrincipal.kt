@@ -274,8 +274,14 @@ fun EcraPrincipal(vm: GatewayViewModel = viewModel()) {
                     comandos = comandos,
                     comandosComHistorico = comandosComHistorico,
                     cenarios = cenariosTrajeto,
-                    onCria = { vm.adicionaCenarioTrajeto(it) },
-                    onAtualiza = { vm.atualizaCenarioTrajeto(it) },
+                    onCria = {
+                        vm.adicionaCenarioTrajeto(it)
+                        vm.marcaCenarioEditadoAgora(it.id)
+                    },
+                    onAtualiza = {
+                        vm.atualizaCenarioTrajeto(it)
+                        vm.marcaCenarioEditadoAgora(it.id)
+                    },
                     onRemove = { vm.removeCenarioTrajeto(it) },
                     onFecha = { mostraCenarios = false }
                 )

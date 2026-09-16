@@ -200,6 +200,10 @@ class GatewayViewModel(app: Application) : AndroidViewModel(app) {
         repo.atualizaCenarioTrajeto(cenario)
     }
 
+    fun marcaCenarioEditadoAgora(cenarioId: String) {
+        repo.marcaCenarioEditadoAgora(cenarioId)
+    }
+
     fun removeCenarioTrajeto(id: String) {
         repo.removeCenarioTrajeto(id)
     }
