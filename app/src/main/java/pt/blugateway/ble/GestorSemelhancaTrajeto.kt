@@ -382,9 +382,33 @@ object GestorSemelhancaTrajeto {
         indiceAtual: Int
     ): Int {
         if (checkpoints.isEmpty() || indiceAtual >= checkpoints.size) return indiceAtual
-        if (trajetoAtual.size < 2) return indiceAtual
+        if (trajetoAtual.isEmpty()) return indiceAtual
 
+        // Recuperação de progresso preso: se a posição mais recente
+        // está muito mais perto de um checkpoint MAIS ADIANTE do que
+        // do checkpoint pendente actual, avança directamente para
+        // esse -- cobre o caso em que o utilizador esteve parado
+        // (avaliação suspensa) antes de cruzar fisicamente o
+        // checkpoint do meio do percurso, retomou a marcha e já
+        // está perto do fim, mas o índice nunca teve oportunidade de
+        // avançar sequencialmente porque a suspensão intermédia
+        // "saltou" essa barreira sem a testar (confirmado: utilizador
+        // a 2m do último checkpoint, progresso preso no primeiro).
+        // Só avança para um checkpoint cuja distância seja
+        // decisivamente menor (<30m) -- evita saltos por coincidência
+        // geométrica com um checkpoint fisicamente próximo por acaso.
+        val ultimo = trajetoAtual.last()
         var indice = indiceAtual
+        for (i in indiceAtual until checkpoints.size) {
+            val cp = checkpoints[i]
+            val meioLat = (cp.latA + cp.latB) / 2
+            val meioLon = (cp.lonA + cp.lonB) / 2
+            if (distanciaMetros(ultimo.latitude, ultimo.longitude, meioLat, meioLon) <= 30.0) {
+                indice = i + 1
+            }
+        }
+
+        if (trajetoAtual.size < 2) return indice
         for (i in 0 until trajetoAtual.size - 1) {
             if (indice >= checkpoints.size) break
             val p1 = trajetoAtual[i]; val p2 = trajetoAtual[i + 1]
@@ -610,23 +634,29 @@ object GestorSemelhancaTrajeto {
             // deslocação real (caso confirmado: jitter GPS indoor ao
             // longo de horas, longe de qualquer checkpoint).
             //
-            // Mas se o utilizador já está parado PERTO do próximo
-            // checkpoint pendente, isso é exactamente a situação de
-            // "acabei de chegar e estou a abrandar/estacionar" -- não
-            // suspender, porque é aí que os últimos checkpoints
-            // precisam de ser atravessados para completar o limiar
-            // (confirmado: disparo perdido com o utilizador a 22m de
-            // casa, guarda suspendeu por estar parado nos últimos
-            // metros ao estacionar).
-            val proximoCp = checkpoints.getOrNull(indiceAntes)
-            val pertoDoProximoCheckpoint = proximoCp != null && trajetoComPosAtual.isNotEmpty() &&
+            // Mas se o utilizador já está parado PERTO de QUALQUER
+            // checkpoint ainda pendente (não só o imediatamente
+            // seguinte), isso é sinal de navegação real a decorrer --
+            // não suspender. Comparar só com o checkpoint imediatamente
+            // seguinte falha quando o progresso ficou preso a meio da
+            // viagem (ex: parou 3+ minutos num semáforo/trânsito a
+            // meio do percurso, a guarda suspendeu aí, e o índice
+            // nunca mais avançou) -- o utilizador pode retomar a
+            // marcha e chegar fisicamente perto do FIM do percurso,
+            // mas a guarda continua a comparar com o checkpoint do
+            // MEIO, que ficou geograficamente para trás, nunca
+            // desbloqueando (confirmado: parado a 2m do checkpoint
+            // final, guarda continuava a suspender indefinidamente).
+            val pertoDeAlgumCheckpointPendente = trajetoComPosAtual.isNotEmpty() &&
                 run {
                     val ultimo = trajetoComPosAtual.last()
-                    val meioLat = (proximoCp.latA + proximoCp.latB) / 2
-                    val meioLon = (proximoCp.lonA + proximoCp.lonB) / 2
-                    distanciaMetros(ultimo.latitude, ultimo.longitude, meioLat, meioLon) <= 150.0
+                    checkpoints.drop(indiceAntes).any { cp ->
+                        val meioLat = (cp.latA + cp.latB) / 2
+                        val meioLon = (cp.lonA + cp.lonB) / 2
+                        distanciaMetros(ultimo.latitude, ultimo.longitude, meioLat, meioLon) <= 150.0
+                    }
                 }
-            if (!pertoDoProximoCheckpoint && utilizadorParadoAgora(trajetoComPosAtual)) {
+            if (!pertoDeAlgumCheckpointPendente && utilizadorParadoAgora(trajetoComPosAtual)) {
                 RegistoDiagnostico.regista(context, "[D-cenarios] cenario='${cenario.nome}' utilizador parado -- avaliação de checkpoints suspensa")
                 continue
             }
