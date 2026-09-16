@@ -75,6 +75,61 @@
     var camadasAtuais = [];
     var camadasCheckpointsAtivos = [];  // barreiras dos cenarios em uso
 
+    // Modo de navegação: segue automaticamente a posição mais recente
+    // com zoom fixo e próximo (como Waze/Google Maps), em vez de
+    // reenquadrar a vista para caber TODO o histórico a cada
+    // actualização (comportamento antigo -- afastava o zoom
+    // continuamente ao longo de uma viagem longa, nunca ficando perto
+    // da posição actual). Desactivado automaticamente se o utilizador
+    // interagir manualmente com o mapa (arrastar/zoom), reactivável
+    // pelo botão de recentrar.
+    var modoNavegacao = true;
+    var ZOOM_NAVEGACAO = 17;
+    var botaoRecentrar = null;
+
+    function criaBotaoRecentrar() {
+      if (botaoRecentrar) return;
+      var ControleRecentrar = L.Control.extend({
+        options: { position: 'bottomright' },
+        onAdd: function () {
+          var div = L.DomUtil.create('div', 'leaflet-bar');
+          div.innerHTML = '<a href="#" title="Recentrar" style="display:flex;align-items:center;justify-content:center;font-size:18px;width:34px;height:34px;background:#161B22;color:#2BA6E0;text-decoration:none;">\u25CE</a>';
+          L.DomEvent.on(div, 'click', function (e) {
+            L.DomEvent.stop(e);
+            modoNavegacao = true;
+            atualizaVisibilidadeBotaoRecentrar();
+            if (window._ultimaPosicaoConhecida) {
+              mapa.setView(window._ultimaPosicaoConhecida, ZOOM_NAVEGACAO, { animate: true });
+            }
+          });
+          return div;
+        }
+      });
+      botaoRecentrar = new ControleRecentrar();
+      botaoRecentrar.addTo(mapa);
+      atualizaVisibilidadeBotaoRecentrar();
+    }
+
+    function atualizaVisibilidadeBotaoRecentrar() {
+      if (!botaoRecentrar || !botaoRecentrar.getContainer()) return;
+      botaoRecentrar.getContainer().style.display = modoNavegacao ? 'none' : 'block';
+    }
+
+    // Qualquer gesto directo do utilizador no mapa desliga o modo de
+    // navegação -- mousedown/touchstart/wheel só disparam com
+    // interação humana real, ao contrário de dragstart/zoomstart do
+    // Leaflet que também disparam com mapa.setView(...,{animate:true})
+    // chamado pelo nosso próprio código (recentragem automática).
+    var mapaEl = document.getElementById('mapa');
+    ['mousedown', 'touchstart', 'wheel'].forEach(function (evento) {
+      mapaEl.addEventListener(evento, function () {
+        if (modoNavegacao) {
+          modoNavegacao = false;
+          atualizaVisibilidadeBotaoRecentrar();
+        }
+      }, { passive: true });
+    });
+
     /**
      * Desenha as barreiras numeradas dos checkpoints de todos os
      * cenarios de trajeto ATIVOS que tenham checkpoints definidos --
@@ -325,6 +380,7 @@
       }
 
       var todosPontos = [];
+      var posicaoMaisRecenteGlobal = null;
 
       dados.forEach(function (comando) {
         if (!comando.pontos || comando.pontos.length === 0) return;
@@ -336,6 +392,15 @@
 
         var latLngs = pontosParaDesenhar.map(function (p) { return [p.lat, p.lon]; });
         todosPontos = todosPontos.concat(latLngs);
+
+        // Último ponto deste comando (pontosParaDesenhar já vem
+        // ordenado cronologicamente) -- candidato a posição mais
+        // recente global, comparado por timestamp mais abaixo.
+        var ultimoDesteComando = pontosParaDesenhar[pontosParaDesenhar.length - 1];
+        if (ultimoDesteComando.timestamp !== undefined &&
+            (posicaoMaisRecenteGlobal === null || ultimoDesteComando.timestamp > posicaoMaisRecenteGlobal.timestamp)) {
+          posicaoMaisRecenteGlobal = ultimoDesteComando;
+        }
 
         var linha = L.polyline(latLngs, { color: comando.cor, weight: 3, opacity: 0.75 }).addTo(mapa);
         camadasAtuais.push(linha);
@@ -388,8 +453,21 @@
         }
       });
 
+      // Modo de navegação: segue a posição mais recente (por
+      // timestamp, entre TODOS os comandos visíveis -- não apenas o
+      // último ponto do último comando iterado) com zoom fixo e
+      // próximo, como um GPS de navegação em tempo real -- em vez de
+      // fitBounds(todosPontos), que reenquadrava a vista para caber
+      // TODO o histórico da viagem, afastando o zoom continuamente
+      // à medida que o percurso crescia.
       if (todosPontos.length > 0) {
-        mapa.fitBounds(todosPontos, { padding: [30, 30], maxZoom: 16 });
+        criaBotaoRecentrar();
+        if (posicaoMaisRecenteGlobal) {
+          window._ultimaPosicaoConhecida = [posicaoMaisRecenteGlobal.lat, posicaoMaisRecenteGlobal.lon];
+          if (modoNavegacao) {
+            mapa.setView(window._ultimaPosicaoConhecida, Math.max(mapa.getZoom(), ZOOM_NAVEGACAO), { animate: true });
+          }
+        }
       }
     }
 
