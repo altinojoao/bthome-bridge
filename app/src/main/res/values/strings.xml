@@ -47,6 +47,7 @@
     <string name="cenario">Cenário</string>
     <string name="url">URL</string>
     <string name="ntfy">Ntfy</string>
+    <string name="erro_de_rede">erro de rede</string>
 
     <string name="id_cenario">ID DO CENÁRIO</string>
     <string name="endereco">ENDEREÇO</string>
@@ -166,6 +167,7 @@
     <string name="blocos_visiveis">Blocos visíveis</string>
     <string name="incluir_localizacao">Incluir localização</string>
     <string name="mapa_trajeto">Mapa de trajeto</string>
+    <string name="erro_nenhuma_app_abre_link">Nenhuma app instalada consegue abrir: %1$s</string>
     <string name="limpar_trajeto_q">Limpar o histórico de trajeto?</string>
     <string name="limpar">Limpar</string>
     <string name="modo_beacon_trajeto">Modo beacon (grava trajeto)</string>

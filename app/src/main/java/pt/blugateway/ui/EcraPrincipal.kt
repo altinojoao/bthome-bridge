@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.*
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
@@ -56,6 +57,7 @@ fun EcraPrincipal(vm: GatewayViewModel = viewModel()) {
 
     val contextoBase = LocalContext.current
     val idiomaAtual = idiomaEscolhido ?: Locale.getDefault().language
+    val nomeNovoPerfilPadrao = stringResource(R.string.nome_novo_perfil)
 
     // Aplica o idioma escolhido substituindo o Context por um com a
     // Configuration alterada -- stringResource() dentro deste bloco
@@ -291,7 +293,7 @@ fun EcraPrincipal(vm: GatewayViewModel = viewModel()) {
                     onRenomeia = vm::renomeiaPerfil,
                     onPedeApagar = vm::pedeApagarPerfil,
                     onConfirmaApagar = vm::confirmaApagar,
-                    onNovoPerfil = { vm.novoPerfil("Novo perfil") },
+                    onNovoPerfil = { vm.novoPerfil(nomeNovoPerfilPadrao) },
                     onDuplicaPerfil = vm::duplicaPerfil,
                     onReordena = vm::reordenaPerfis,
                     onExpande = { id -> if (id != null) vm.abrePerfil(id) else vm.fechaPerfil() },

@@ -172,7 +172,7 @@ object ExecutorAcoes {
         // so persiste noutros endpoints por compatibilidade historica).
         val url = "$servidor/scene/manual_run"
         val corpo = "id=${encURL(sceneId)}&auth_key=${encURL(conta.authKey)}"
-        enviaPost(url, corpo, "application/x-www-form-urlencoded", context.getString(R.string.cenario))
+        enviaPost(context, url, corpo, "application/x-www-form-urlencoded", context.getString(R.string.cenario))
     }
 
     private fun executaUrlLivre(context: Context, valorBruto: String, metodo: Metodo, ctx: ContextoClique) {
@@ -180,9 +180,9 @@ object ExecutorAcoes {
         val etiqueta = context.getString(R.string.url)
         if (metodo == Metodo.POST) {
             val corpo = ctxParaJson(ctx)
-            enviaPost(url, corpo, "application/json", etiqueta)
+            enviaPost(context, url, corpo, "application/json", etiqueta)
         } else {
-            enviaGet(url, etiqueta)
+            enviaGet(context, url, etiqueta)
         }
     }
 
@@ -195,28 +195,28 @@ object ExecutorAcoes {
 
         if (metodo == Metodo.POST) {
             val corpo = if (msg.isNotEmpty()) preencheTexto(msg, ctx) else ctxParaJson(ctx)
-            enviaPost(alvo, corpo, "text/plain; charset=utf-8", etiqueta)
+            enviaPost(context, alvo, corpo, "text/plain; charset=utf-8", etiqueta)
         } else {
             val texto = if (msg.isNotEmpty()) preencheTexto(msg, ctx) else ctx.evento
-            enviaGet("$alvo/publish?message=${encURL(texto)}", etiqueta)
+            enviaGet(context, "$alvo/publish?message=${encURL(texto)}", etiqueta)
         }
     }
 
-    private fun enviaGet(url: String, etiqueta: String) {
+    private fun enviaGet(context: Context, url: String, etiqueta: String) {
         val pedido = Request.Builder().url(url).get().build()
-        despacha(pedido, etiqueta)
+        despacha(context, pedido, etiqueta)
     }
 
-    private fun enviaPost(url: String, corpo: String, mediaType: String, etiqueta: String) {
+    private fun enviaPost(context: Context, url: String, corpo: String, mediaType: String, etiqueta: String) {
         val body = corpo.toRequestBody(mediaType.toMediaTypeOrNull())
         val pedido = Request.Builder().url(url).post(body).build()
-        despacha(pedido, etiqueta)
+        despacha(context, pedido, etiqueta)
     }
 
-    private fun despacha(pedido: Request, etiqueta: String) {
+    private fun despacha(context: Context, pedido: Request, etiqueta: String) {
         cliente.newCall(pedido).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
-                RegistoEventos.adicionaResultado(etiqueta, false, e.message ?: "erro de rede")
+                RegistoEventos.adicionaResultado(etiqueta, false, e.message ?: context.getString(R.string.erro_de_rede))
             }
 
             override fun onResponse(call: Call, response: okhttp3.Response) {

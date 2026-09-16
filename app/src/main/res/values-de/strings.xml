@@ -47,6 +47,8 @@
     <string name="cenario">Szene</string>
     <string name="url">URL</string>
     <string name="ntfy">Ntfy</string>
+    <string name="erro_de_rede">Netzwerkfehler</string>
+    <string name="erro_nenhuma_app_abre_link">Keine installierte App kann öffnen: %1$s</string>
 
     <string name="id_cenario">SZENEN-ID</string>
     <string name="endereco">ADRESSE</string>

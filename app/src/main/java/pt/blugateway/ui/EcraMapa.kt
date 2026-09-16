@@ -441,7 +441,13 @@ private fun MapaWebView(
                             view?.context?.startActivity(intent)
                             true
                         } catch (e: android.content.ActivityNotFoundException) {
-                            onErro("Nenhuma app instalada consegue abrir: $url")
+                            val ctx = view?.context
+                            val msg = if (ctx != null) {
+                                ctx.getString(pt.blugateway.R.string.erro_nenhuma_app_abre_link, url.toString())
+                            } else {
+                                "Nenhuma app instalada consegue abrir: $url"
+                            }
+                            onErro(msg)
                             true
                         }
                     }
