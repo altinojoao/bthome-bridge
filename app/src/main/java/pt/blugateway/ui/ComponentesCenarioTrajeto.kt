@@ -197,6 +197,24 @@ fun CriadorOuEditorCenario(
 
     var nome by remember { mutableStateOf(cenarioExistente?.nome ?: "") }
     var limiarTexto by remember { mutableStateOf((cenarioExistente?.limiarPercentagem ?: 80).toString()) }
+
+    // Checkpoints do cenário -- usados só para mostrar ao utilizador a
+    // que barreira concreta corresponde a percentagem escrita (feedback
+    // visual, não altera a lógica de disparo real). Reutiliza os
+    // checkpoints já gerados se existirem; senão gera-os a partir do
+    // template actual (novo ou existente), com a mesma função usada em
+    // produção -- garante que o número mostrado aqui é sempre o mesmo
+    // que o algoritmo real vai usar.
+    val templateParaCheckpoints = templateNovo ?: cenarioExistente?.template
+    val checkpointsPreview = remember(templateParaCheckpoints, cenarioExistente?.checkpoints) {
+        if (templateNovo == null && !cenarioExistente?.checkpoints.isNullOrEmpty()) {
+            cenarioExistente!!.checkpoints
+        } else if (templateParaCheckpoints != null && templateParaCheckpoints.size >= 2) {
+            pt.blugateway.ble.GestorSemelhancaTrajeto.geraCheckpoints(templateParaCheckpoints)
+        } else {
+            emptyList()
+        }
+    }
     var raioTexto by remember { mutableStateOf((cenarioExistente?.raioMetros ?: 40).toString()) }
     var raioGeofenceTexto by remember { mutableStateOf((cenarioExistente?.raioGeofenceMetros ?: 150).toString()) }
     var minutosParaNovaViagemTexto by remember { mutableStateOf((cenarioExistente?.minutosParaNovaViagem ?: 15).toString()) }
@@ -317,6 +335,23 @@ fun CriadorOuEditorCenario(
                     onValor = { raioTexto = it }
                 )
             }
+        }
+        if (checkpointsPreview.isNotEmpty()) {
+            val limiarNum = limiarTexto.toIntOrNull()?.coerceIn(1, 100) ?: 80
+            // Mesmo cálculo usado em produção (GestorSemelhancaTrajeto):
+            // o cenário dispara ao primeiro checkpoint cuja fracção
+            // acumulada seja >= ao limiar -- por isso encontra-se aqui
+            // o primeiro índice (1-based) que satisfaz essa condição.
+            val totalCheckpoints = checkpointsPreview.size
+            val checkpointDisparo = (1..totalCheckpoints).firstOrNull { indice ->
+                (indice * 100 / totalCheckpoints) >= limiarNum
+            } ?: totalCheckpoints
+            Text(
+                stringResource(R.string.limiar_corresponde_checkpoint, checkpointDisparo, totalCheckpoints),
+                color = cores.azul,
+                fontSize = 10.5.sp,
+                modifier = Modifier.padding(top = 4.dp)
+            )
         }
 
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {

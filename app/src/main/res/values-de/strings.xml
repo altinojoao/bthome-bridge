@@ -192,6 +192,7 @@
     <string name="cenario_trajeto_detalhe">Löst bei %1$d%% aus, Radius %2$dm, %3$d Punkte</string>
     <string name="criar_cenario">Szenario erstellen</string>
     <string name="limiar_semelhanca">Auslösen bei (%)</string>
+    <string name="limiar_corresponde_checkpoint">= löst beim Überqueren von Schranke %1$d von %2$d aus</string>
     <string name="nome_cenario">Name des Szenarios</string>
     <string name="nome_cenario_exemplo">Z.B.: Auf dem Weg nach Hause</string>
     <string name="novo_cenario_trajeto">Neues Streckenszenario</string>

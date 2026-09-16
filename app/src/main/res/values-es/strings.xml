@@ -192,6 +192,7 @@
     <string name="cenario_trajeto_detalhe">Dispara al %1$d%%, radio %2$dm, %3$d puntos</string>
     <string name="criar_cenario">Crear escenario</string>
     <string name="limiar_semelhanca">Disparar al (%)</string>
+    <string name="limiar_corresponde_checkpoint">= se activa al cruzar la barrera %1$d de %2$d</string>
     <string name="nome_cenario">Nombre del escenario</string>
     <string name="nome_cenario_exemplo">Ej: Camino a casa</string>
     <string name="novo_cenario_trajeto">Nuevo escenario de trayecto</string>

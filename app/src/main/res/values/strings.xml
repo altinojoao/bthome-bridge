@@ -193,6 +193,7 @@
     <string name="cenario_trajeto_detalhe">Dispara aos %1$d%%, raio %2$dm, %3$d pontos</string>
     <string name="criar_cenario">Criar cenário</string>
     <string name="limiar_semelhanca">Disparar aos (%)</string>
+    <string name="limiar_corresponde_checkpoint">= dispara ao atravessar a barreira %1$d de %2$d</string>
     <string name="nome_cenario">Nome do cenário</string>
     <string name="nome_cenario_exemplo">Ex: A caminho de casa</string>
     <string name="novo_cenario_trajeto">Novo cenário de trajeto</string>

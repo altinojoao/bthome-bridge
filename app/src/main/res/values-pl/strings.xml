@@ -192,6 +192,7 @@
     <string name="cenario_trajeto_detalhe">Uruchamia się przy %1$d%%, promień %2$dm, %3$d punktów</string>
     <string name="criar_cenario">Utwórz scenariusz</string>
     <string name="limiar_semelhanca">Uruchom przy (%)</string>
+    <string name="limiar_corresponde_checkpoint">= uruchamia się po przekroczeniu bariery %1$d z %2$d</string>
     <string name="nome_cenario">Nazwa scenariusza</string>
     <string name="nome_cenario_exemplo">Np.: W drodze do domu</string>
     <string name="novo_cenario_trajeto">Nowy scenariusz trasy</string>

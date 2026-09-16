@@ -192,6 +192,7 @@
     <string name="cenario_trajeto_detalhe">Activeert bij %1$d%%, straal %2$dm, %3$d punten</string>
     <string name="criar_cenario">Scenario maken</string>
     <string name="limiar_semelhanca">Activeren bij (%)</string>
+    <string name="limiar_corresponde_checkpoint">= activeert bij het oversteken van barrière %1$d van %2$d</string>
     <string name="nome_cenario">Naam van het scenario</string>
     <string name="nome_cenario_exemplo">Bijv.: Op weg naar huis</string>
     <string name="novo_cenario_trajeto">Nieuw trajectscenario</string>

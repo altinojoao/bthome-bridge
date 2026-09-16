@@ -192,6 +192,7 @@
     <string name="cenario_trajeto_detalhe">Se déclenche à %1$d%%, rayon %2$dm, %3$d points</string>
     <string name="criar_cenario">Créer le scénario</string>
     <string name="limiar_semelhanca">Déclencher à (%)</string>
+    <string name="limiar_corresponde_checkpoint">= se déclenche en franchissant la barrière %1$d sur %2$d</string>
     <string name="nome_cenario">Nom du scénario</string>
     <string name="nome_cenario_exemplo">Ex : En route vers la maison</string>
     <string name="novo_cenario_trajeto">Nouveau scénario de trajet</string>

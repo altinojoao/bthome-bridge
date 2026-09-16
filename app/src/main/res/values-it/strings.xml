@@ -192,6 +192,7 @@
     <string name="cenario_trajeto_detalhe">Si attiva al %1$d%%, raggio %2$dm, %3$d punti</string>
     <string name="criar_cenario">Crea scenario</string>
     <string name="limiar_semelhanca">Attiva al (%)</string>
+    <string name="limiar_corresponde_checkpoint">= si attiva attraversando la barriera %1$d di %2$d</string>
     <string name="nome_cenario">Nome dello scenario</string>
     <string name="nome_cenario_exemplo">Es: Verso casa</string>
     <string name="novo_cenario_trajeto">Nuovo scenario di percorso</string>
