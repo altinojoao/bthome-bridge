@@ -4,7 +4,9 @@ import android.annotation.SuppressLint
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.AlertDialog
@@ -300,16 +302,17 @@ fun EcraMapa(
                             comandos.any { c -> c.mac == it.macComando }
                     }
                     if (cenariosAtivos.isNotEmpty()) {
+                        Text(
+                            stringResource(R.string.sim_escolher),
+                            color = cores.suave,
+                            fontSize = 10.sp,
+                            modifier = Modifier.fillMaxWidth().padding(top = 4.dp)
+                        )
                         Row(
-                            Modifier.fillMaxWidth().padding(top = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                            Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState())
                         ) {
-                            Text(
-                                stringResource(R.string.sim_escolher),
-                                color = cores.suave,
-                                fontSize = 10.sp,
-                                modifier = Modifier.weight(1f)
-                            )
                             cenariosAtivos.forEach { c ->
                                 TextButton(onClick = {
                                     cenarioSimulado = c; simPct = 0
@@ -343,7 +346,7 @@ fun EcraMapa(
                                         )
                                     }
                                 }) {
-                                    Text("\u25B6 ${c.nome}", color = cores.azul, fontSize = 10.sp)
+                                    Text("\u25B6 ${c.nome}", color = cores.azul, fontSize = 10.sp, maxLines = 1)
                                 }
                             }
                         }
