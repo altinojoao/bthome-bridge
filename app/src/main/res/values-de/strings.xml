@@ -235,6 +235,7 @@
     <string name="menu_topo_desc_tema_claro">Helles Design — für dunkel tippen</string>
     <string name="menu_topo_desc_tema_escuro">Dunkles Design — für hell tippen</string>
     <string name="menu_topo_desc_blocos_visiveis">Auswählen, welche Bereiche angezeigt werden</string>
+    <string name="menu_topo_desc_ajuda">Vollständige Einrichtungsanleitung</string>
     <string name="sufixo_copia">(Kopie)</string>
     <string name="menu_topo_desc_perfis">Aktionsprofile erstellen, bearbeiten und organisieren</string>
     <string name="grelha_comandos_titulo">Befehlsraster</string>

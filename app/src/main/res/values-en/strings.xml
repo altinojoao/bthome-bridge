@@ -235,6 +235,7 @@
     <string name="menu_topo_desc_tema_claro">Light theme — tap for dark</string>
     <string name="menu_topo_desc_tema_escuro">Dark theme — tap for light</string>
     <string name="menu_topo_desc_blocos_visiveis">Choose which sections appear on screen</string>
+    <string name="menu_topo_desc_ajuda">Complete configuration guide</string>
     <string name="sufixo_copia">(copy)</string>
     <string name="menu_topo_desc_perfis">Create, edit and organize action profiles</string>
     <string name="grelha_comandos_titulo">Command grid</string>

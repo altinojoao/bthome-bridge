@@ -256,7 +256,7 @@ fun EcraPrincipal(vm: GatewayViewModel = viewModel()) {
             }
 
             if (mostraAjuda) {
-                DialogoAjuda(onFecha = { mostraAjuda = false })
+                DialogoAjuda(idioma = idiomaAtual, onFecha = { mostraAjuda = false })
             }
 
             if (mostraCenarios) {

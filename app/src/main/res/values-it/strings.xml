@@ -235,6 +235,7 @@
     <string name="menu_topo_desc_tema_claro">Tema chiaro — tocca per scuro</string>
     <string name="menu_topo_desc_tema_escuro">Tema scuro — tocca per chiaro</string>
     <string name="menu_topo_desc_blocos_visiveis">Scegli quali sezioni appaiono a schermo</string>
+    <string name="menu_topo_desc_ajuda">Guida completa alla configurazione</string>
     <string name="sufixo_copia">(copia)</string>
     <string name="menu_topo_desc_perfis">Crea, modifica e organizza i profili di azioni</string>
     <string name="grelha_comandos_titulo">Griglia comandi</string>

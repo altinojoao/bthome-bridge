@@ -86,13 +86,6 @@ fun BarraTopo(
             descricao = stringResource(R.string.atualizacao_titulo),
             onClick = onAbreAtualizacoes
         )
-        Spacer(Modifier.width(7.dp))
-        BotaoTopo(
-            emoji = "\u2753",
-            ativo = false,
-            descricao = stringResource(R.string.guia_titulo),
-            onClick = onAbreAjuda
-        )
     }
 
     if (mostraMenu) {
@@ -108,6 +101,7 @@ fun BarraTopo(
             onEscolheIdioma = onEscolheIdioma,
             onAbreCardsVisiveis = onAbreCardsVisiveis,
             onAbrePerfis = onAbrePerfis,
+            onAbreAjuda = onAbreAjuda,
             onFecha = { mostraMenu = false }
         )
     }

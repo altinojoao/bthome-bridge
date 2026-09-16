@@ -26,15 +26,22 @@ import pt.blugateway.ui.theme.LocalCoresGateway
 
 /**
  * Guia de configuração para o utilizador final -- um HTML estático
- * (assets/ajuda/guia_configuracao.html), sem JavaScript nem
- * comunicação com o Kotlin. Mesma estrutura de Dialog+WebView já
- * usada em DialogoSimulacaoCenario, mas muito mais simples: não há
- * estado para sincronizar, só uma página a carregar uma vez.
+ * por idioma (assets/ajuda/guia_configuracao_<idioma>.html), sem
+ * JavaScript nem comunicação com o Kotlin. Mesma estrutura de
+ * Dialog+WebView já usada em DialogoSimulacaoCenario, mas muito mais
+ * simples: não há estado para sincronizar, só uma página a carregar
+ * uma vez.
+ *
+ * @param idioma código de idioma de duas letras (ex: "en", "de") --
+ *   o mesmo formato já usado em GatewayViewModel.idioma. Sem
+ *   ficheiro traduzido para o idioma pedido, cai em português.
  */
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
-fun DialogoAjuda(onFecha: () -> Unit) {
+fun DialogoAjuda(idioma: String, onFecha: () -> Unit) {
     val cores = LocalCoresGateway.current
+    val idiomasComGuia = setOf("pt", "en", "de", "es", "fr", "it", "nl", "pl")
+    val idiomaFicheiro = if (idioma in idiomasComGuia) idioma else "pt"
 
     Dialog(
         onDismissRequest = onFecha,
@@ -71,7 +78,7 @@ fun DialogoAjuda(onFecha: () -> Unit) {
                             )
                             // Sem javaScriptEnabled: a página de ajuda é
                             // texto estático puro, não precisa de JS.
-                            loadUrl("file:///android_asset/ajuda/guia_configuracao.html")
+                            loadUrl("file:///android_asset/ajuda/guia_configuracao_$idiomaFicheiro.html")
                         }
                     }
                 )

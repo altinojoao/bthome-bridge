@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>Jak skonfigurować</title>
+<style>
+  :root {
+    --fundo: #0D1117;
+    --cartao: #161B22;
+    --elevado: #1C2530;
+    --linha: #2A3441;
+    --tinta: #E6EDF3;
+    --suave: #8B9AB0;
+    --azul: #2BA6E0;
+    --ok: #3FB950;
+    --aviso: #F0A500;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--fundo);
+    color: var(--tinta);
+    font-family: -apple-system, Roboto, "Segoe UI", sans-serif;
+    padding: 18px 16px 40px;
+    line-height: 1.5;
+  }
+  h1 { font-size: 20px; margin: 4px 0 4px; }
+  .subtitulo { color: var(--suave); font-size: 13px; margin-bottom: 20px; }
+  .indice { background: var(--cartao); border-radius: 12px; padding: 14px 16px; margin-bottom: 22px; }
+  .indice-titulo { font-size: 12px; color: var(--suave); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 8px; }
+  .indice a { display: block; color: var(--azul); text-decoration: none; font-size: 14px; padding: 4px 0; }
+  section { background: var(--cartao); border-radius: 14px; padding: 18px 16px; margin-bottom: 16px; scroll-margin-top: 16px; }
+  .passo-numero { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: var(--azul); color: #fff; font-weight: bold; font-size: 13px; margin-right: 8px; }
+  h2 { font-size: 16px; margin: 0 0 10px; display: flex; align-items: center; }
+  p { font-size: 14px; margin: 8px 0; }
+  ul, ol { font-size: 14px; padding-left: 20px; margin: 8px 0; }
+  li { margin: 4px 0; }
+  .caixa { background: var(--elevado); border-left: 3px solid var(--azul); border-radius: 6px; padding: 10px 12px; font-size: 13px; margin: 10px 0; }
+  .caixa.aviso { border-left-color: var(--aviso); }
+  .caixa.ok { border-left-color: var(--ok); }
+  code { background: var(--elevado); padding: 1px 6px; border-radius: 4px; font-size: 13px; color: var(--azul); }
+  .tabela { width: 100%; border-collapse: collapse; font-size: 13px; margin: 10px 0; }
+  .tabela th, .tabela td { border-bottom: 1px solid var(--linha); padding: 6px 8px; text-align: left; }
+  .tabela th { color: var(--suave); font-weight: normal; }
+  .voltar-topo { display: inline-block; margin-top: 6px; color: var(--suave); font-size: 12px; text-decoration: none; }
+  .rodape { text-align: center; color: var(--suave); font-size: 11px; margin-top: 24px; }
+</style>
+</head>
+<body>
+
+<h1>🚦 Jak skonfigurować</h1>
+<div class="subtitulo">Pełny przewodnik — od poleceń po scenariusze podróży</div>
+
+<div class="indice" id="topo">
+  <div class="indice-titulo">Spis treści</div>
+  <a href="#s1">1. Dodaj beacon</a>
+  <a href="#s2">2. Skonfiguruj kliknięcia</a>
+  <a href="#s3">3. Włącz tryb podróży</a>
+  <a href="#s4">4. Nagraj trasę</a>
+  <a href="#s5">5. Utwórz scenariusz</a>
+  <a href="#s6">6. Punkty kontrolne i procent</a>
+  <a href="#s7">7. Ogranicz według godzin</a>
+  <a href="#s8">8. Mapa w czasie rzeczywistym</a>
+  <a href="#s9">9. Ostrzegaj przy utracie zasięgu</a>
+  <a href="#s10">10. Wskazówki i rozwiązywanie problemów</a>
+</div>
+
+<section id="s1">
+  <h2><span class="passo-numero">1</span> Dodaj beacon</h2>
+  <p>Na głównym ekranie dotknij <b>Wykryj</b>, aby wyszukać w pobliżu swój Shelly BLU Button.</p>
+  <ol><li>Gdy tylko pojawi się na liście, dotknij go, aby go sparować.</li><li>Nadaj mu łatwą do rozpoznania nazwę (np. "Klucze do domu", "Plecak szkolny").</li><li>Wybierz profil kolorystyczny, aby szybko go rozpoznać w siatce poleceń.</li></ol>
+  <div class="caixa">Każdy fizyczny beacon trzeba sparować tylko raz — potem pozostaje dostępny na liście poleceń.</div>
+  <a class="voltar-topo" href="#topo">↑ powrót do spisu treści</a>
+</section>
+
+<section id="s2">
+  <h2><span class="passo-numero">2</span> Skonfiguruj kliknięcia</h2>
+  <p>Każdy beacon rozpoznaje <b>1, 2 lub 3 kliknięcia</b> — a każde z nich może uruchomić inną akcję.</p>
+  <table class="tabela">
+    <tr><th>Akcja</th><th>Przykład zastosowania</th></tr>
+    <tr><td>Uruchom scenę Shelly</td><td>Włącz/wyłącz światła, otwórz roletę</td></tr>
+    <tr><td>Wyślij powiadomienie</td><td>Poinformuj kogoś, że dotarłeś</td></tr>
+    <tr><td>Włącz alarm w telefonie</td><td>Znajdź zgubiony telefon</td></tr>
+  </table>
+  <p>Otwórz kartę polecenia i przypisz żądaną akcję do każdej liczby kliknięć.</p>
+  <a class="voltar-topo" href="#topo">↑ powrót do spisu treści</a>
+</section>
+
+<section id="s3">
+  <h2><span class="passo-numero">3</span> Włącz tryb podróży</h2>
+  <p>Na karcie polecenia włącz <b>"Tryb beacona (nagrywa podróż)"</b>. Od teraz, gdy beacon jest przy tobie, aplikacja okresowo rejestruje twoją pozycję GPS.</p>
+  <ul><li><b>Interwał (s)</b> — jak często zapisywany jest nowy punkt GPS. Niska wartość (np. 3-5s) daje większą precyzję; wyższa wartość oszczędza baterię.</li><li><b>Uwzględnij lokalizację</b> — wymagane, aby tryb podróży działał; w tym przypadku powinno być zawsze włączone.</li></ul>
+  <div class="caixa aviso">Bez włączonego tego trybu beacon nadal działa normalnie dla kliknięć/akcji, ale nie gromadzi historii GPS — dlatego nie można go użyć do tworzenia scenariuszy podróży.</div>
+  <a class="voltar-topo" href="#topo">↑ powrót do spisu treści</a>
+</section>
+
+<section id="s4">
+  <h2><span class="passo-numero">4</span> Nagraj trasę</h2>
+  <p>Przy włączonym trybie podróży odbądź podróż normalnie z beaconem przy sobie — na przykład z domu do pracy.</p>
+  <p>Aplikacja gromadzi punkty GPS po drodze. Ta historia jest surowym materiałem, który wykorzystasz w następnym kroku do utworzenia scenariusza — nie musisz robić nic specjalnego podczas podróży, wystarczy trzymać beacon blisko siebie (w kieszeni, torbie lub na breloku do kluczy samochodowych).</p>
+  <div class="caixa">Im częściej pokonujesz tę samą trasę, tym więcej danych masz do wyboru podróży, która najlepiej odzwierciedla twoją zwykłą trasę.</div>
+  <a class="voltar-topo" href="#topo">↑ powrót do spisu treści</a>
+</section>
+
+<section id="s5">
+  <h2><span class="passo-numero">5</span> Utwórz scenariusz</h2>
+  <p>Na ekranie <b>Scenariusze</b> utwórz nowy i wybierz jedną z już nagranych podróży jako szablon.</p>
+  <ol><li>Nadaj scenariuszowi nazwę (np. "Powrót do domu", "Przyjazd do pracy").</li><li>Wybierz akcje, które mają się uruchomić po wykryciu scenariusza.</li><li>Aplikacja automatycznie rysuje bariery wykrywania na wybranej trasie.</li></ol>
+  <a class="voltar-topo" href="#topo">↑ powrót do spisu treści</a>
+</section>
+
+<section id="s6">
+  <h2><span class="passo-numero">6</span> Punkty kontrolne i procent</h2>
+  <p>Każdy scenariusz ma <b>punkty kontrolne</b> — niewidzialne bariery rozmieszczone wzdłuż trasy, które aplikacja wykrywa, gdy przekraczasz je we właściwej kolejności.</p>
+  <p>Pole <b>"Procent"</b> określa, w którym miejscu trasy ma się uruchomić akcja:</p>
+  <ul><li><code>50%</code> — uruchamia się w połowie drogi</li><li><code>80%</code> — uruchamia się blisko końca, przydatne do przygotowania czegoś (np. włączenia ogrzewania) przed przyjazdem</li><li><code>100%</code> — uruchamia się dopiero po ukończeniu całej trasy</li></ul>
+  <div class="caixa ok">Nie musisz wybierać liczby punktów kontrolnych — aplikacja generuje je automatycznie z wystarczającą precyzją dla dowolnego wybranego procentu.</div>
+  <a class="voltar-topo" href="#topo">↑ powrót do spisu treści</a>
+</section>
+
+<section id="s7">
+  <h2><span class="passo-numero">7</span> Ogranicz według godzin</h2>
+  <p>Jeśli chcesz, aby scenariusz działał tylko w określonych porach, dodaj jedno lub więcej <b>okien czasowych</b>.</p>
+  <ul><li>Ustaw godzinę początkową i końcową (np. 07:00 do 10:00).</li><li>Wybierz dni tygodnia, w które ma obowiązywać (lub pozostaw puste dla wszystkich dni).</li><li>Możesz dodać kilka okien do tego samego scenariusza — na przykład poranki w dni robocze <b>i</b> popołudnia w weekendy.</li></ul>
+  <p>Poza skonfigurowanymi oknami scenariusz się nie uruchomi, nawet jeśli trasa zostanie poprawnie wykryta.</p>
+  <a class="voltar-topo" href="#topo">↑ powrót do spisu treści</a>
+</section>
+
+<section id="s8">
+  <h2><span class="passo-numero">8</span> Mapa w czasie rzeczywistym</h2>
+  <p>Mapa podróży automatycznie podąża za twoją bieżącą pozycją, jak nawigacja GPS — nie musisz ręcznie przesuwać mapy.</p>
+  <ul><li>Jeśli przeciągniesz lub przybliżysz, automatyczne śledzenie się wyłączy; dotknij przycisku centrowania, aby je ponownie włączyć.</li><li>Ikona kompasu pokazuje wskaźnik prędkości i kierunku.</li><li>Bariery aktywnych scenariuszy pojawiają się narysowane na mapie, w kolorze odpowiadającego beacona.</li></ul>
+  <a class="voltar-topo" href="#topo">↑ powrót do spisu treści</a>
+</section>
+
+<section id="s9">
+  <h2><span class="passo-numero">9</span> Ostrzegaj przy utracie zasięgu</h2>
+  <p>Włącz tę opcję na karcie polecenia, aby otrzymać ostrzeżenie, gdy beacon przestanie być w pobliżu — przydatne, aby nie zapomnieć kluczy, torby lub innych ważnych przedmiotów.</p>
+  <div class="caixa">Ta opcja wymaga włączonego "Trybu beacona", aby działać poprawnie.</div>
+  <a class="voltar-topo" href="#topo">↑ powrót do spisu treści</a>
+</section>
+
+<section id="s10">
+  <h2><span class="passo-numero">10</span> Wskazówki i rozwiązywanie problemów</h2>
+  <p><b>Scenariusz nie uruchomił się po moim przyjeździe:</b> sprawdź, czy przebyta trasa jest wystarczająco podobna do nagranej i czy skonfigurowany procent nie jest zbyt wysoki.</p>
+  <p><b>Otrzymuję ostrzeżenia o utracie zasięgu bez wyraźnego powodu:</b> może się to zdarzyć, jeśli telefon długo nie przetwarza sygnału (np. ekran zablokowany przez dłuższy czas) — zwykle rozwiązuje się samo przy kolejnym sygnale beacona.</p>
+  <p><b>Bateria telefonu rozładowuje się szybciej:</b> spróbuj zwiększyć "Interwał (s)" trybu podróży, aby rzadziej zapisywać punkty GPS.</p>
+  <a class="voltar-topo" href="#topo">↑ powrót do spisu treści</a>
+</section>
+
+<div class="rodape">Gateway BLU · Przewodnik konfiguracji</div>
+
+</body>
+</html>

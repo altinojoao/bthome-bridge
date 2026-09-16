@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>Come configurare</title>
+<style>
+  :root {
+    --fundo: #0D1117;
+    --cartao: #161B22;
+    --elevado: #1C2530;
+    --linha: #2A3441;
+    --tinta: #E6EDF3;
+    --suave: #8B9AB0;
+    --azul: #2BA6E0;
+    --ok: #3FB950;
+    --aviso: #F0A500;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--fundo);
+    color: var(--tinta);
+    font-family: -apple-system, Roboto, "Segoe UI", sans-serif;
+    padding: 18px 16px 40px;
+    line-height: 1.5;
+  }
+  h1 { font-size: 20px; margin: 4px 0 4px; }
+  .subtitulo { color: var(--suave); font-size: 13px; margin-bottom: 20px; }
+  .indice { background: var(--cartao); border-radius: 12px; padding: 14px 16px; margin-bottom: 22px; }
+  .indice-titulo { font-size: 12px; color: var(--suave); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 8px; }
+  .indice a { display: block; color: var(--azul); text-decoration: none; font-size: 14px; padding: 4px 0; }
+  section { background: var(--cartao); border-radius: 14px; padding: 18px 16px; margin-bottom: 16px; scroll-margin-top: 16px; }
+  .passo-numero { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: var(--azul); color: #fff; font-weight: bold; font-size: 13px; margin-right: 8px; }
+  h2 { font-size: 16px; margin: 0 0 10px; display: flex; align-items: center; }
+  p { font-size: 14px; margin: 8px 0; }
+  ul, ol { font-size: 14px; padding-left: 20px; margin: 8px 0; }
+  li { margin: 4px 0; }
+  .caixa { background: var(--elevado); border-left: 3px solid var(--azul); border-radius: 6px; padding: 10px 12px; font-size: 13px; margin: 10px 0; }
+  .caixa.aviso { border-left-color: var(--aviso); }
+  .caixa.ok { border-left-color: var(--ok); }
+  code { background: var(--elevado); padding: 1px 6px; border-radius: 4px; font-size: 13px; color: var(--azul); }
+  .tabela { width: 100%; border-collapse: collapse; font-size: 13px; margin: 10px 0; }
+  .tabela th, .tabela td { border-bottom: 1px solid var(--linha); padding: 6px 8px; text-align: left; }
+  .tabela th { color: var(--suave); font-weight: normal; }
+  .voltar-topo { display: inline-block; margin-top: 6px; color: var(--suave); font-size: 12px; text-decoration: none; }
+  .rodape { text-align: center; color: var(--suave); font-size: 11px; margin-top: 24px; }
+</style>
+</head>
+<body>
+
+<h1>🚦 Come configurare</h1>
+<div class="subtitulo">Guida completa — dai comandi agli scenari di percorso</div>
+
+<div class="indice" id="topo">
+  <div class="indice-titulo">Indice</div>
+  <a href="#s1">1. Aggiungi un beacon</a>
+  <a href="#s2">2. Configura i clic</a>
+  <a href="#s3">3. Attiva la modalità percorso</a>
+  <a href="#s4">4. Registra un percorso</a>
+  <a href="#s5">5. Crea uno scenario</a>
+  <a href="#s6">6. Checkpoint e percentuale</a>
+  <a href="#s7">7. Limita per orario</a>
+  <a href="#s8">8. La mappa in tempo reale</a>
+  <a href="#s9">9. Avvisa se fuori portata</a>
+  <a href="#s10">10. Suggerimenti e risoluzione problemi</a>
+</div>
+
+<section id="s1">
+  <h2><span class="passo-numero">1</span> Aggiungi un beacon</h2>
+  <p>Nella schermata principale, tocca <b>Rileva</b> per cercare il tuo Shelly BLU Button nelle vicinanze.</p>
+  <ol><li>Non appena appare nell'elenco, toccalo per associarlo.</li><li>Dagli un nome facile da riconoscere (es: "Chiavi di casa", "Zaino scuola").</li><li>Scegli un profilo colore per identificarlo rapidamente nella griglia dei comandi.</li></ol>
+  <div class="caixa">Ogni beacon fisico deve essere associato una sola volta — dopodiché resta sempre disponibile nell'elenco dei comandi.</div>
+  <a class="voltar-topo" href="#topo">↑ torna all'indice</a>
+</section>
+
+<section id="s2">
+  <h2><span class="passo-numero">2</span> Configura i clic</h2>
+  <p>Ogni beacon riconosce <b>1, 2 o 3 clic</b> — e ognuno può attivare un'azione diversa.</p>
+  <table class="tabela">
+    <tr><th>Azione</th><th>Esempio d'uso</th></tr>
+    <tr><td>Avvia scena Shelly</td><td>Accendere/spegnere luci, aprire tapparella</td></tr>
+    <tr><td>Invia notifica</td><td>Far sapere a qualcuno che sei arrivato</td></tr>
+    <tr><td>Suona allarme sul telefono</td><td>Trovare un telefono smarrito</td></tr>
+  </table>
+  <p>Apri la scheda del comando e assegna l'azione desiderata a ogni numero di clic.</p>
+  <a class="voltar-topo" href="#topo">↑ torna all'indice</a>
+</section>
+
+<section id="s3">
+  <h2><span class="passo-numero">3</span> Attiva la modalità percorso</h2>
+  <p>Nella scheda del comando, attiva <b>"Modalità beacon (registra percorso)"</b>. Da qui in poi, ogni volta che il beacon è con te, l'app registra periodicamente la tua posizione GPS.</p>
+  <ul><li><b>Intervallo (s)</b> — ogni quanto viene salvato un nuovo punto GPS. Un valore basso (es: 3-5s) dà più precisione; un valore più alto risparmia batteria.</li><li><b>Includi posizione</b> — necessario affinché la modalità percorso funzioni; deve essere sempre attivo in questo caso.</li></ul>
+  <div class="caixa aviso">Senza questa modalità attiva, il beacon continua a funzionare normalmente per clic/azioni, ma non accumula la cronologia GPS — quindi non può essere usato per creare scenari di percorso.</div>
+  <a class="voltar-topo" href="#topo">↑ torna all'indice</a>
+</section>
+
+<section id="s4">
+  <h2><span class="passo-numero">4</span> Registra un percorso</h2>
+  <p>Con la modalità percorso attiva, fai il viaggio normalmente con il beacon con te — per esempio, da casa al lavoro.</p>
+  <p>L'app accumula punti GPS lungo il tragitto. Questa cronologia è la materia prima che userai nel passo successivo per creare uno scenario — non serve fare nulla di speciale durante il viaggio, basta tenere il beacon vicino a te (in tasca, nella borsa, nel portachiavi dell'auto).</p>
+  <div class="caixa">Più volte fai lo stesso percorso, più dati hai a disposizione per scegliere il viaggio che meglio rappresenta il tuo tragitto abituale.</div>
+  <a class="voltar-topo" href="#topo">↑ torna all'indice</a>
+</section>
+
+<section id="s5">
+  <h2><span class="passo-numero">5</span> Crea uno scenario</h2>
+  <p>Nella schermata <b>Scenari</b>, creane uno nuovo e scegli uno dei viaggi già registrati come modello.</p>
+  <ol><li>Dai un nome allo scenario (es: "Arrivo a casa", "Arrivo al lavoro").</li><li>Scegli le azioni che vuoi vengano attivate quando lo scenario viene rilevato.</li><li>L'app disegna automaticamente le barriere di rilevamento sul percorso scelto.</li></ol>
+  <a class="voltar-topo" href="#topo">↑ torna all'indice</a>
+</section>
+
+<section id="s6">
+  <h2><span class="passo-numero">6</span> Checkpoint e percentuale</h2>
+  <p>Ogni scenario ha <b>checkpoint</b> — barriere invisibili distribuite lungo il percorso, che l'app rileva quando le attraversi, nell'ordine giusto.</p>
+  <p>Il campo <b>"Percentuale"</b> definisce a che punto del percorso deve attivarsi l'azione:</p>
+  <ul><li><code>50%</code> — si attiva a metà strada</li><li><code>80%</code> — si attiva vicino alla fine, utile per preparare qualcosa (es: accendere il riscaldamento) prima di arrivare</li><li><code>100%</code> — si attiva solo al completamento dell'intero percorso</li></ul>
+  <div class="caixa ok">Non devi scegliere il numero di checkpoint — l'app li genera automaticamente con precisione sufficiente per qualsiasi percentuale tu scelga.</div>
+  <a class="voltar-topo" href="#topo">↑ torna all'indice</a>
+</section>
+
+<section id="s7">
+  <h2><span class="passo-numero">7</span> Limita per orario</h2>
+  <p>Se vuoi che uno scenario funzioni solo in certi momenti, aggiungi una o più <b>fasce orarie</b>.</p>
+  <ul><li>Imposta un'ora di inizio e fine (es: 07:00-10:00).</li><li>Scegli i giorni della settimana in cui si applica (o lascia vuoto per tutti i giorni).</li><li>Puoi aggiungere più fasce allo stesso scenario — per esempio, mattine dei giorni feriali <b>e</b> pomeriggi del weekend.</li></ul>
+  <p>Al di fuori delle fasce configurate, lo scenario non si attiverà, anche se il percorso viene rilevato correttamente.</p>
+  <a class="voltar-topo" href="#topo">↑ torna all'indice</a>
+</section>
+
+<section id="s8">
+  <h2><span class="passo-numero">8</span> La mappa in tempo reale</h2>
+  <p>La mappa del percorso segue automaticamente la tua posizione attuale, come un GPS di navigazione — non serve spostare la mappa manualmente.</p>
+  <ul><li>Se trascini o fai zoom, il seguimento automatico si disattiva; tocca il pulsante di ricentraggio per riattivarlo.</li><li>L'icona della bussola mostra un indicatore di velocità e direzione.</li><li>Le barriere degli scenari attivi appaiono disegnate sulla mappa, nel colore del beacon corrispondente.</li></ul>
+  <a class="voltar-topo" href="#topo">↑ torna all'indice</a>
+</section>
+
+<section id="s9">
+  <h2><span class="passo-numero">9</span> Avvisa se fuori portata</h2>
+  <p>Attiva questa opzione sulla scheda del comando per ricevere un avviso se il beacon non è più nelle vicinanze — utile per non dimenticare chiavi, borsa o altri oggetti importanti.</p>
+  <div class="caixa">Questa opzione richiede la "Modalità beacon" attiva per funzionare correttamente.</div>
+  <a class="voltar-topo" href="#topo">↑ torna all'indice</a>
+</section>
+
+<section id="s10">
+  <h2><span class="passo-numero">10</span> Suggerimenti e risoluzione problemi</h2>
+  <p><b>Lo scenario non si è attivato al mio arrivo:</b> controlla che il percorso fatto sia abbastanza simile a quello registrato, e che la percentuale configurata non sia troppo alta.</p>
+  <p><b>Ricevo avvisi di fuori portata senza motivo apparente:</b> può succedere se il telefono resta a lungo senza elaborare segnale (es: schermo bloccato per lungo tempo) — di solito si risolve da solo al successivo annuncio del beacon.</p>
+  <p><b>La batteria del telefono si scarica più velocemente:</b> prova ad aumentare l'"Intervallo (s)" della modalità percorso per registrare i punti GPS meno frequentemente.</p>
+  <a class="voltar-topo" href="#topo">↑ torna all'indice</a>
+</section>
+
+<div class="rodape">Gateway BLU · Guida alla configurazione</div>
+
+</body>
+</html>

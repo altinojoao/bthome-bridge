@@ -48,6 +48,7 @@ fun DialogoMenuTopo(
     onEscolheIdioma: () -> Unit,
     onAbreCardsVisiveis: () -> Unit,
     onAbrePerfis: () -> Unit,
+    onAbreAjuda: () -> Unit,
     onFecha: () -> Unit
 ) {
     val cores = LocalCoresGateway.current
@@ -124,6 +125,13 @@ fun DialogoMenuTopo(
                     descricao = stringResource(R.string.menu_topo_desc_blocos_visiveis),
                     ativo = false,
                     onClick = { onAbreCardsVisiveis(); onFecha() }
+                )
+                ItemMenuTopo(
+                    emoji = "\u2753",
+                    nome = stringResource(R.string.guia_titulo),
+                    descricao = stringResource(R.string.menu_topo_desc_ajuda),
+                    ativo = false,
+                    onClick = { onAbreAjuda(); onFecha() }
                 )
             }
         }
