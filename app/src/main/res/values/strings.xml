@@ -142,6 +142,52 @@
     <string name="chave_encriptacao_32hex">CHAVE (32 CARATERES HEX)</string>
 
     <string name="fechar">Fechar</string>
+
+    <!-- Dashboard -->
+    <string name="dashboard_titulo">Painel</string>
+    <string name="dashboard_seccao_beacons">Beacons</string>
+    <string name="dashboard_seccao_cenarios">Cenários de trajecto</string>
+    <string name="dashboard_seccao_atividade">Atividade recente</string>
+    <string name="dashboard_sem_beacons">Nenhum beacon associado ainda.</string>
+    <string name="dashboard_sem_cenarios">Nenhum cenário de trajecto criado ainda.</string>
+    <string name="dashboard_sem_atividade">Ainda sem eventos registados.</string>
+    <string name="dashboard_fora_de_alcance">Fora de alcance</string>
+    <string name="dashboard_limiar_em">Dispara aos %1$d%%</string>
+    <string name="dashboard_com_horario">com horário</string>
+    <string name="dashboard_ativo">Activo</string>
+    <string name="dashboard_inativo">Inactivo</string>
+
+    <!-- Guia de configuração -->
+    <string name="guia_titulo">Como configurar</string>
+    <string name="guia_passo_contador">Passo %1$d de %2$d</string>
+    <string name="guia_anterior">Anterior</string>
+    <string name="guia_seguinte">Seguinte</string>
+    <string name="guia_saltar">Saltar</string>
+    <string name="guia_concluir">Concluir</string>
+
+    <string name="guia_passo1_titulo">Adicionar o beacon</string>
+    <string name="guia_passo1_texto">Toca em \"Detectar\" no ecrã principal para procurar o teu Shelly BLU Button. Assim que aparecer na lista, escolhe um nome fácil de reconhecer (ex: \"Chaves de casa\").</string>
+
+    <string name="guia_passo2_titulo">Configurar os cliques</string>
+    <string name="guia_passo2_texto">Cada beacon pode disparar acções diferentes consoante o número de cliques (1, 2 ou 3). Associa a cada clique o que quiseres: activar um cenário Shelly, enviar uma notificação, ou tocar um alarme no telemóvel.</string>
+
+    <string name="guia_passo3_titulo">Activar o modo trajecto</string>
+    <string name="guia_passo3_texto">No cartão do comando, activa \"Modo beacon (grava trajecto)\" para o beacon começar a registar a tua posição GPS enquanto o transportas contigo. O campo \"Intervalo (s)\" define de quanto em quanto tempo um novo ponto é gravado.</string>
+
+    <string name="guia_passo4_titulo">Gravar um percurso</string>
+    <string name="guia_passo4_texto">Faz o percurso normalmente com o beacon contigo (ex: de casa para o trabalho). A app grava os pontos GPS ao longo do caminho — esse registo serve de modelo para o cenário que vais criar a seguir.</string>
+
+    <string name="guia_passo5_titulo">Criar um cenário</string>
+    <string name="guia_passo5_texto">No ecrã de Cenários, cria um novo a partir de uma viagem já gravada. A app desenha automaticamente \"checkpoints\" — barreiras ao longo do percurso que detectam quando estás a atravessá-lo, na ordem certa.</string>
+
+    <string name="guia_passo6_titulo">Percentagem de disparo</string>
+    <string name="guia_passo6_texto">Define a que percentagem do percurso a acção deve disparar. Por exemplo, 70% dispara quando já atravessaste a maior parte do caminho — útil para preparares algo em casa antes de chegares.</string>
+
+    <string name="guia_passo7_titulo">Restringir por horário</string>
+    <string name="guia_passo7_texto">Se só quiseres que o cenário funcione em certas alturas (ex: dias úteis de manhã), adiciona uma ou mais janelas horárias. Fora dessas janelas, o cenário não dispara mesmo que o percurso seja detectado.</string>
+
+    <string name="guia_passo8_titulo">Ver no mapa</string>
+    <string name="guia_passo8_texto">O mapa de trajecto segue automaticamente a tua posição actual, como um GPS de navegação. Podes ligar o indicador de velocidade e direcção tocando no ícone da bússola.</string>
     <string name="ajuda_escuta">A app ouve o Bluetooth sempre em fundo. Toque na lupa só para associar um botão novo — os já associados não precisam disto.</string>
     <string name="ajuda_diag">Mostra o botão e o tipo de clique mais recente, e os dados técnicos em hexadecimal.</string>
     <string name="ajuda_comandos">Botões físicos já associados. Para associar um novo: toque na lupa acima e depois carregue no botão.</string>

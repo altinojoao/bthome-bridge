@@ -51,6 +51,8 @@ fun EcraPrincipal(vm: GatewayViewModel = viewModel()) {
     var mostraCenarios by remember { mutableStateOf(false) }
     var mostraPerfis by remember { mutableStateOf(false) }
     var mostraAtualizacoes by remember { mutableStateOf(false) }
+    var mostraDashboard by remember { mutableStateOf(false) }
+    var mostraGuia by remember { mutableStateOf(false) }
     var balaoAtivo by remember { mutableStateOf(BalaoAtivo.NENHUM) }
 
     val contextoBase = LocalContext.current
@@ -111,7 +113,9 @@ fun EcraPrincipal(vm: GatewayViewModel = viewModel()) {
                     onAbreMapa = { mostraMapa = true },
                     onAbreCenarios = { mostraCenarios = true },
                     onAbrePerfis = { mostraPerfis = true },
-                    onAbreAtualizacoes = { mostraAtualizacoes = true }
+                    onAbreAtualizacoes = { mostraAtualizacoes = true },
+                    onAbreDashboard = { mostraDashboard = true },
+                    onAbreGuia = { mostraGuia = true }
                 )
 
                 if ("hero" !in cardsDesativados) {
@@ -251,6 +255,19 @@ fun EcraPrincipal(vm: GatewayViewModel = viewModel()) {
                     vm = vm,
                     onFecha = { mostraMapa = false }
                 )
+            }
+
+            if (mostraDashboard) {
+                val cenariosTrajeto by vm.cenariosTrajeto.collectAsState()
+                EcraDashboard(
+                    comandos = comandos,
+                    cenarios = cenariosTrajeto,
+                    onFecha = { mostraDashboard = false }
+                )
+            }
+
+            if (mostraGuia) {
+                EcraGuiaConfiguracao(onFecha = { mostraGuia = false })
             }
 
             if (mostraCenarios) {
