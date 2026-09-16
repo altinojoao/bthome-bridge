@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>Como configurar</title>
+<style>
+  :root {
+    --fundo: #0D1117;
+    --cartao: #161B22;
+    --elevado: #1C2530;
+    --linha: #2A3441;
+    --tinta: #E6EDF3;
+    --suave: #8B9AB0;
+    --azul: #2BA6E0;
+    --ok: #3FB950;
+    --aviso: #F0A500;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--fundo);
+    color: var(--tinta);
+    font-family: -apple-system, Roboto, "Segoe UI", sans-serif;
+    padding: 18px 16px 40px;
+    line-height: 1.5;
+  }
+  h1 {
+    font-size: 20px;
+    margin: 4px 0 4px;
+  }
+  .subtitulo {
+    color: var(--suave);
+    font-size: 13px;
+    margin-bottom: 20px;
+  }
+  .indice {
+    background: var(--cartao);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 22px;
+  }
+  .indice-titulo {
+    font-size: 12px;
+    color: var(--suave);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 8px;
+  }
+  .indice a {
+    display: block;
+    color: var(--azul);
+    text-decoration: none;
+    font-size: 14px;
+    padding: 4px 0;
+  }
+  section {
+    background: var(--cartao);
+    border-radius: 14px;
+    padding: 18px 16px;
+    margin-bottom: 16px;
+    scroll-margin-top: 16px;
+  }
+  .passo-numero {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--azul);
+    color: #fff;
+    font-weight: bold;
+    font-size: 13px;
+    margin-right: 8px;
+  }
+  h2 {
+    font-size: 16px;
+    margin: 0 0 10px;
+    display: flex;
+    align-items: center;
+  }
+  h2 .emoji { font-size: 20px; margin-right: 8px; }
+  p { font-size: 14px; margin: 8px 0; }
+  ul, ol { font-size: 14px; padding-left: 20px; margin: 8px 0; }
+  li { margin: 4px 0; }
+  .caixa {
+    background: var(--elevado);
+    border-left: 3px solid var(--azul);
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 13px;
+    margin: 10px 0;
+  }
+  .caixa.aviso { border-left-color: var(--aviso); }
+  .caixa.ok { border-left-color: var(--ok); }
+  code {
+    background: var(--elevado);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 13px;
+    color: var(--azul);
+  }
+  .tabela {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin: 10px 0;
+  }
+  .tabela th, .tabela td {
+    border-bottom: 1px solid var(--linha);
+    padding: 6px 8px;
+    text-align: left;
+  }
+  .tabela th { color: var(--suave); font-weight: normal; }
+  .voltar-topo {
+    display: inline-block;
+    margin-top: 6px;
+    color: var(--suave);
+    font-size: 12px;
+    text-decoration: none;
+  }
+  hr { border: none; border-top: 1px solid var(--linha); margin: 24px 0; }
+  .rodape {
+    text-align: center;
+    color: var(--suave);
+    font-size: 11px;
+    margin-top: 24px;
+  }
+</style>
+</head>
+<body>
+
+<h1>🚦 Como configurar</h1>
+<div class="subtitulo">Guia completo — dos comandos aos cenários de trajecto</div>
+
+<div class="indice" id="topo">
+  <div class="indice-titulo">Índice</div>
+  <a href="#beacon">1. Adicionar um beacon</a>
+  <a href="#cliques">2. Configurar os cliques</a>
+  <a href="#trajeto">3. Activar o modo trajecto</a>
+  <a href="#gravar">4. Gravar um percurso</a>
+  <a href="#cenario">5. Criar um cenário</a>
+  <a href="#checkpoints">6. Checkpoints e percentagem</a>
+  <a href="#horario">7. Restringir por horário</a>
+  <a href="#mapa">8. O mapa em tempo real</a>
+  <a href="#alcance">9. Alertar se sair de alcance</a>
+  <a href="#dicas">10. Dicas e resolução de problemas</a>
+</div>
+
+<section id="beacon">
+  <h2><span class="passo-numero">1</span> Adicionar um beacon</h2>
+  <p>No ecrã principal, toca em <b>Detectar</b> para procurar o teu Shelly BLU Button por perto.</p>
+  <ol>
+    <li>Assim que aparecer na lista, toca nele para o associar.</li>
+    <li>Dá-lhe um nome fácil de reconhecer (ex: "Chaves de casa", "Mochila da escola").</li>
+    <li>Escolhe um perfil de cor para o identificares rapidamente na grelha de comandos.</li>
+  </ol>
+  <div class="caixa">Cada beacon físico só precisa de ser associado uma vez — depois fica sempre disponível na lista de comandos.</div>
+  <a class="voltar-topo" href="#topo">↑ voltar ao índice</a>
+</section>
+
+<section id="cliques">
+  <h2><span class="passo-numero">2</span> Configurar os cliques</h2>
+  <p>Cada beacon reconhece <b>1, 2 ou 3 cliques</b> — e cada um pode disparar uma acção diferente.</p>
+  <table class="tabela">
+    <tr><th>Acção</th><th>Exemplo de uso</th></tr>
+    <tr><td>Executar cena Shelly</td><td>Acender/apagar luzes, abrir estore</td></tr>
+    <tr><td>Enviar notificação</td><td>Avisar outra pessoa que chegaste</td></tr>
+    <tr><td>Tocar alarme no telemóvel</td><td>Encontrar o telemóvel perdido</td></tr>
+  </table>
+  <p>Abre o cartão do comando e associa a acção pretendida a cada número de cliques.</p>
+  <a class="voltar-topo" href="#topo">↑ voltar ao índice</a>
+</section>
+
+<section id="trajeto">
+  <h2><span class="passo-numero">3</span> Activar o modo trajecto</h2>
+  <p>No cartão do comando, activa o interruptor <b>"Modo beacon (grava trajecto)"</b>. A partir daqui, sempre que o beacon estiver contigo, a app regista a tua posição GPS periodicamente.</p>
+  <ul>
+    <li><b>Intervalo (s)</b> — de quanto em quanto tempo um novo ponto GPS é gravado. Um valor baixo (ex: 3-5s) dá mais precisão; um valor mais alto poupa bateria.</li>
+    <li><b>Incluir localização</b> — necessário para o modo trajecto funcionar; deve estar sempre activo neste caso.</li>
+  </ul>
+  <div class="caixa aviso">Sem este modo activo, o beacon continua a funcionar normalmente para cliques/acções, mas não acumula histórico de GPS — e por isso não pode ser usado para criar cenários de trajecto.</div>
+  <a class="voltar-topo" href="#topo">↑ voltar ao índice</a>
+</section>
+
+<section id="gravar">
+  <h2><span class="passo-numero">4</span> Gravar um percurso</h2>
+  <p>Com o modo trajecto activo, faz a viagem normalmente com o beacon contigo — por exemplo, de casa para o trabalho.</p>
+  <p>A app vai acumulando pontos GPS ao longo do caminho. Este histórico é a matéria-prima que vais usar no passo seguinte para criar um cenário — não é preciso fazer nada de especial durante a viagem, só teres o beacon perto de ti (no bolso, na mala, no porta-chaves do carro).</p>
+  <div class="caixa">Quanto mais vezes fizeres o mesmo percurso, mais dados tens disponíveis para escolher a viagem que melhor representa o teu trajecto habitual.</div>
+  <a class="voltar-topo" href="#topo">↑ voltar ao índice</a>
+</section>
+
+<section id="cenario">
+  <h2><span class="passo-numero">5</span> Criar um cenário</h2>
+  <p>No ecrã de <b>Cenários</b>, cria um novo e escolhe uma das viagens já gravadas como modelo (template).</p>
+  <ol>
+    <li>Dá um nome ao cenário (ex: "A chegar a casa", "A chegar ao trabalho").</li>
+    <li>Escolhe as acções que queres que disparem quando o cenário for detectado.</li>
+    <li>A app desenha automaticamente as barreiras de detecção sobre o percurso escolhido.</li>
+  </ol>
+  <a class="voltar-topo" href="#topo">↑ voltar ao índice</a>
+</section>
+
+<section id="checkpoints">
+  <h2><span class="passo-numero">6</span> Checkpoints e percentagem</h2>
+  <p>Cada cenário tem <b>checkpoints</b> — barreiras invisíveis espalhadas ao longo do percurso, que a app detecta quando as atravessas, pela ordem certa.</p>
+  <p>O campo <b>"Percentagem"</b> define a que ponto do percurso a acção deve disparar:</p>
+  <ul>
+    <li><code>50%</code> — dispara a meio do caminho</li>
+    <li><code>80%</code> — dispara perto do fim, útil para preparares algo (ex: ligar o aquecimento) antes de chegares</li>
+    <li><code>100%</code> — só dispara ao completar o percurso todo</li>
+  </ul>
+  <div class="caixa ok">Não precisas de escolher o número de checkpoints — a app gera-os automaticamente com precisão suficiente para qualquer percentagem que escolheres.</div>
+  <a class="voltar-topo" href="#topo">↑ voltar ao índice</a>
+</section>
+
+<section id="horario">
+  <h2><span class="passo-numero">7</span> Restringir por horário</h2>
+  <p>Se só quiseres que um cenário funcione em certas alturas do dia ou da semana, adiciona uma ou mais <b>janelas horárias</b>.</p>
+  <ul>
+    <li>Define hora de início e fim (ex: 07:00 às 10:00).</li>
+    <li>Escolhe os dias da semana em que se aplica (ou deixa em branco para todos os dias).</li>
+    <li>Podes adicionar várias janelas ao mesmo cenário — por exemplo, manhãs de dias úteis <b>e</b> tardes ao fim de semana.</li>
+  </ul>
+  <p>Fora das janelas configuradas, o cenário não dispara, mesmo que o percurso seja detectado correctamente.</p>
+  <a class="voltar-topo" href="#topo">↑ voltar ao índice</a>
+</section>
+
+<section id="mapa">
+  <h2><span class="passo-numero">8</span> O mapa em tempo real</h2>
+  <p>O mapa de trajecto segue automaticamente a tua posição actual, como um GPS de navegação — não precisas de andar a mexer no mapa manualmente.</p>
+  <ul>
+    <li>Se arrastares ou fizeres zoom, o seguimento automático desliga-se; toca no botão de recentrar para o reactivar.</li>
+    <li>O ícone da bússola mostra um indicador de velocidade e a direcção do movimento.</li>
+    <li>As barreiras dos cenários activos aparecem desenhadas sobre o mapa, com a cor do beacon correspondente.</li>
+  </ul>
+  <a class="voltar-topo" href="#topo">↑ voltar ao índice</a>
+</section>
+
+<section id="alcance">
+  <h2><span class="passo-numero">9</span> Alertar se sair de alcance</h2>
+  <p>Activa esta opção no cartão do comando para receberes um aviso se o beacon deixar de estar por perto — útil para não esqueceres chaves, mala ou outros objectos importantes.</p>
+  <div class="caixa">Esta opção precisa do "Modo beacon" activo para funcionar correctamente.</div>
+  <a class="voltar-topo" href="#topo">↑ voltar ao índice</a>
+</section>
+
+<section id="dicas">
+  <h2><span class="passo-numero">10</span> Dicas e resolução de problemas</h2>
+  <p><b>O cenário não disparou quando cheguei:</b> confirma que o percurso feito é suficientemente parecido com o gravado, e que a percentagem configurada não é demasiado alta.</p>
+  <p><b>Recebo alertas de fora de alcance sem razão aparente:</b> pode acontecer se o telemóvel ficar muito tempo sem processar sinal (ex: ecrã bloqueado por longos períodos) — normalmente resolve-se sozinho no anúncio seguinte do beacon.</p>
+  <p><b>A bateria do telemóvel gasta-se mais depressa:</b> experimenta aumentar o "Intervalo (s)" do modo trajecto para gravar pontos GPS com menos frequência.</p>
+  <a class="voltar-topo" href="#topo">↑ voltar ao índice</a>
+</section>
+
+<div class="rodape">Gateway BLU · Guia de configuração</div>
+
+</body>
+</html>

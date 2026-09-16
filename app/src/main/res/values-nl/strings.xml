@@ -140,6 +140,7 @@
     <string name="definir_chave">Versleutelingssleutel instellen</string>
     <string name="chave_encriptacao_32hex">SLEUTEL (32 HEX-TEKENS)</string>
 
+    <string name="guia_titulo">Zo stel je het in</string>
     <string name="fechar">Sluiten</string>
     <string name="ajuda_escuta">De app luistert altijd op de achtergrond naar Bluetooth. Tik alleen op het vergrootglas om een nieuwe knop te koppelen — al gekoppelde knoppen hebben dit niet nodig.</string>
     <string name="ajuda_diag">Toont de knop en het meest recente kliktype, en de technische gegevens in hex.</string>

@@ -21,8 +21,8 @@ android {
         // tambem foi a primeira com a keystore de debug fixa -- a
         // v1.0.3 e a primeira atualizacao real desse mecanismo,
         // instalando por cima da v1.0.2 sem perder dados.
-        versionCode 126
-        versionName "1.5.3"
+        versionCode 127
+        versionName "1.6.0"
     }
 
     signingConfigs {

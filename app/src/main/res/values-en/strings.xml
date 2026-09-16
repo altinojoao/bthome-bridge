@@ -140,6 +140,7 @@
     <string name="definir_chave">Set encryption key</string>
     <string name="chave_encriptacao_32hex">KEY (32 HEX CHARACTERS)</string>
 
+    <string name="guia_titulo">How to set up</string>
     <string name="fechar">Close</string>
     <string name="ajuda_escuta">The app listens for Bluetooth in the background at all times. Tap the magnifier only to pair a new button — the ones already paired don\'t need this.</string>
     <string name="ajuda_diag">Shows the button and click type most recently received, and the technical data in hex.</string>

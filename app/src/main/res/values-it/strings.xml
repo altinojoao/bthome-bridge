@@ -140,6 +140,7 @@
     <string name="definir_chave">Imposta chiave di crittografia</string>
     <string name="chave_encriptacao_32hex">CHIAVE (32 CARATTERI HEX)</string>
 
+    <string name="guia_titulo">Come configurare</string>
     <string name="fechar">Chiudi</string>
     <string name="ajuda_escuta">L\'app ascolta il Bluetooth sempre in background. Tocca la lente solo per associare un nuovo pulsante — quelli già associati non ne hanno bisogno.</string>
     <string name="ajuda_diag">Mostra il pulsante e il tipo di clic più recente, e i dati tecnici in esadecimale.</string>

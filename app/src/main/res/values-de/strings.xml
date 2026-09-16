@@ -140,6 +140,7 @@
     <string name="definir_chave">Verschlüsselungsschlüssel festlegen</string>
     <string name="chave_encriptacao_32hex">SCHLÜSSEL (32 HEX-ZEICHEN)</string>
 
+    <string name="guia_titulo">Einrichtung</string>
     <string name="fechar">Schließen</string>
     <string name="ajuda_escuta">Die App hört Bluetooth immer im Hintergrund ab. Tippen Sie nur auf die Lupe, um eine neue Taste zu koppeln — bereits gekoppelte benötigen dies nicht.</string>
     <string name="ajuda_diag">Zeigt die Taste und den zuletzt empfangenen Klicktyp sowie die technischen Daten in Hex an.</string>

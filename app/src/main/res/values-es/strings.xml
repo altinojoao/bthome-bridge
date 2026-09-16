@@ -140,6 +140,7 @@
     <string name="definir_chave">Definir clave de encriptación</string>
     <string name="chave_encriptacao_32hex">CLAVE (32 CARACTERES HEX)</string>
 
+    <string name="guia_titulo">Cómo configurar</string>
     <string name="fechar">Cerrar</string>
     <string name="ajuda_escuta">La app escucha Bluetooth siempre en segundo plano. Toque la lupa solo para asociar un botón nuevo — los ya asociados no lo necesitan.</string>
     <string name="ajuda_diag">Muestra el botón y el tipo de clic más reciente, y los datos técnicos en hexadecimal.</string>

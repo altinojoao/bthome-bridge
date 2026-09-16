@@ -140,6 +140,7 @@
     <string name="definir_chave">Ustaw klucz szyfrowania</string>
     <string name="chave_encriptacao_32hex">KLUCZ (32 ZNAKI HEX)</string>
 
+    <string name="guia_titulo">Jak skonfigurować</string>
     <string name="fechar">Zamknij</string>
     <string name="ajuda_escuta">Aplikacja nasłuchuje Bluetooth zawsze w tle. Dotknij lupy tylko, aby sparować nowy przycisk — już sparowane tego nie wymagają.</string>
     <string name="ajuda_diag">Pokazuje przycisk i ostatnio odebrany typ kliknięcia oraz dane techniczne w hex.</string>

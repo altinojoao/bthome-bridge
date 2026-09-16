@@ -142,6 +142,7 @@
     <string name="chave_encriptacao_32hex">CHAVE (32 CARATERES HEX)</string>
 
     <string name="fechar">Fechar</string>
+    <string name="guia_titulo">Como configurar</string>
     <string name="ajuda_escuta">A app ouve o Bluetooth sempre em fundo. Toque na lupa só para associar um botão novo — os já associados não precisam disto.</string>
     <string name="ajuda_diag">Mostra o botão e o tipo de clique mais recente, e os dados técnicos em hexadecimal.</string>
     <string name="ajuda_comandos">Botões físicos já associados. Para associar um novo: toque na lupa acima e depois carregue no botão.</string>
