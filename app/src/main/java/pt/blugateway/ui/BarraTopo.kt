@@ -45,9 +45,7 @@ fun BarraTopo(
     onAbreMapa: () -> Unit,
     onAbreCenarios: () -> Unit,
     onAbrePerfis: () -> Unit,
-    onAbreAtualizacoes: () -> Unit,
-    onAbreDashboard: () -> Unit,
-    onAbreGuia: () -> Unit
+    onAbreAtualizacoes: () -> Unit
 ) {
     val cores = LocalCoresGateway.current
     var mostraMenu by remember { mutableStateOf(false) }
@@ -86,20 +84,6 @@ fun BarraTopo(
             ativo = false,
             descricao = stringResource(R.string.atualizacao_titulo),
             onClick = onAbreAtualizacoes
-        )
-        Spacer(Modifier.width(7.dp))
-        BotaoTopo(
-            emoji = "\uD83D\uDCCA",
-            ativo = false,
-            descricao = stringResource(R.string.dashboard_titulo),
-            onClick = onAbreDashboard
-        )
-        Spacer(Modifier.width(7.dp))
-        BotaoTopo(
-            emoji = "\u2753",
-            ativo = false,
-            descricao = stringResource(R.string.guia_titulo),
-            onClick = onAbreGuia
         )
     }
 
