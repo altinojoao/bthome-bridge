@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
+import pt.blugateway.R
 import pt.blugateway.ui.theme.LocalCoresGateway
 import pt.blugateway.ui.theme.TemaGateway
 import java.util.Locale
