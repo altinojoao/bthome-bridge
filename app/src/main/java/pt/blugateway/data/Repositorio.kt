@@ -347,7 +347,7 @@ class Repositorio private constructor(context: Context) {
         prefs.edit()
             .putLong("disparo_ts_$cenarioId", System.currentTimeMillis())
             .commit()
-        limpaProgressoCheckpoints(cenarioId)
+        reiniciaProgressoCheckpoints(cenarioId)
     }
 
     /**
@@ -371,7 +371,7 @@ class Repositorio private constructor(context: Context) {
             .apply()
     }
 
-    private fun limpaProgressoCheckpoints(cenarioId: String) {
+    fun reiniciaProgressoCheckpoints(cenarioId: String) {
         prefs.edit().remove("checkpoint_progresso_$cenarioId").apply()
     }
 

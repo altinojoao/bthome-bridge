@@ -304,6 +304,19 @@ object GestorSemelhancaTrajeto {
                     "[D-cenarios] cenario='${cenario.nome}' checkpoints regenerados (${existentes.size}->${regenerados.size}) -- ${existentes.size} checkpoints não permitiam atingir o limiar de ${cenario.limiarPercentagem}%"
                 )
                 repo.atualizaCenarioTrajeto(cenario.copy(checkpoints = regenerados))
+                // Reiniciar qualquer progresso guardado -- o índice
+                // antigo (relativo ao array de checkpoints anterior)
+                // fica dessincronizado do novo array: os checkpoints
+                // regenerados têm posições geográficas DIFERENTES dos
+                // antigos (espaçados por fracção de distância, não os
+                // mesmos pontos). Sem isto, um progresso já avançado
+                // (ex: 3/4) ficaria a apontar para checkpoints[3] do
+                // NOVO array de 10 -- um ponto geográfico que o
+                // utilizador pode já ter ultrapassado fisicamente,
+                // impedindo o cenário de disparar para sempre nessa
+                // viagem (confirmado como causa provável de cenários
+                // que deixam de disparar após a migração automática).
+                repo.reiniciaProgressoCheckpoints(cenario.id)
                 return regenerados
             }
             return existentes
