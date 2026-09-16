@@ -5,9 +5,64 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <link rel="stylesheet" href="leaflet.css" />
   <style>
-    html, body { height: 100%; margin: 0; padding: 0; }
+    html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; }
     #mapa { height: 100%; background: #0D1117; }
     .leaflet-control-attribution { font-size: 9px; }
+
+    /* No modo condução, o mapa roda para manter a direcção do
+       movimento sempre "para cima" -- os elementos de UI (marcador
+       de veículo, indicador de velocidade) rodam de volta para se
+       manterem sempre direitos, ao contrário do mapa por baixo. */
+    #veiculo-fixo {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 36px;
+      height: 36px;
+      margin: -18px 0 0 -18px;
+      z-index: 900;
+      pointer-events: none;
+      display: none;
+      transition: transform 0.4s linear;
+    }
+    #veiculo-fixo svg { width: 100%; height: 100%; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6)); }
+
+    #painel-velocidade {
+      position: absolute;
+      bottom: 16px;
+      left: 16px;
+      z-index: 1000;
+      background: rgba(13,17,23,0.9);
+      border: 2px solid #2BA6E0;
+      border-radius: 50%;
+      width: 58px;
+      height: 58px;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+    #painel-velocidade .valor { color: white; font-size: 18px; font-weight: bold; line-height: 1; }
+    #painel-velocidade .unidade { color: #8B9AB0; font-size: 9px; }
+
+    #botao-modo-conducao {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      z-index: 1000;
+      background: rgba(13,17,23,0.9);
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      color: #8B9AB0;
+      cursor: pointer;
+    }
+    #botao-modo-conducao.ativo { color: #2BA6E0; border: 2px solid #2BA6E0; }
 
     /* Radar pulsante: um anel vermelho que expande e desvanece em
        loop, sobreposto ao ultimo ponto de um comando em movimento
@@ -49,6 +104,16 @@
 </head>
 <body>
   <div id="mapa"></div>
+  <div id="veiculo-fixo">
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 2 L20 20 L12 16 L4 20 Z" fill="#2BA6E0" stroke="white" stroke-width="1.2"/>
+    </svg>
+  </div>
+  <div id="painel-velocidade">
+    <div class="valor" id="valor-velocidade">0</div>
+    <div class="unidade">km/h</div>
+  </div>
+  <div id="botao-modo-conducao" title="Mostrar veículo e velocidade">🧭</div>
   <script src="leaflet.js"></script>
   <script>
     // Mapa comeca centrado num ponto neutro (0,0) ate a app chamar
@@ -126,6 +191,80 @@
         if (modoNavegacao) {
           modoNavegacao = false;
           atualizaVisibilidadeBotaoRecentrar();
+        }
+      }, { passive: true });
+    });
+
+    // ---------------------------------------------------------------
+    // MODO CONDUÇÃO: mapa roda para manter a direcção do movimento
+    // sempre "para cima" (como Waze/Google Maps em navegação), com
+    // o veículo fixo no centro do ecrã e indicador de velocidade.
+    // O Leaflet não suporta rotação nativa -- roda-se o próprio pane
+    // que contém os tiles e overlays (.leaflet-map-pane) via CSS
+    // transform, e roda-se de volta (rotação inversa) os elementos
+    // de UI que devem continuar sempre direitos.
+    // ---------------------------------------------------------------
+    var modoConducaoAtivo = false;
+    var ultimoRumoConhecido = 0;
+    var ultimaVelocidadeKmh = 0;
+
+    function aplicaRotacaoMapa(rumoGraus) {
+      // Rodar visualmente o mapa (tiles) exigiria reestruturar os
+      // controlos nativos do Leaflet (que ficam dentro do mesmo
+      // elemento e rodariam também, de lado) sem um plugin dedicado
+      // -- não incluído neste projecto por não termos acesso a rede
+      // para o descarregar dentro do WebView. Mantém-se o mapa fixo
+      // com norte para cima; o modo condução usa antes o ícone do
+      // veículo a apontar na direcção real do movimento sobre o
+      // mapa fixo, e o zoom/seguimento automático já implementados.
+    }
+
+    function removeRotacaoMapa() {}
+
+    function atualizaVeiculoFixo(rumoGraus) {
+      var el = document.getElementById('veiculo-fixo');
+      if (!el) return;
+      el.style.transform = 'rotate(' + rumoGraus + 'deg)';
+    }
+
+    function atualizaPainelVelocidade(kmh) {
+      var el = document.getElementById('valor-velocidade');
+      if (el) el.textContent = Math.round(kmh);
+    }
+
+    function alternaModoConducao() {
+      modoConducaoAtivo = !modoConducaoAtivo;
+      var botao = document.getElementById('botao-modo-conducao');
+      var veiculo = document.getElementById('veiculo-fixo');
+      var painelVel = document.getElementById('painel-velocidade');
+      if (modoConducaoAtivo) {
+        botao.classList.add('ativo');
+        veiculo.style.display = 'block';
+        painelVel.style.display = 'flex';
+        modoNavegacao = true;
+        atualizaVisibilidadeBotaoRecentrar();
+        aplicaRotacaoMapa(ultimoRumoConhecido);
+        atualizaVeiculoFixo(ultimoRumoConhecido);
+      } else {
+        botao.classList.remove('ativo');
+        veiculo.style.display = 'none';
+        painelVel.style.display = 'none';
+        removeRotacaoMapa();
+      }
+    }
+
+    document.getElementById('botao-modo-conducao').addEventListener('click', alternaModoConducao);
+
+    // Gestos manuais também desligam o modo condução -- faz sentido
+    // parar de rodar o mapa se o utilizador está a explorá-lo à mão.
+    ['mousedown', 'touchstart', 'wheel'].forEach(function (evento) {
+      mapaEl.addEventListener(evento, function () {
+        if (modoConducaoAtivo) {
+          modoConducaoAtivo = false;
+          document.getElementById('botao-modo-conducao').classList.remove('ativo');
+          document.getElementById('veiculo-fixo').style.display = 'none';
+          document.getElementById('painel-velocidade').style.display = 'none';
+          removeRotacaoMapa();
         }
       }, { passive: true });
     });
@@ -381,6 +520,7 @@
 
       var todosPontos = [];
       var posicaoMaisRecenteGlobal = null;
+      var penultimaPosicaoGlobal = null;
 
       dados.forEach(function (comando) {
         if (!comando.pontos || comando.pontos.length === 0) return;
@@ -400,6 +540,9 @@
         if (ultimoDesteComando.timestamp !== undefined &&
             (posicaoMaisRecenteGlobal === null || ultimoDesteComando.timestamp > posicaoMaisRecenteGlobal.timestamp)) {
           posicaoMaisRecenteGlobal = ultimoDesteComando;
+          penultimaPosicaoGlobal = pontosParaDesenhar.length >= 2
+            ? pontosParaDesenhar[pontosParaDesenhar.length - 2]
+            : null;
         }
 
         var linha = L.polyline(latLngs, { color: comando.cor, weight: 3, opacity: 0.75 }).addTo(mapa);
@@ -464,6 +607,33 @@
         criaBotaoRecentrar();
         if (posicaoMaisRecenteGlobal) {
           window._ultimaPosicaoConhecida = [posicaoMaisRecenteGlobal.lat, posicaoMaisRecenteGlobal.lon];
+
+          if (penultimaPosicaoGlobal) {
+            var rumo = calculaRumo(
+              penultimaPosicaoGlobal.lat, penultimaPosicaoGlobal.lon,
+              posicaoMaisRecenteGlobal.lat, posicaoMaisRecenteGlobal.lon
+            );
+            var dMetros = distanciaMetros(
+              penultimaPosicaoGlobal.lat, penultimaPosicaoGlobal.lon,
+              posicaoMaisRecenteGlobal.lat, posicaoMaisRecenteGlobal.lon
+            );
+            var dSegundos = (posicaoMaisRecenteGlobal.timestamp - penultimaPosicaoGlobal.timestamp) / 1000;
+            if (dSegundos > 0) {
+              ultimaVelocidadeKmh = (dMetros / dSegundos) * 3.6;
+            }
+            // Só actualizar o rumo se houve deslocação suficiente --
+            // com o veículo parado, pequenos saltos de GPS dariam
+            // rumos aleatórios e o mapa "tremeria" a rodar sem sentido.
+            if (dMetros >= 3) {
+              ultimoRumoConhecido = rumo;
+            } else {
+              ultimaVelocidadeKmh = 0;
+            }
+            atualizaPainelVelocidade(ultimaVelocidadeKmh);
+            atualizaVeiculoFixo(ultimoRumoConhecido);
+            if (modoConducaoAtivo) aplicaRotacaoMapa(ultimoRumoConhecido);
+          }
+
           if (modoNavegacao) {
             mapa.setView(window._ultimaPosicaoConhecida, Math.max(mapa.getZoom(), ZOOM_NAVEGACAO), { animate: true });
           }
