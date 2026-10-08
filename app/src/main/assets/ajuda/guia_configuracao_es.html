@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>Cómo configurar</title>
+<style>
+  :root {
+    --fundo: #0D1117;
+    --cartao: #161B22;
+    --elevado: #1C2530;
+    --linha: #2A3441;
+    --tinta: #E6EDF3;
+    --suave: #8B9AB0;
+    --azul: #2BA6E0;
+    --ok: #3FB950;
+    --aviso: #F0A500;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--fundo);
+    color: var(--tinta);
+    font-family: -apple-system, Roboto, "Segoe UI", sans-serif;
+    padding: 18px 16px 40px;
+    line-height: 1.5;
+  }
+  h1 { font-size: 20px; margin: 4px 0 4px; }
+  .subtitulo { color: var(--suave); font-size: 13px; margin-bottom: 20px; }
+  .indice { background: var(--cartao); border-radius: 12px; padding: 14px 16px; margin-bottom: 22px; }
+  .indice-titulo { font-size: 12px; color: var(--suave); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 8px; }
+  .indice a { display: block; color: var(--azul); text-decoration: none; font-size: 14px; padding: 4px 0; }
+  section { background: var(--cartao); border-radius: 14px; padding: 18px 16px; margin-bottom: 16px; scroll-margin-top: 16px; }
+  .passo-numero { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: var(--azul); color: #fff; font-weight: bold; font-size: 13px; margin-right: 8px; }
+  h2 { font-size: 16px; margin: 0 0 10px; display: flex; align-items: center; }
+  p { font-size: 14px; margin: 8px 0; }
+  ul, ol { font-size: 14px; padding-left: 20px; margin: 8px 0; }
+  li { margin: 4px 0; }
+  .caixa { background: var(--elevado); border-left: 3px solid var(--azul); border-radius: 6px; padding: 10px 12px; font-size: 13px; margin: 10px 0; }
+  .caixa.aviso { border-left-color: var(--aviso); }
+  .caixa.ok { border-left-color: var(--ok); }
+  code { background: var(--elevado); padding: 1px 6px; border-radius: 4px; font-size: 13px; color: var(--azul); }
+  .tabela { width: 100%; border-collapse: collapse; font-size: 13px; margin: 10px 0; }
+  .tabela th, .tabela td { border-bottom: 1px solid var(--linha); padding: 6px 8px; text-align: left; }
+  .tabela th { color: var(--suave); font-weight: normal; }
+  .voltar-topo { display: inline-block; margin-top: 6px; color: var(--suave); font-size: 12px; text-decoration: none; }
+  .rodape { text-align: center; color: var(--suave); font-size: 11px; margin-top: 24px; }
+</style>
+</head>
+<body>
+
+<h1>🚦 Cómo configurar</h1>
+<div class="subtitulo">Guía completa — desde los comandos hasta los escenarios de trayecto</div>
+
+<div class="indice" id="topo">
+  <div class="indice-titulo">Índice</div>
+  <a href="#s1">1. Añadir un beacon</a>
+  <a href="#s2">2. Configurar los clics</a>
+  <a href="#s3">3. Activar el modo trayecto</a>
+  <a href="#s4">4. Grabar un recorrido</a>
+  <a href="#s5">5. Crear un escenario</a>
+  <a href="#s6">6. Checkpoints y porcentaje</a>
+  <a href="#s7">7. Restringir por horario</a>
+  <a href="#s8">8. El mapa en tiempo real</a>
+  <a href="#s9">9. Alertar si sale de alcance</a>
+  <a href="#s10">10. Consejos y solución de problemas</a>
+</div>
+
+<section id="s1">
+  <h2><span class="passo-numero">1</span> Añadir un beacon</h2>
+  <p>En la pantalla principal, toca <b>Detectar</b> para buscar tu Shelly BLU Button cerca.</p>
+  <ol><li>En cuanto aparezca en la lista, tócalo para emparejarlo.</li><li>Dale un nombre fácil de reconocer (ej: "Llaves de casa", "Mochila del colegio").</li><li>Elige un perfil de color para identificarlo rápidamente en la cuadrícula de comandos.</li></ol>
+  <div class="caixa">Cada beacon físico solo necesita emparejarse una vez — después queda siempre disponible en la lista de comandos.</div>
+  <a class="voltar-topo" href="#topo">↑ volver al índice</a>
+</section>
+
+<section id="s2">
+  <h2><span class="passo-numero">2</span> Configurar los clics</h2>
+  <p>Cada beacon reconoce <b>1, 2 o 3 clics</b> — y cada uno puede activar una acción diferente.</p>
+  <table class="tabela">
+    <tr><th>Acción</th><th>Ejemplo de uso</th></tr>
+    <tr><td>Ejecutar escena Shelly</td><td>Encender/apagar luces, abrir persiana</td></tr>
+    <tr><td>Enviar notificación</td><td>Avisar a alguien de que has llegado</td></tr>
+    <tr><td>Sonar alarma en el teléfono</td><td>Encontrar un teléfono perdido</td></tr>
+  </table>
+  <p>Abre la tarjeta del comando y asigna la acción deseada a cada número de clics.</p>
+  <a class="voltar-topo" href="#topo">↑ volver al índice</a>
+</section>
+
+<section id="s3">
+  <h2><span class="passo-numero">3</span> Activar el modo trayecto</h2>
+  <p>En la tarjeta del comando, activa <b>"Modo beacon (graba trayecto)"</b>. A partir de aquí, siempre que el beacon esté contigo, la app registra tu posición GPS periódicamente.</p>
+  <ul><li><b>Intervalo (s)</b> — cada cuánto se guarda un nuevo punto GPS. Un valor bajo (ej: 3-5s) da más precisión; un valor más alto ahorra batería.</li><li><b>Incluir ubicación</b> — necesario para que funcione el modo trayecto; debe estar siempre activo en este caso.</li></ul>
+  <div class="caixa aviso">Sin este modo activo, el beacon sigue funcionando normalmente para clics/acciones, pero no acumula historial GPS — por eso no se puede usar para crear escenarios de trayecto.</div>
+  <a class="voltar-topo" href="#topo">↑ volver al índice</a>
+</section>
+
+<section id="s4">
+  <h2><span class="passo-numero">4</span> Grabar un recorrido</h2>
+  <p>Con el modo trayecto activo, haz el viaje con normalidad llevando el beacon contigo — por ejemplo, de casa al trabajo.</p>
+  <p>La app va acumulando puntos GPS por el camino. Este historial es la materia prima que usarás en el siguiente paso para crear un escenario — no hace falta hacer nada especial durante el viaje, solo tener el beacon cerca (en el bolsillo, la mochila, el llavero del coche).</p>
+  <div class="caixa">Cuantas más veces hagas el mismo recorrido, más datos tienes disponibles para elegir el viaje que mejor representa tu trayecto habitual.</div>
+  <a class="voltar-topo" href="#topo">↑ volver al índice</a>
+</section>
+
+<section id="s5">
+  <h2><span class="passo-numero">5</span> Crear un escenario</h2>
+  <p>En la pantalla de <b>Escenarios</b>, crea uno nuevo y elige uno de los viajes ya grabados como plantilla.</p>
+  <ol><li>Dale un nombre al escenario (ej: "Llegando a casa", "Llegando al trabajo").</li><li>Elige las acciones que quieres que se activen cuando se detecte el escenario.</li><li>La app dibuja automáticamente las barreras de detección sobre el recorrido elegido.</li></ol>
+  <a class="voltar-topo" href="#topo">↑ volver al índice</a>
+</section>
+
+<section id="s6">
+  <h2><span class="passo-numero">6</span> Checkpoints y porcentaje</h2>
+  <p>Cada escenario tiene <b>checkpoints</b> — barreras invisibles repartidas por el recorrido, que la app detecta cuando las cruzas, en el orden correcto.</p>
+  <p>El campo <b>"Porcentaje"</b> define en qué punto del recorrido debe activarse la acción:</p>
+  <ul><li><code>50%</code> — se activa a mitad de camino</li><li><code>80%</code> — se activa cerca del final, útil para preparar algo (ej: encender la calefacción) antes de llegar</li><li><code>100%</code> — solo se activa al completar todo el recorrido</li></ul>
+  <div class="caixa ok">No necesitas elegir el número de checkpoints — la app los genera automáticamente con precisión suficiente para cualquier porcentaje que elijas.</div>
+  <a class="voltar-topo" href="#topo">↑ volver al índice</a>
+</section>
+
+<section id="s7">
+  <h2><span class="passo-numero">7</span> Restringir por horario</h2>
+  <p>Si solo quieres que un escenario funcione en ciertos momentos, añade una o más <b>franjas horarias</b>.</p>
+  <ul><li>Define hora de inicio y fin (ej: 07:00 a 10:00).</li><li>Elige los días de la semana en que se aplica (o déjalo en blanco para todos los días).</li><li>Puedes añadir varias franjas al mismo escenario — por ejemplo, mañanas de días laborables <b>y</b> tardes de fin de semana.</li></ul>
+  <p>Fuera de las franjas configuradas, el escenario no se activará, aunque el recorrido se detecte correctamente.</p>
+  <a class="voltar-topo" href="#topo">↑ volver al índice</a>
+</section>
+
+<section id="s8">
+  <h2><span class="passo-numero">8</span> El mapa en tiempo real</h2>
+  <p>El mapa de trayecto sigue automáticamente tu posición actual, como un GPS de navegación — no necesitas mover el mapa manualmente.</p>
+  <ul><li>Si arrastras o haces zoom, el seguimiento automático se desactiva; toca el botón de recentrar para reactivarlo.</li><li>El icono de la brújula muestra un indicador de velocidad y dirección.</li><li>Las barreras de los escenarios activos aparecen dibujadas en el mapa, con el color del beacon correspondiente.</li></ul>
+  <a class="voltar-topo" href="#topo">↑ volver al índice</a>
+</section>
+
+<section id="s9">
+  <h2><span class="passo-numero">9</span> Alertar si sale de alcance</h2>
+  <p>Activa esta opción en la tarjeta del comando para recibir un aviso si el beacon deja de estar cerca — útil para no olvidar llaves, bolso u otros objetos importantes.</p>
+  <div class="caixa">Esta opción necesita el "Modo beacon" activo para funcionar correctamente.</div>
+  <a class="voltar-topo" href="#topo">↑ volver al índice</a>
+</section>
+
+<section id="s10">
+  <h2><span class="passo-numero">10</span> Consejos y solución de problemas</h2>
+  <p><b>El escenario no se activó cuando llegué:</b> comprueba que el recorrido hecho es suficientemente parecido al grabado, y que el porcentaje configurado no es demasiado alto.</p>
+  <p><b>Recibo alertas de fuera de alcance sin razón aparente:</b> puede pasar si el teléfono pasa mucho tiempo sin procesar señal (ej: pantalla bloqueada durante mucho tiempo) — normalmente se soluciona solo en el siguiente anuncio del beacon.</p>
+  <p><b>La batería del teléfono se gasta más rápido:</b> prueba a aumentar el "Intervalo (s)" del modo trayecto para grabar puntos GPS con menos frecuencia.</p>
+  <a class="voltar-topo" href="#topo">↑ volver al índice</a>
+</section>
+
+<div class="rodape">Gateway BLU · Guía de configuración</div>
+
+</body>
+</html>

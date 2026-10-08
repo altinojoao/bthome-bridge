@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>How to configure</title>
+<style>
+  :root {
+    --fundo: #0D1117;
+    --cartao: #161B22;
+    --elevado: #1C2530;
+    --linha: #2A3441;
+    --tinta: #E6EDF3;
+    --suave: #8B9AB0;
+    --azul: #2BA6E0;
+    --ok: #3FB950;
+    --aviso: #F0A500;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--fundo);
+    color: var(--tinta);
+    font-family: -apple-system, Roboto, "Segoe UI", sans-serif;
+    padding: 18px 16px 40px;
+    line-height: 1.5;
+  }
+  h1 { font-size: 20px; margin: 4px 0 4px; }
+  .subtitulo { color: var(--suave); font-size: 13px; margin-bottom: 20px; }
+  .indice { background: var(--cartao); border-radius: 12px; padding: 14px 16px; margin-bottom: 22px; }
+  .indice-titulo { font-size: 12px; color: var(--suave); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 8px; }
+  .indice a { display: block; color: var(--azul); text-decoration: none; font-size: 14px; padding: 4px 0; }
+  section { background: var(--cartao); border-radius: 14px; padding: 18px 16px; margin-bottom: 16px; scroll-margin-top: 16px; }
+  .passo-numero { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: var(--azul); color: #fff; font-weight: bold; font-size: 13px; margin-right: 8px; }
+  h2 { font-size: 16px; margin: 0 0 10px; display: flex; align-items: center; }
+  p { font-size: 14px; margin: 8px 0; }
+  ul, ol { font-size: 14px; padding-left: 20px; margin: 8px 0; }
+  li { margin: 4px 0; }
+  .caixa { background: var(--elevado); border-left: 3px solid var(--azul); border-radius: 6px; padding: 10px 12px; font-size: 13px; margin: 10px 0; }
+  .caixa.aviso { border-left-color: var(--aviso); }
+  .caixa.ok { border-left-color: var(--ok); }
+  code { background: var(--elevado); padding: 1px 6px; border-radius: 4px; font-size: 13px; color: var(--azul); }
+  .tabela { width: 100%; border-collapse: collapse; font-size: 13px; margin: 10px 0; }
+  .tabela th, .tabela td { border-bottom: 1px solid var(--linha); padding: 6px 8px; text-align: left; }
+  .tabela th { color: var(--suave); font-weight: normal; }
+  .voltar-topo { display: inline-block; margin-top: 6px; color: var(--suave); font-size: 12px; text-decoration: none; }
+  .rodape { text-align: center; color: var(--suave); font-size: 11px; margin-top: 24px; }
+</style>
+</head>
+<body>
+
+<h1>🚦 How to configure</h1>
+<div class="subtitulo">Complete guide — from commands to trip scenarios</div>
+
+<div class="indice" id="topo">
+  <div class="indice-titulo">Index</div>
+  <a href="#s1">1. Add a beacon</a>
+  <a href="#s2">2. Set up the clicks</a>
+  <a href="#s3">3. Enable trip mode</a>
+  <a href="#s4">4. Record a route</a>
+  <a href="#s5">5. Create a scenario</a>
+  <a href="#s6">6. Checkpoints and percentage</a>
+  <a href="#s7">7. Restrict by time</a>
+  <a href="#s8">8. The real-time map</a>
+  <a href="#s9">9. Alert if out of range</a>
+  <a href="#s10">10. Tips and troubleshooting</a>
+</div>
+
+<section id="s1">
+  <h2><span class="passo-numero">1</span> Add a beacon</h2>
+  <p>On the main screen, tap <b>Detect</b> to search for your Shelly BLU Button nearby.</p>
+  <ol><li>As soon as it appears in the list, tap it to pair it.</li><li>Give it an easy name to recognise (e.g. "House keys", "School backpack").</li><li>Choose a colour profile to spot it quickly in the command grid.</li></ol>
+  <div class="caixa">Each physical beacon only needs to be paired once — it then stays available in the command list.</div>
+  <a class="voltar-topo" href="#topo">↑ back to index</a>
+</section>
+
+<section id="s2">
+  <h2><span class="passo-numero">2</span> Set up the clicks</h2>
+  <p>Each beacon recognises <b>1, 2 or 3 clicks</b> — and each one can trigger a different action.</p>
+  <table class="tabela">
+    <tr><th>Action</th><th>Example use</th></tr>
+    <tr><td>Run Shelly scene</td><td>Turn lights on/off, open blinds</td></tr>
+    <tr><td>Send notification</td><td>Let someone know you've arrived</td></tr>
+    <tr><td>Ring phone alarm</td><td>Find a lost phone</td></tr>
+  </table>
+  <p>Open the command card and assign the desired action to each number of clicks.</p>
+  <a class="voltar-topo" href="#topo">↑ back to index</a>
+</section>
+
+<section id="s3">
+  <h2><span class="passo-numero">3</span> Enable trip mode</h2>
+  <p>On the command card, turn on <b>"Beacon mode (records trip)"</b>. From here on, whenever the beacon is with you, the app records your GPS position periodically.</p>
+  <ul><li><b>Interval (s)</b> — how often a new GPS point is saved. A low value (e.g. 3-5s) gives more precision; a higher value saves battery.</li><li><b>Include location</b> — required for trip mode to work; should always be on in this case.</li></ul>
+  <div class="caixa aviso">Without this mode on, the beacon still works normally for clicks/actions, but doesn't build up GPS history — so it can't be used to create trip scenarios.</div>
+  <a class="voltar-topo" href="#topo">↑ back to index</a>
+</section>
+
+<section id="s4">
+  <h2><span class="passo-numero">4</span> Record a route</h2>
+  <p>With trip mode on, make the trip as usual with the beacon on you — for example, from home to work.</p>
+  <p>The app builds up GPS points along the way. This history is the raw material you'll use in the next step to create a scenario — no need to do anything special during the trip, just keep the beacon near you (in your pocket, bag, or car keyring).</p>
+  <div class="caixa">The more times you make the same route, the more data you have available to choose the trip that best represents your usual journey.</div>
+  <a class="voltar-topo" href="#topo">↑ back to index</a>
+</section>
+
+<section id="s5">
+  <h2><span class="passo-numero">5</span> Create a scenario</h2>
+  <p>On the <b>Scenarios</b> screen, create a new one and choose one of the already recorded trips as a template.</p>
+  <ol><li>Give the scenario a name (e.g. "Arriving home", "Arriving at work").</li><li>Choose the actions you want to trigger when the scenario is detected.</li><li>The app automatically draws the detection barriers over the chosen route.</li></ol>
+  <a class="voltar-topo" href="#topo">↑ back to index</a>
+</section>
+
+<section id="s6">
+  <h2><span class="passo-numero">6</span> Checkpoints and percentage</h2>
+  <p>Each scenario has <b>checkpoints</b> — invisible barriers spread along the route, which the app detects when you cross them, in the right order.</p>
+  <p>The <b>"Percentage"</b> field sets how far along the route the action should trigger:</p>
+  <ul><li><code>50%</code> — triggers halfway through</li><li><code>80%</code> — triggers near the end, useful to prepare something (e.g. turn on the heating) before you arrive</li><li><code>100%</code> — only triggers once the whole route is completed</li></ul>
+  <div class="caixa ok">You don't need to choose the number of checkpoints — the app generates them automatically with enough precision for whichever percentage you choose.</div>
+  <a class="voltar-topo" href="#topo">↑ back to index</a>
+</section>
+
+<section id="s7">
+  <h2><span class="passo-numero">7</span> Restrict by time</h2>
+  <p>If you only want a scenario to work at certain times, add one or more <b>time windows</b>.</p>
+  <ul><li>Set a start and end time (e.g. 07:00 to 10:00).</li><li>Choose the days of the week it applies to (or leave blank for every day).</li><li>You can add several windows to the same scenario — for example, weekday mornings <b>and</b> weekend afternoons.</li></ul>
+  <p>Outside the configured windows, the scenario won't trigger, even if the route is detected correctly.</p>
+  <a class="voltar-topo" href="#topo">↑ back to index</a>
+</section>
+
+<section id="s8">
+  <h2><span class="passo-numero">8</span> The real-time map</h2>
+  <p>The trip map automatically follows your current position, like a navigation GPS — no need to move the map around manually.</p>
+  <ul><li>If you drag or zoom, automatic following turns off; tap the recenter button to turn it back on.</li><li>The compass icon shows a speed and direction indicator.</li><li>Barriers from active scenarios appear drawn on the map, in the colour of the matching beacon.</li></ul>
+  <a class="voltar-topo" href="#topo">↑ back to index</a>
+</section>
+
+<section id="s9">
+  <h2><span class="passo-numero">9</span> Alert if out of range</h2>
+  <p>Turn on this option on the command card to get a warning if the beacon stops being nearby — useful for not forgetting keys, a bag, or other important items.</p>
+  <div class="caixa">This option needs "Beacon mode" on to work correctly.</div>
+  <a class="voltar-topo" href="#topo">↑ back to index</a>
+</section>
+
+<section id="s10">
+  <h2><span class="passo-numero">10</span> Tips and troubleshooting</h2>
+  <p><b>The scenario didn't trigger when I arrived:</b> check that the route you took is similar enough to the recorded one, and that the configured percentage isn't too high.</p>
+  <p><b>I get out-of-range alerts for no apparent reason:</b> this can happen if the phone goes a long time without processing a signal (e.g. screen locked for long periods) — it usually sorts itself out on the next beacon announcement.</p>
+  <p><b>My phone's battery drains faster:</b> try increasing the trip mode "Interval (s)" to record GPS points less often.</p>
+  <a class="voltar-topo" href="#topo">↑ back to index</a>
+</section>
+
+<div class="rodape">Gateway BLU · Configuration guide</div>
+
+</body>
+</html>

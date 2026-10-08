@@ -1,0 +1,325 @@
+package pt.blugateway.ble
+
+import android.content.Context
+import android.os.Handler
+import android.os.Looper
+import android.util.Log
+import pt.blugateway.data.Comando
+import pt.blugateway.data.PeriodoAgenda
+import pt.blugateway.data.Repositorio
+import java.util.Calendar
+
+/**
+ * Alarme de "fora de alcance": para comandos com alertaAlcance=true,
+ * verifica periodicamente se algum sinal (clique OU beacon) chegou
+ * dentro do limite de tempo configurado (comando.tempoLimiteMs), OU
+ * se o ultimo RSSI recebido e pior que o limite configurado
+ * (comando.rssiLimite). So dispara dentro da agenda semanal do
+ * comando (ou sempre, se agendaSempreAtiva=true). Toca um alarme
+ * sonoro -- repetido enquanto continuar fora de alcance, e desliga-se
+ * sozinho assim que o comando voltar a emitir (ver
+ * Repositorio.atualizaSinal, que limpa foraDeAlcance).
+ *
+ * Depende do modo beacon do próprio botão Shelly estar ativado --
+ * sem beacon, o único sinal é o clique, e não há forma de distinguir
+ * "fora de alcance" de "simplesmente não foi premido". Isto é
+ * avisado ao utilizador na UI, não imposto aqui.
+ */
+object GestorAlcance {
+
+    private const val TAG = "GestorAlcance"
+    private const val INTERVALO_VERIFICACAO_MS = 15_000L
+    private const val INTERVALO_REPETICAO_ALARME_MS = 60_000L
+
+    // Deteccao de presenca por MEDIANA de RSSI (nao um valor isolado)
+    // com HISTERESE: presente >= LIMIAR_RSSI_PRESENTE_DBM (fixo),
+    // ausente < Comando.rssiLimite (configuravel por comando, valor
+    // por omissao -85 dBm para comandos novos -- ver Modelos.kt). Na
+    // zona intermedia entre os dois, mantem o estado anterior --
+    // evita alternar entre presente/ausente so por causa do ruido
+    // normal de RSSI perto do limite.
+    private const val LIMIAR_RSSI_PRESENTE_DBM = -75
+    // 120s sem sinal = ausente: implementado atraves do novo valor por
+    // omissao de Comando.tempoLimiteMs (ver Modelos.kt), nao repetido
+    // aqui como constante separada -- a logica de "tempo sem sinal"
+    // ja usa comando.tempoLimiteMs, que agora comeca em 120_000L por
+    // omissao para comandos novos (e para comandos antigos que nunca
+    // personalizaram o valor).
+
+    // janela circular das ultimas leituras de RSSI por comando (5 a
+    // 10 valores), usada so para calcular a mediana -- em memoria,
+    // nao precisa de sobreviver a reinicios do processo, recompoe-se
+    // rapidamente com os proximos anuncios
+    private const val TAMANHO_JANELA_RSSI = 8
+    private val janelaRssi = HashMap<String, MutableList<Int>>()
+
+    // estado de presenca (true=presente) usado pela histerese -- por
+    // omissao presente, ate' a primeira leitura decidir o contrario
+    private val presencaAtual = HashMap<String, Boolean>()
+
+    private var handler: Handler? = null
+    @Volatile private var contexto: Context? = null
+    private val ultimoAlarmeTocado = HashMap<String, Long>()
+
+    // exige que a condicao de "fora de alcance" se confirme em DUAS
+    // verificacoes consecutivas (INTERVALO_VERIFICACAO_MS = 15s entre
+    // elas) antes de disparar -- o botao Shelly BLU documenta um
+    // intervalo de beacon de 8s, muito mais curto que qualquer
+    // tempoLimiteMs razoavel, mas pode ocasionalmente falhar um
+    // ciclo de emissao (confirmado por registo de diagnostico real:
+    // uma lacuna isolada de ~68s entre anuncios, com o telemovel a
+    // continuar a captar outros dispositivos normalmente na mesma
+    // janela). Uma unica falha pontual do dispositivo ja nao chega
+    // para soar o alarme -- so uma falha que persista na verificacao
+    // seguinte, dando tempo real ao dispositivo de recuperar entretanto.
+    private const val VERIFICACOES_CONSECUTIVAS_NECESSARIAS = 2
+    private val contagemForaDeAlcance = HashMap<String, Int>()
+
+    private val verificacaoRunnable = object : Runnable {
+        override fun run() {
+            verificaTodos()
+            handler?.postDelayed(this, INTERVALO_VERIFICACAO_MS)
+        }
+    }
+
+    /**
+     * Indica se o beacon está actualmente considerado presente (RSSI
+     * válido e acima do limiar, com histerese). Usado por outros
+     * gestores (ex: GestorSemelhancaTrajeto) para exigir confirmação
+     * de presença real do beacon antes de avaliar cenários de trajeto
+     * -- evita avaliar contra pontos GPS que não têm nenhum sinal BLE
+     * recente a confirmá-los.
+     * Por omissão (sem leituras ainda) devolve true, coerente com o
+     * valor inicial de presencaAtual.
+     */
+    fun estaPresente(mac: String): Boolean = presencaAtual[mac] ?: true
+
+    fun inicia(context: Context) {
+        contexto = context.applicationContext
+        if (handler != null) return
+        handler = Handler(Looper.getMainLooper())
+        handler?.postDelayed(verificacaoRunnable, INTERVALO_VERIFICACAO_MS)
+    }
+
+    /**
+     * Chamado a cada anuncio Bluetooth recebido com RSSI valido (ver
+     * ProcessadorClique) -- alimenta a janela circular usada para
+     * calcular a mediana. Nao faz nada alem disto (nao decide
+     * presenca aqui, so guarda a leitura); a decisao acontece em
+     * verificaTodos(), a cada INTERVALO_VERIFICACAO_MS.
+     */
+    fun registaLeituraRssi(mac: String, rssi: Int) {
+        val janela = janelaRssi.getOrPut(mac) { mutableListOf() }
+        janela.add(rssi)
+        if (janela.size > TAMANHO_JANELA_RSSI) {
+            janela.removeAt(0)
+        }
+    }
+
+    private fun medianaRssi(mac: String): Int? {
+        val janela = janelaRssi[mac] ?: return null
+        if (janela.isEmpty()) return null
+        val ordenados = janela.sorted()
+        val meio = ordenados.size / 2
+        return if (ordenados.size % 2 == 1) {
+            ordenados[meio]
+        } else {
+            (ordenados[meio - 1] + ordenados[meio]) / 2
+        }
+    }
+
+    /**
+     * Decide presenca com histerese: o limiar de PRESENTE e' fixo
+     * (LIMIAR_RSSI_PRESENTE_DBM, -75 dBm), e o limiar de AUSENTE e'
+     * o proprio comando.rssiLimite ja configuravel (por omissao -85
+     * dBm para comandos novos) -- reutiliza o campo existente com
+     * efeito real, sem exigir um segundo campo novo na UI so para
+     * este ajuste fino.
+     */
+    private fun decidePresencaComHisterese(mac: String, medianaAtual: Int, limiarAusente: Int): Boolean {
+        val estadoAnterior = presencaAtual[mac] ?: true
+        val novoEstado = if (estadoAnterior) {
+            medianaAtual >= limiarAusente
+        } else {
+            medianaAtual >= LIMIAR_RSSI_PRESENTE_DBM
+        }
+        presencaAtual[mac] = novoEstado
+        return novoEstado
+    }
+
+    private fun paraMinutos(hhmm: String): Int {
+        val partes = hhmm.split(":")
+        return (partes.getOrNull(0)?.toIntOrNull() ?: 0) * 60 + (partes.getOrNull(1)?.toIntOrNull() ?: 0)
+    }
+
+    /** dia 0=domingo .. 6=sabado (mesma convencao usada na interface HTML) */
+    private fun diaDaSemanaAtual0(): Int = Calendar.getInstance().get(Calendar.DAY_OF_WEEK) - 1
+
+    private fun horaAtualEmMinutos(): Int {
+        val cal = Calendar.getInstance()
+        return cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE)
+    }
+
+    /**
+     * Verifica se o instante atual esta dentro de algum periodo do
+     * dia -- incluindo periodos que atravessam a meia-noite, e
+     * verificando tambem o dia ANTERIOR para cobrir a madrugada de
+     * um periodo que comecou ontem (ex: 22:00-06:00 de sexta continua
+     * ativo na madrugada de sabado).
+     */
+    private fun agendaAtivaAgora(agendaDias: Map<Int, List<PeriodoAgenda>>, diaSemana0: Int, horaMin: Int): Boolean {
+        val periodosHoje = agendaDias[diaSemana0] ?: emptyList()
+        for (p in periodosHoje) {
+            val ini = paraMinutos(p.inicio)
+            val fim = paraMinutos(p.fim)
+            if (fim > ini) {
+                if (horaMin in ini until fim) return true
+            } else {
+                if (horaMin >= ini || horaMin < fim) return true
+            }
+        }
+        val diaAnterior = (diaSemana0 + 6) % 7
+        val periodosOntem = agendaDias[diaAnterior] ?: emptyList()
+        for (p in periodosOntem) {
+            val ini = paraMinutos(p.inicio)
+            val fim = paraMinutos(p.fim)
+            if (fim <= ini && horaMin < fim) return true
+        }
+        return false
+    }
+
+    private fun dentroDaAgenda(comando: Comando): Boolean {
+        if (comando.agendaSempreAtiva) return true
+        return agendaAtivaAgora(comando.agendaDias, diaDaSemanaAtual0(), horaAtualEmMinutos())
+    }
+
+    // Detecta se o PROCESSO esteve suspenso (não só sem sinal do
+    // beacon) -- com o ecrã bloqueado, o Android pode suspender o
+    // processo inteiro durante minutos; quando acorda, ultimoSinalEm
+    // reflecte o momento em que o processo adormeceu, não uma falha
+    // real do beacon. O RSSI actual (mais recente, chegou já depois
+    // do processo acordar) é a prova definitiva: se for bom, o beacon
+    // nunca esteve fora de alcance -- foi o telemóvel que dormiu.
+    private var ultimaExecucaoVerificaTodos = 0L
+
+    private fun processoEsteveSuspenso(agora: Long): Boolean {
+        if (ultimaExecucaoVerificaTodos == 0L) return false  // primeira execução
+        val hiato = agora - ultimaExecucaoVerificaTodos
+        // Hiato muito maior que o intervalo esperado (15s) indica que
+        // o Handler não correu durante esse tempo -- processo suspenso,
+        // não falha de agendamento normal (que teria no máximo alguns
+        // segundos de atraso, nunca minutos).
+        return hiato > INTERVALO_VERIFICACAO_MS * 3
+    }
+
+    private fun verificaTodos() {
+        val ctx = contexto ?: return
+        val repo = Repositorio(ctx)
+        val agora = System.currentTimeMillis()
+        val processoSuspenso = processoEsteveSuspenso(agora)
+        ultimaExecucaoVerificaTodos = agora
+
+        if (processoSuspenso) {
+            Log.i(TAG, "processo esteve suspenso -- concedendo janela de recuperação a todos os comandos")
+        }
+
+        for (comando in repo.comandos.value) {
+            if (!comando.alertaAlcance) continue
+
+            if (!dentroDaAgenda(comando)) {
+                // fora do horario configurado -- nunca dispara o alarme
+                // aqui, e limpa o estado se estava marcado como fora
+                // de alcance de uma verificacao anterior dentro do horario
+                if (comando.foraDeAlcance) {
+                    repo.defineForaDeAlcance(comando.mac, false)
+                    ultimoAlarmeTocado.remove(comando.mac)
+                }
+                continue
+            }
+
+            val ultimoSinal = comando.ultimoSinalEm
+            val semSinalDemasiadoTempo = ultimoSinal != null && (agora - ultimoSinal) >= comando.tempoLimiteMs
+
+            // deteccao por MEDIANA das ultimas leituras de RSSI (nao um
+            // valor isolado, ver registaLeituraRssi/medianaRssi), com
+            // HISTERESE entre presente/ausente para nao oscilar perto
+            // do limite. Se ainda nao houver nenhuma leitura na janela
+            // (comando acabado de detetar, ou app reiniciada), cai de
+            // volta ao ultimo RSSI conhecido do comando -- comportamento
+            // igual ao anterior nesse caso especifico, so ate' a janela
+            // ter dados suficientes.
+            val mediana = medianaRssi(comando.mac) ?: comando.rssi
+            val presente = mediana?.let { decidePresencaComHisterese(comando.mac, it, comando.rssiLimite) } ?: true
+            val sinalFraco = !presente
+            var foraDeAlcanceAgora = ultimoSinal != null && (semSinalDemasiadoTempo || sinalFraco)
+
+            // Janela de recuperação: se o processo esteve suspenso
+            // (não o beacon), e o RSSI mais recente conhecido é bom
+            // (>= limiar de presente), o "sem sinal há muito tempo"
+            // não reflecte uma falha real do beacon -- foi o telemóvel
+            // que esteve incontactável. O comando.rssi é sempre
+            // actualizado a cada anúncio processado (ver atualizaSinal),
+            // incluindo o que acordou o processo agora mesmo.
+            if (processoSuspenso && semSinalDemasiadoTempo && comando.rssi != null &&
+                comando.rssi!! >= LIMIAR_RSSI_PRESENTE_DBM) {
+                RegistoDiagnostico.regista(
+                    ctx,
+                    "alcance[${comando.mac}]: processo esteve suspenso, RSSI actual=${comando.rssi} bom -- ignorando falso 'sem sinal'"
+                )
+                foraDeAlcanceAgora = sinalFraco  // ainda pode disparar por RSSI fraco, só não por "sem sinal"
+            }
+
+            // diagnostico temporario: grava o estado exato de cada
+            // verificacao, para investigar disparos do alarme sem
+            // sentido aparente (comando perto do telemovel, ecra
+            // ligado ou desligado)
+            val tempoDesdeUltimoSinal = ultimoSinal?.let { agora - it }
+            val contagemAntes = contagemForaDeAlcance[comando.mac] ?: 0
+            RegistoDiagnostico.regista(
+                ctx,
+                "alcance[${comando.mac}]: rssiAtual=${comando.rssi} mediana=$mediana " +
+                    "limiarPresente=$LIMIAR_RSSI_PRESENTE_DBM limiarAusente=${comando.rssiLimite} " +
+                    "tempoDesdeSinal=${tempoDesdeUltimoSinal}ms limite=${comando.tempoLimiteMs}ms " +
+                    "semSinal=$semSinalDemasiadoTempo sinalFraco=$sinalFraco -> foraDeAlcance=$foraDeAlcanceAgora " +
+                    "(confirmacoes=$contagemAntes/$VERIFICACOES_CONSECUTIVAS_NECESSARIAS)"
+            )
+
+            if (foraDeAlcanceAgora) {
+                val contagemAtual = (contagemForaDeAlcance[comando.mac] ?: 0) + 1
+                contagemForaDeAlcance[comando.mac] = contagemAtual
+
+                if (contagemAtual < VERIFICACOES_CONSECUTIVAS_NECESSARIAS) {
+                    // primeira vez que a condicao se verifica -- ainda nao
+                    // confirma, da ao dispositivo oportunidade de recuperar
+                    // ate a proxima verificacao (15s depois)
+                    continue
+                }
+
+                val mudouAgora = repo.defineForaDeAlcance(comando.mac, true)
+                val ultimoAlarme = ultimoAlarmeTocado[comando.mac] ?: 0L
+                val tempoDesdeUltimoAlarme = agora - ultimoAlarme
+
+                if (mudouAgora || tempoDesdeUltimoAlarme >= INTERVALO_REPETICAO_ALARME_MS) {
+                    val motivo = when {
+                        semSinalDemasiadoTempo && sinalFraco -> "sem sinal e RSSI fraco"
+                        semSinalDemasiadoTempo -> "sem sinal há ${agora - ultimoSinal!!}ms"
+                        else -> "RSSI fraco (mediana $mediana < ${comando.rssiLimite})"
+                    }
+                    Log.w(TAG, "${comando.nome} fora de alcance: $motivo")
+                    RegistoEventos.adicionaAlertaAlcance(comando.nome)
+                    GestorSons.tocaAlarmeAlcance()
+                    ultimoAlarmeTocado[comando.mac] = agora
+                }
+            } else {
+                contagemForaDeAlcance.remove(comando.mac)
+                if (comando.foraDeAlcance) {
+                    // ainda nao devia acontecer aqui (atualizaSinal ja limpa
+                    // foraDeAlcance ao receber um pacote), mas serve de
+                    // salvaguarda caso o estado fique desalinhado
+                    repo.defineForaDeAlcance(comando.mac, false)
+                    ultimoAlarmeTocado.remove(comando.mac)
+                }
+            }
+        }
+    }
+}

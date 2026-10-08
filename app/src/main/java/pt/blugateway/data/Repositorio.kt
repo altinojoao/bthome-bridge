@@ -1,0 +1,775 @@
+package pt.blugateway.data
+
+import android.content.Context
+import android.content.SharedPreferences
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import org.json.JSONArray
+import org.json.JSONObject
+
+/**
+ * Fonte única de verdade para perfis, comandos e conta Shelly.
+ * Persistido em SharedPreferences (mesmo padrão do projeto original
+ * bthome-bridge), exposto à UI via StateFlow para recomposição automática.
+ *
+ * SINGLETON: mantido como instância única para toda a app, através do
+ * companion object com operator fun invoke() abaixo -- Repositorio(context)
+ * continua a funcionar em qualquer sítio do código exatamente como
+ * antes, mas devolve sempre a mesma instância em memória. Sem isto,
+ * cada ponto do código (ProcessadorClique, GestorAlcance, BootReceiver,
+ * o ViewModel) criava a sua própria cópia dos StateFlow -- mudanças
+ * feitas em segundo plano por uma instância nunca chegavam a notificar
+ * as outras, mesmo estando todas a persistir no mesmo SharedPreferences
+ * por baixo. A UI só veria essas mudanças se recriasse o seu próprio
+ * Repositorio (o que só acontecia, por exemplo, ao reabrir a app).
+ *
+ * allowBackup=false no manifesto (decisão já tomada no projeto original):
+ * a auth key da cloud nunca deve ir para o Android Auto Backup.
+ */
+class Repositorio private constructor(context: Context) {
+
+    companion object {
+        const val TEMPO_DESTAQUE_COMBINACAO_MS = 6000L
+        // Bloqueio de re-disparo: reduzido de 2h para 20min (v1.3.3).
+        // 2h bloqueava indevidamente uma segunda passagem legítima no
+        // mesmo dia -- ex: sair de casa de manhã, ir almoçar fora e
+        // voltar ao trabalho horas depois disparava correctamente,
+        // mas sair e voltar num intervalo mais curto (ex: ida a casa
+        // ao almoço e regresso ao trabalho) ficava bloqueado.
+        // 20min é suficiente para evitar disparo duplicado da MESMA
+        // passagem (ex: o utilizador andar de um lado para o outro
+        // perto do último checkpoint) sem bloquear viagens de ida-e-
+        // volta reais, que tipicamente demoram mais que isso.
+        // As restantes protecções contra falsos positivos (sequência
+        // ordenada de checkpoints, utilizadorParadoAgora, distancia-
+        // MaximaEntrada, presença confirmada do beacon) continuam
+        // activas e cobrem os casos que o bloqueio longo pretendia
+        // evitar por si só.
+        const val TEMPO_BLOQUEIO_APOS_DISPARO_MS = 20 * 60 * 1000L
+        // Carência após criar/editar um cenário: bloqueia disparos
+        // durante 5 minutos depois de sair do editor. Sem isto, um
+        // cenário criado a partir de uma viagem já gravada podia
+        // disparar imediatamente -- o histórico usado como template
+        // termina sempre no destino, satisfazendo os checkpoints na
+        // primeiríssima avaliação, sem nenhuma navegação real ter
+        // ocorrido (confirmado em produção).
+        const val TEMPO_CARENCIA_APOS_EDICAO_MS = 5 * 60 * 1000L
+        // valores por omissao, usados so na primeira vez (antes do
+        // utilizador escolher algo em Configuracao)
+        const val DIAS_TRAJETO_OMISSAO = 30
+        const val QUANTIDADE_TRAJETO_OMISSAO = 500
+
+        @Volatile private var instancia: Repositorio? = null
+
+        operator fun invoke(context: Context): Repositorio =
+            instancia ?: synchronized(this) {
+                instancia ?: Repositorio(context.applicationContext).also { instancia = it }
+            }
+    }
+
+    private val prefs: SharedPreferences =
+        requireNotNull(context.getSharedPreferences("blugateway", Context.MODE_PRIVATE)) {
+            "getSharedPreferences nunca deveria devolver null"
+        }
+
+    private val _perfis = MutableStateFlow(carregaPerfis())
+    val perfis: StateFlow<List<Perfil>> = _perfis
+
+    private val _comandos = MutableStateFlow(carregaComandos())
+    val comandos: StateFlow<List<Comando>> = _comandos
+
+    private val _conta = MutableStateFlow(carregaConta())
+    val conta: StateFlow<ContaShelly> = _conta
+
+    private val _cenariosTrajeto = MutableStateFlow(carregaCenariosTrajeto())
+    val cenariosTrajeto: StateFlow<List<CenarioTrajeto>> = _cenariosTrajeto
+
+    // --- perfis ---
+
+    private fun carregaPerfis(): List<Perfil> {
+        val raw = prefs.getString("perfis", null)
+        if (raw != null) {
+            return try {
+                val arr = JSONArray(raw)
+                (0 until arr.length()).mapNotNull { arr.getJSONObject(it)?.let { o -> Perfil.deJson(o) } }
+            } catch (e: Exception) {
+                listOf(perfilPadrao())
+            }
+        }
+        return listOf(perfilPadrao())
+    }
+
+    private fun perfilPadrao(): Perfil {
+        val p = Perfil.novo("Perfil principal")
+        p.eventos[0].add(Acao(TipoAcao.NTFY, "meu-topico", Metodo.POST, "{evento} \u00b7 {bateria}% \u00b7 {rssi} dBm"))
+        return p
+    }
+
+    private fun guardaPerfis(lista: List<Perfil>) {
+        val arr = JSONArray()
+        lista.forEach { arr.put(it.paraJson()) }
+        prefs.edit().putString("perfis", arr.toString()).apply()
+        _perfis.value = lista
+    }
+
+    fun acharPerfil(id: String?): Perfil? = _perfis.value.firstOrNull { it.id == id }
+
+    fun novoPerfil(nome: String): Perfil {
+        val p = Perfil.novo(nome)
+        guardaPerfis(_perfis.value + p)
+        return p
+    }
+
+    fun renomeiaPerfil(id: String, novoNome: String) {
+        val lista = _perfis.value.map { if (it.id == id) it.copy(nome = novoNome) else it }
+        guardaPerfis(lista)
+    }
+
+    fun atualizaAcoes(perfilId: String, indiceEvento: Int, acoes: MutableList<Acao>) {
+        val lista = _perfis.value.map {
+            if (it.id == perfilId) {
+                val novosEventos = it.eventos.toMutableList()
+                novosEventos[indiceEvento] = acoes
+                it.copy(eventos = novosEventos)
+            } else it
+        }
+        guardaPerfis(lista)
+    }
+
+    fun alternaModoCombinacao(perfilId: String, ligado: Boolean) {
+        val lista = _perfis.value.map { if (it.id == perfilId) it.copy(modoCombinacao = ligado) else it }
+        guardaPerfis(lista)
+    }
+
+    fun defineJanelaCombinacao(perfilId: String, ms: Long) {
+        val lista = _perfis.value.map { if (it.id == perfilId) it.copy(janelaCombinacaoMs = ms) else it }
+        guardaPerfis(lista)
+    }
+
+    fun novaCombinacao(perfilId: String, nome: String, sequencia: List<Int>): Combinacao? {
+        val p = acharPerfil(perfilId) ?: return null
+        val nova = Combinacao.nova(nome).apply { this.sequencia.addAll(sequencia) }
+        val novasCombinacoes = p.combinacoes.toMutableList().apply { add(nova) }
+        val lista = _perfis.value.map { if (it.id == perfilId) it.copy(combinacoes = novasCombinacoes) else it }
+        guardaPerfis(lista)
+        return nova
+    }
+
+    fun apagaCombinacao(perfilId: String, combinacaoId: String) {
+        val p = acharPerfil(perfilId) ?: return
+        val novasCombinacoes = p.combinacoes.filter { it.id != combinacaoId }.toMutableList()
+        val lista = _perfis.value.map { if (it.id == perfilId) it.copy(combinacoes = novasCombinacoes) else it }
+        guardaPerfis(lista)
+    }
+
+    fun atualizaAcoesCombinacao(perfilId: String, combinacaoId: String, acoes: MutableList<Acao>) {
+        val p = acharPerfil(perfilId) ?: return
+        val novasCombinacoes = p.combinacoes.map {
+            if (it.id == combinacaoId) it.copy(acoes = acoes) else it
+        }.toMutableList()
+        val lista = _perfis.value.map { if (it.id == perfilId) it.copy(combinacoes = novasCombinacoes) else it }
+        guardaPerfis(lista)
+    }
+
+    /** Apaga um perfil. Comandos órfãos são reatribuídos ao primeiro perfil
+     *  restante. Nunca apaga o último perfil (a app precisa de pelo menos um). */
+    fun apagaPerfil(id: String): String? {
+        if (_perfis.value.size <= 1) return null
+        val restantes = _perfis.value.filter { it.id != id }
+        val substituto = restantes.first().id
+        guardaPerfis(restantes)
+
+        val comandosAtualizados = _comandos.value.map {
+            if (it.perfilId == id) it.copy(perfilId = substituto) else it
+        }
+        guardaComandos(comandosAtualizados)
+        return substituto
+    }
+
+    /**
+     * Move o perfil no indice 'de' para o indice 'para', deslocando
+     * os restantes -- usado pelo arrastar-para-reordenar em
+     * EcraPerfis. A ordem da lista e' a unica fonte de verdade da
+     * ordem de apresentacao (nao ha campo 'ordem' explicito no
+     * modelo Perfil).
+     */
+    fun reordenaPerfis(de: Int, para: Int) {
+        val lista = _perfis.value.toMutableList()
+        if (de !in lista.indices || para !in lista.indices) return
+        val item = lista.removeAt(de)
+        lista.add(para, item)
+        guardaPerfis(lista)
+    }
+
+    /**
+     * Cria uma copia completa de um perfil existente -- novo id,
+     * nome com sufixo "(cópia)", mas os mesmos eventos/acoes e
+     * combinacoes copiados profundamente (listas novas, nao
+     * partilhadas com o original, para editar uma copia nunca afetar
+     * a outra). O novo perfil fica logo a seguir ao original na
+     * lista. Devolve o novo perfil criado.
+     */
+    fun duplicaPerfil(id: String, sufixoNome: String): Perfil? {
+        val original = acharPerfil(id) ?: return null
+        val copia = original.copy(
+            id = "p" + System.currentTimeMillis(),
+            nome = "${original.nome} $sufixoNome",
+            eventos = original.eventos.map { it.map { a -> a.copy() }.toMutableList() }.toMutableList(),
+            combinacoes = original.combinacoes.map { it.copy(acoes = it.acoes.map { a -> a.copy() }.toMutableList()) }.toMutableList()
+        )
+        val indiceOriginal = _perfis.value.indexOfFirst { it.id == id }
+        val lista = _perfis.value.toMutableList()
+        val posicaoInsercao = if (indiceOriginal >= 0) indiceOriginal + 1 else lista.size
+        lista.add(posicaoInsercao, copia)
+        guardaPerfis(lista)
+        return copia
+    }
+
+    // --- comandos ---
+
+    private fun carregaComandos(): List<Comando> {
+        val raw = prefs.getString("comandos", null) ?: return emptyList()
+        return try {
+            val arr = JSONArray(raw)
+            (0 until arr.length()).mapNotNull { arr.getJSONObject(it)?.let { o -> Comando.deJson(o) } }
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    private fun guardaComandos(lista: List<Comando>) {
+        val arr = JSONArray()
+        lista.forEach { arr.put(it.paraJson()) }
+        prefs.edit().putString("comandos", arr.toString()).apply()
+        _comandos.value = lista
+    }
+
+    fun acharComandoPorMac(mac: String): Comando? = _comandos.value.firstOrNull { it.mac == mac }
+
+    // --- cenarios de trajeto ---
+
+    private fun carregaCenariosTrajeto(): List<CenarioTrajeto> {
+        val raw = prefs.getString("cenarios_trajeto", null) ?: return emptyList()
+        return try {
+            val arr = JSONArray(raw)
+            (0 until arr.length()).mapNotNull { arr.getJSONObject(it)?.let { o -> CenarioTrajeto.deJson(o) } }
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    private fun guardaCenariosTrajeto(lista: List<CenarioTrajeto>) {
+        val arr = JSONArray()
+        lista.forEach { arr.put(it.paraJson()) }
+        prefs.edit().putString("cenarios_trajeto", arr.toString()).apply()
+        _cenariosTrajeto.value = lista
+    }
+
+    /** Devolve todos os cenarios onde este MAC e' beacon principal
+     *  OU beacon adicional -- usado para verificar semelhanca sempre
+     *  que qualquer beacon da lista e' detetado. */
+    fun cenariosTrajetoPara(mac: String): List<CenarioTrajeto> =
+        _cenariosTrajeto.value.filter { it.macComando == mac || mac in it.macsAdicionais }
+
+    fun adicionaCenarioTrajeto(cenario: CenarioTrajeto) {
+        guardaCenariosTrajeto(_cenariosTrajeto.value + cenario)
+    }
+
+    fun atualizaCenarioTrajeto(cenario: CenarioTrajeto) {
+        android.util.Log.d("BluGateway", "[D-editar] atualizaCenarioTrajeto id=${cenario.id} nome='${cenario.nome}' template=${cenario.template.size}pts mac=${cenario.macComando} acoes=${cenario.acoes.size} limiar=${cenario.limiarPercentagem}")
+        val listaAtual = _cenariosTrajeto.value
+        val existe = listaAtual.any { it.id == cenario.id }
+        android.util.Log.d("BluGateway", "[D-editar] cenario existe na lista=$existe (total=${listaAtual.size})")
+        guardaCenariosTrajeto(listaAtual.map { if (it.id == cenario.id) cenario else it })
+    }
+
+    fun removeCenarioTrajeto(id: String) {
+        guardaCenariosTrajeto(_cenariosTrajeto.value.filter { it.id != id })
+        limpaBloqueioDisparo(id)
+    }
+
+    fun alternaCenarioAtivo(id: String, ativo: Boolean) {
+        guardaCenariosTrajeto(_cenariosTrajeto.value.map {
+            if (it.id == id) it.copy(ativo = ativo) else it
+        })
+    }
+
+    fun atualizaUltimoDisparoCenario(id: String, timestamp: Long) {
+        guardaCenariosTrajeto(_cenariosTrajeto.value.map {
+            if (it.id == id) it.copy(ultimoDisparoEm = timestamp) else it
+        })
+    }
+
+    /**
+     * Bloqueio de disparo repetido por viagem -- guarda, por
+     * cenarioId, o timestamp de INICIO DA VIAGEM em que esse cenario
+     * ja disparou. Um cenario so pode disparar de novo se o inicio
+     * da viagem atual for DIFERENTE do ultimo em que disparou --
+     * nao interessa quantos pontos novos cheguem dentro da MESMA
+     * viagem, so interessa quando uma viagem nova comeca (ver
+     * GestorSemelhancaTrajeto.inicioViagemAtual).
+     *
+     * Guardado num unico blob JSON (nao um StateFlow -- este estado
+     * e' efemero e interno, a UI nunca precisa de o mostrar
+     * diretamente) para simplificar; o volume e' minimo (um par
+     * id->timestamp por cenario).
+     */
+    /**
+     * Verifica se o cenário já disparou nesta viagem específica.
+     * Guarda duas chaves separadas: disparo_ts_<id> (timestamp real do
+     * disparo) e disparo_iv_<id> (inicioViagem activo nesse momento).
+     * Chaves separadas em vez de uma string composta "ts:iv" -- elimina
+     * qualquer ambiguidade de parsing e é imune a dados de formatos
+     * antigos incompatíveis (getLong com valor por omissão -1 trata
+     * dados ausentes/corrompidos como "nunca disparado", nunca como
+     * um erro que bloqueia o disparo actual).
+     * Tolerância de 5min para variações do algoritmo ao reiniciar.
+     */
+    /**
+     * Verifica se o cenário já disparou recentemente. Bloqueia durante
+     * TEMPO_BLOQUEIO_APOS_DISPARO_MS após o último disparo real.
+     *
+     * Não compara com inicioViagem: um cenário pode ter vários MACs
+     * associados (macComando + macsAdicionais) e cada MAC calcula o
+     * seu inicioViagem a partir do SEU PRÓPRIO histórico de pontos
+     * GPS -- valores que podem diferir em centenas de minutos entre
+     * MACs diferentes (confirmado: 706 min de diferença nos logs),
+     * tornando qualquer tolerância pequena inútil e causando disparos
+     * repetidos sempre que o beacon "chamador" mudava.
+     *
+     * O bloqueio por tempo fixo é robusto a isto porque não depende
+     * de qual MAC fez a chamada -- só depende de quando o cenário
+     * disparou pela última vez, que é um facto único e global ao
+     * cenário, independente de quem o desencadeou.
+     */
+    fun jaDisparadoNestaViagem(cenarioId: String, @Suppress("UNUSED_PARAMETER") inicioViagem: Long): Boolean {
+        val tsDisparo = prefs.getLong("disparo_ts_$cenarioId", -1L)
+        if (tsDisparo == -1L) return false
+        return (System.currentTimeMillis() - tsDisparo) < TEMPO_BLOQUEIO_APOS_DISPARO_MS
+    }
+
+    fun marcaDisparado(cenarioId: String, @Suppress("UNUSED_PARAMETER") inicioViagem: Long) {
+        // commit() síncrono: garante que o bloqueio está em disco antes
+        // de continuar -- importante porque o AlarmManager pode reiniciar
+        // o scan (e nalguns casos o processo) logo a seguir a um disparo.
+        prefs.edit()
+            .putLong("disparo_ts_$cenarioId", System.currentTimeMillis())
+            .commit()
+        reiniciaProgressoCheckpoints(cenarioId)
+    }
+
+    /**
+     * Próximo checkpoint (0-based) que o cenário espera atravessar
+     * nesta viagem. Guardado como par "inicioViagem:indice" -- se o
+     * inicioViagem mudar (nova viagem detectada), o progresso reinicia
+     * automaticamente do zero em vez de continuar da viagem anterior.
+     */
+    fun proximoCheckpointEsperado(cenarioId: String, inicioViagem: Long): Int {
+        val guardado = prefs.getString("checkpoint_progresso_$cenarioId", null) ?: return 0
+        val partes = guardado.split(":")
+        if (partes.size != 2) return 0
+        val ivGuardado = partes[0].toLongOrNull() ?: return 0
+        if (ivGuardado != inicioViagem) return 0  // viagem diferente -- reinicia
+        return partes[1].toIntOrNull() ?: 0
+    }
+
+    fun avancaCheckpoint(cenarioId: String, inicioViagem: Long, novoIndice: Int) {
+        prefs.edit()
+            .putString("checkpoint_progresso_$cenarioId", "$inicioViagem:$novoIndice")
+            .apply()
+    }
+
+    fun reiniciaProgressoCheckpoints(cenarioId: String) {
+        prefs.edit().remove("checkpoint_progresso_$cenarioId").apply()
+    }
+
+    /**
+     * Marca que o cenário acabou de ser criado/editado agora mesmo --
+     * usado para atrasar a primeira avaliação de checkpoints por um
+     * curto período depois de sair do editor. Sem isto, criar um
+     * cenário a partir de uma viagem já gravada disparava as suas
+     * acções IMEDIATAMENTE: o histórico usado como template termina
+     * sempre exactamente no destino, e tanto a intersecção sequencial
+     * de segmentos como a recuperação de progresso preso encontram aí
+     * uma correspondência perfeita na primeiríssima avaliação --
+     * mesmo sem nenhuma navegação em tempo real ter ocorrido
+     * (confirmado em produção: dois cenários dispararam "Cheguei a
+     * Casa" no mesmo segundo em que um deles foi criado no editor).
+     */
+    fun marcaCenarioEditadoAgora(cenarioId: String) {
+        prefs.edit().putLong("cenario_editado_em_$cenarioId", System.currentTimeMillis()).apply()
+    }
+
+    fun editadoRecentemente(cenarioId: String): Boolean {
+        val ts = prefs.getLong("cenario_editado_em_$cenarioId", -1L)
+        if (ts == -1L) return false
+        return (System.currentTimeMillis() - ts) < TEMPO_CARENCIA_APOS_EDICAO_MS
+    }
+
+    private fun limpaBloqueioDisparo(cenarioId: String) {
+        prefs.edit()
+            .remove("disparo_ts_$cenarioId")
+            .remove("disparo_iv_$cenarioId")
+            .remove("checkpoint_progresso_$cenarioId")
+            .remove("cenarios_disparados")  // limpar também o formato antigo, se existir
+            .apply()
+    }
+
+    fun associaComando(mac: String, nome: String, perfilId: String) {
+        if (acharComandoPorMac(mac) != null) return
+        guardaComandos(_comandos.value + Comando(mac = mac, nome = nome, perfilId = perfilId))
+    }
+
+    /** Associa manualmente um comando por MAC, para o caso de um
+     *  botão já com "Segurança / conexão Bluetooth segura" ativada
+     *  no firmware -- nunca envia um clique legível para a app o
+     *  detetar durante a procura normal, por isso o utilizador tem de
+     *  introduzir o MAC e a chave à mão. Devolve false se o MAC já
+     *  estiver associado (nesse caso nada é alterado) ou se o formato
+     *  do MAC for inválido. */
+    fun associaComandoManual(mac: String, nome: String, perfilId: String, chaveHex: String?): Boolean {
+        val macNormalizado = mac.trim().uppercase()
+        if (!macNormalizado.matches(Regex("^([0-9A-F]{2}:){5}[0-9A-F]{2}$"))) return false
+        if (acharComandoPorMac(macNormalizado) != null) return false
+        val chaveLimpa = chaveHex?.trim()?.takeIf { it.isNotEmpty() }
+        guardaComandos(_comandos.value + Comando(
+            mac = macNormalizado, nome = nome, perfilId = perfilId, chaveEncriptacao = chaveLimpa
+        ))
+        return true
+    }
+
+    fun esqueceComando(mac: String) {
+        guardaComandos(_comandos.value.filter { it.mac != mac })
+    }
+
+    fun mudaPerfilComando(mac: String, novoPerfilId: String) {
+        val lista = _comandos.value.map { if (it.mac == mac) it.copy(perfilId = novoPerfilId) else it }
+        guardaComandos(lista)
+    }
+
+    /** Chamado por QUALQUER pacote BTHome recebido deste comando --
+     *  clique ou beacon. Atualiza tambem ultimoSinalEm, que alimenta
+     *  o alarme de fora-de-alcance: se o comando estava marcado como
+     *  fora de alcance e agora voltou a emitir, o alarme desliga-se
+     *  sozinho aqui. */
+    fun atualizaSinal(mac: String, rssi: Int?, bateria: Int?) {
+        val agora = System.currentTimeMillis()
+        val lista = _comandos.value.map {
+            if (it.mac == mac) {
+                it.copy(
+                    rssi = rssi ?: it.rssi,
+                    bateria = bateria ?: it.bateria,
+                    ultimoSinalEm = agora,
+                    foraDeAlcance = false
+                )
+            } else it
+        }
+        guardaComandos(lista)
+    }
+
+    fun alternaAlertaAlcance(mac: String, ativo: Boolean) {
+        val lista = _comandos.value.map {
+            if (it.mac == mac) it.copy(alertaAlcance = ativo, foraDeAlcance = false) else it
+        }
+        guardaComandos(lista)
+    }
+
+    fun defineTempoLimiteAlcance(mac: String, segundos: Int) {
+        val ms = (segundos.coerceAtLeast(1)) * 1000L
+        val lista = _comandos.value.map {
+            if (it.mac == mac) it.copy(tempoLimiteMs = ms) else it
+        }
+        guardaComandos(lista)
+    }
+
+    fun defineRssiLimiteAlcance(mac: String, rssi: Int) {
+        val lista = _comandos.value.map {
+            if (it.mac == mac) it.copy(rssiLimite = rssi) else it
+        }
+        guardaComandos(lista)
+    }
+
+    fun alternaAgendaSempreAtiva(mac: String, sempreAtiva: Boolean) {
+        val lista = _comandos.value.map {
+            if (it.mac == mac) it.copy(agendaSempreAtiva = sempreAtiva) else it
+        }
+        guardaComandos(lista)
+    }
+
+    /** Adiciona um periodo ao dia indicado (0=domingo..6=sabado),
+     *  rejeitando periodos invalidos (inicio igual ao fim) ou que se
+     *  sobrepoem a um periodo ja existente nesse dia -- incluindo
+     *  sobreposicao atraves da meia-noite. Devolve false sem alterar
+     *  nada se a validacao falhar, para a UI poder avisar o
+     *  utilizador. */
+    fun adicionaPeriodoAgenda(mac: String, dia: Int, inicio: String, fim: String): Boolean {
+        if (inicio == fim) return false
+        val comando = _comandos.value.firstOrNull { it.mac == mac } ?: return false
+        val existentes = comando.agendaDias[dia] ?: emptyList()
+        val novo = PeriodoAgenda(inicio, fim)
+        if (existentes.any { periodosSobrepostos(novo, it) }) return false
+
+        val lista = _comandos.value.map {
+            if (it.mac == mac) {
+                val novaAgenda = it.agendaDias.toMutableMap()
+                val novaLista = (novaAgenda[dia] ?: mutableListOf()).toMutableList()
+                novaLista.add(novo)
+                novaAgenda[dia] = novaLista
+                it.copy(agendaDias = novaAgenda)
+            } else it
+        }
+        guardaComandos(lista)
+        return true
+    }
+
+    fun removePeriodoAgenda(mac: String, dia: Int, indice: Int) {
+        val lista = _comandos.value.map {
+            if (it.mac == mac) {
+                val novaAgenda = it.agendaDias.toMutableMap()
+                val novaLista = (novaAgenda[dia] ?: mutableListOf()).toMutableList()
+                if (indice in novaLista.indices) novaLista.removeAt(indice)
+                novaAgenda[dia] = novaLista
+                it.copy(agendaDias = novaAgenda)
+            } else it
+        }
+        guardaComandos(lista)
+    }
+
+    private fun paraMinutosAgenda(hhmm: String): Int {
+        val partes = hhmm.split(":")
+        return (partes.getOrNull(0)?.toIntOrNull() ?: 0) * 60 + (partes.getOrNull(1)?.toIntOrNull() ?: 0)
+    }
+
+    private fun periodosSobrepostos(a: PeriodoAgenda, b: PeriodoAgenda): Boolean {
+        var a1 = paraMinutosAgenda(a.inicio); var a2 = paraMinutosAgenda(a.fim)
+        if (a2 <= a1) a2 += 1440
+        var b1 = paraMinutosAgenda(b.inicio); var b2 = paraMinutosAgenda(b.fim)
+        if (b2 <= b1) b2 += 1440
+        for (deslocamento in intArrayOf(-1440, 0, 1440)) {
+            val d1 = b1 + deslocamento; val d2 = b2 + deslocamento
+            if (a1 < d2 && d1 < a2) return true
+        }
+        return false
+    }
+
+    /** Define a chave de encriptação de um comando (32 caracteres hex,
+     *  16 bytes). Passar null ou string vazia remove a chave -- o
+     *  comando volta a ser tratado como não encriptado. */
+    fun defineChaveEncriptacao(mac: String, chaveHex: String?) {
+        val limpa = chaveHex?.trim()?.takeIf { it.isNotEmpty() }
+        val lista = _comandos.value.map {
+            if (it.mac == mac) it.copy(chaveEncriptacao = limpa) else it
+        }
+        guardaComandos(lista)
+    }
+
+    fun defineIncluirLocalizacao(mac: String, incluir: Boolean) {
+        val lista = _comandos.value.map {
+            if (it.mac == mac) it.copy(incluirLocalizacao = incluir) else it
+        }
+        guardaComandos(lista)
+    }
+
+    /** URL da imagem do comando na grelha visual -- null/vazio remove
+     *  a imagem, voltando ao icone generico. */
+    fun defineImagemUrl(mac: String, url: String?) {
+        val limpo = url?.trim()?.takeIf { it.isNotEmpty() }
+        val lista = _comandos.value.map {
+            if (it.mac == mac) it.copy(imagemUrl = limpo) else it
+        }
+        guardaComandos(lista)
+    }
+
+    fun defineImagemBloqueada(mac: String, bloqueada: Boolean) {
+        val lista = _comandos.value.map {
+            if (it.mac == mac) it.copy(imagemBloqueada = bloqueada) else it
+        }
+        guardaComandos(lista)
+    }
+
+    /** Chamado pelo vigilante de alcance quando um comando passa a
+     *  estar/deixar de estar fora de alcance. Devolve true se o
+     *  estado realmente mudou (para o chamador so tocar o alarme na
+     *  transicao, nao a cada verificacao). */
+    fun defineForaDeAlcance(mac: String, foraDeAlcance: Boolean): Boolean {
+        var mudou = false
+        val lista = _comandos.value.map {
+            if (it.mac == mac && it.foraDeAlcance != foraDeAlcance) {
+                mudou = true
+                it.copy(foraDeAlcance = foraDeAlcance)
+            } else it
+        }
+        if (mudou) guardaComandos(lista)
+        return mudou
+    }
+
+    /** Marca que uma combinacao acabou de disparar neste comando --
+     *  usado para o cartao mostrar destaque temporario (ver
+     *  Repositorio.TEMPO_DESTAQUE_COMBINACAO_MS na UI). */
+    fun registaCombinacaoDisparada(mac: String, nomeCombinacao: String) {
+        val agora = System.currentTimeMillis()
+        val lista = _comandos.value.map {
+            if (it.mac == mac) it.copy(ultimaCombinacao = nomeCombinacao, ultimaCombinacaoEm = agora) else it
+        }
+        guardaComandos(lista)
+    }
+
+    /** Marca que um clique (qualquer tipo, com ou sem acao
+     *  configurada) acabou de ser recebido neste comando -- usado
+     *  pelo icone de pulsos na grelha visual, que replica o mesmo
+     *  numero/duracao de pulsos que GestorSons.tocaClique() usa para
+     *  o som, mas visualmente (ver PulsosClique em
+     *  CartaoGrelhaComandos.kt). */
+    fun registaClique(mac: String, tipoIndice: Int, disparouAcao: Boolean) {
+        val agora = System.currentTimeMillis()
+        val lista = _comandos.value.map {
+            if (it.mac == mac) it.copy(
+                ultimoCliqueTipo = tipoIndice,
+                ultimoCliqueEm = agora,
+                ultimoCliqueDisparouAcao = disparouAcao
+            ) else it
+        }
+        guardaComandos(lista)
+    }
+
+    // --- conta shelly ---
+
+    private fun carregaConta(): ContaShelly = ContaShelly(
+        servidorNum = prefs.getString("srv_num", "") ?: "",
+        regiao = prefs.getString("srv_regiao", "eu") ?: "eu",
+        authKey = prefs.getString("srv_key", "") ?: ""
+    )
+
+    fun guardaConta(conta: ContaShelly) {
+        prefs.edit()
+            .putString("srv_num", conta.servidorNum)
+            .putString("srv_regiao", conta.regiao)
+            .putString("srv_key", conta.authKey)
+            .apply()
+        _conta.value = conta
+    }
+
+    // --- preferências de UI (não sensíveis) ---
+
+    fun notacaoPontos(): Boolean = prefs.getBoolean("notacao_pontos", true)
+    fun defineNotacao(pontos: Boolean) {
+        prefs.edit().putBoolean("notacao_pontos", pontos).apply()
+    }
+
+    fun idioma(): String? = prefs.getString("idioma", null)
+    fun defineIdioma(cod: String) {
+        prefs.edit().putString("idioma", cod).apply()
+    }
+
+    fun temaClaro(): Boolean = prefs.getBoolean("tema_claro", false)
+    fun defineTemaClaro(claro: Boolean) {
+        prefs.edit().putBoolean("tema_claro", claro).apply()
+    }
+
+    fun somAtivo(): Boolean = prefs.getBoolean("som_ativo", true)
+    fun defineSomAtivo(ativo: Boolean) {
+        prefs.edit().putBoolean("som_ativo", ativo).apply()
+    }
+
+    /** Blocos que o utilizador desativou explicitamente no ecra
+     *  "Blocos visiveis" (Escuta, Ultimo clique, Comandos,
+     *  Configuracao, Registo). Guarda-se so os DESATIVADOS -- por
+     *  omissao todos estao ativos, sem precisar de nada persistido. */
+    fun cardsDesativados(): Set<String> = prefs.getStringSet("cards_desativados", emptySet()) ?: emptySet()
+    fun defineCardAtivo(idBloco: String, ativo: Boolean) {
+        val atuais = cardsDesativados().toMutableSet()
+        if (ativo) atuais.remove(idBloco) else atuais.add(idBloco)
+        prefs.edit().putStringSet("cards_desativados", atuais).apply()
+    }
+
+    fun alternaModoBeaconTrajeto(mac: String, ativo: Boolean) {
+        val lista = _comandos.value.map {
+            if (it.mac == mac) it.copy(modoBeaconTrajeto = ativo) else it
+        }
+        guardaComandos(lista)
+    }
+
+    fun defineIntervaloBeaconTrajeto(mac: String, segundos: Int) {
+        val ms = segundos.coerceAtLeast(1) * 1000L
+        val lista = _comandos.value.map {
+            if (it.mac == mac) it.copy(intervaloBeaconMs = ms) else it
+        }
+        guardaComandos(lista)
+    }
+
+    /** Historico de trajeto por comando -- uma chave SharedPreferences
+     *  POR MAC (nao um unico blob gigante com todos os comandos), para
+     *  poder ler/escrever o historico de um comando sem tocar nos
+     *  outros. Mantem so os ultimos DIAS_HISTORICO_TRAJETO dias --
+     *  pontos mais antigos sao descartados a cada gravacao. */
+    fun historicoTrajeto(mac: String): List<PontoTrajeto> {
+        val raw = prefs.getString("trajeto_$mac", null) ?: return emptyList()
+        return try {
+            val arr = JSONArray(raw)
+            (0 until arr.length()).mapNotNull { i -> PontoTrajeto.deJson(arr.getJSONObject(i)) }
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    /** Politica de retencao do historico de trajeto -- global, aplicada
+     *  a todos os comandos por igual. */
+    fun modoRetencaoTrajeto(): ModoRetencaoTrajeto {
+        val nome = prefs.getString("modo_retencao_trajeto", ModoRetencaoTrajeto.DIAS.name)
+        return try {
+            ModoRetencaoTrajeto.valueOf(nome ?: ModoRetencaoTrajeto.DIAS.name)
+        } catch (e: IllegalArgumentException) {
+            ModoRetencaoTrajeto.DIAS
+        }
+    }
+
+    fun defineModoRetencaoTrajeto(modo: ModoRetencaoTrajeto) {
+        prefs.edit().putString("modo_retencao_trajeto", modo.name).apply()
+    }
+
+    fun diasRetencaoTrajeto(): Int = prefs.getInt("dias_retencao_trajeto", DIAS_TRAJETO_OMISSAO)
+    fun defineDiasRetencaoTrajeto(dias: Int) {
+        prefs.edit().putInt("dias_retencao_trajeto", dias.coerceAtLeast(1)).apply()
+    }
+
+    fun quantidadeRetencaoTrajeto(): Int = prefs.getInt("quantidade_retencao_trajeto", QUANTIDADE_TRAJETO_OMISSAO)
+    fun defineQuantidadeRetencaoTrajeto(quantidade: Int) {
+        prefs.edit().putInt("quantidade_retencao_trajeto", quantidade.coerceAtLeast(1)).apply()
+    }
+
+    /** Aplica a politica de retencao atual (DIAS ou QUANTIDADE) a uma
+     *  lista de pontos ja ordenada cronologicamente (mais antigo
+     *  primeiro) -- usado tanto ao gravar um novo ponto como, se no
+     *  futuro for preciso, para relimpar o historico existente apos
+     *  o utilizador mudar de politica. */
+    private fun aplicaRetencao(pontos: List<PontoTrajeto>): List<PontoTrajeto> {
+        return when (modoRetencaoTrajeto()) {
+            ModoRetencaoTrajeto.DIAS -> {
+                val limite = System.currentTimeMillis() - diasRetencaoTrajeto().toLong() * 24 * 60 * 60 * 1000
+                pontos.filter { it.timestamp >= limite }
+            }
+            ModoRetencaoTrajeto.QUANTIDADE -> {
+                val n = quantidadeRetencaoTrajeto()
+                if (pontos.size > n) pontos.subList(pontos.size - n, pontos.size) else pontos
+            }
+        }
+    }
+
+    fun adicionaPontoTrajeto(mac: String, ponto: PontoTrajeto) {
+        val atualizado = aplicaRetencao(historicoTrajeto(mac) + ponto)
+        val arr = JSONArray()
+        atualizado.forEach { arr.put(it.paraJson()) }
+        prefs.edit().putString("trajeto_$mac", arr.toString()).apply()
+    }
+
+    fun limpaTrajeto(mac: String) {
+        prefs.edit().remove("trajeto_$mac").apply()
+    }
+
+    fun atualizaUltimoPontoTrajeto(mac: String, timestamp: Long) {
+        val lista = _comandos.value.map {
+            if (it.mac == mac) it.copy(ultimoPontoTrajetoEm = timestamp) else it
+        }
+        guardaComandos(lista)
+    }
+}

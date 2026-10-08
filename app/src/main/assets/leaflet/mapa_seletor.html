@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <link rel="stylesheet" href="leaflet.css" />
+  <style>
+    html, body { height: 100%; margin: 0; padding: 0; }
+    #mapa { height: 100%; background: #0D1117; }
+    .leaflet-control-attribution { font-size: 9px; }
+  </style>
+</head>
+<body>
+  <div id="mapa"></div>
+  <script src="leaflet.js"></script>
+  <script>
+    var mapa = L.map('mapa', { zoomControl: true }).setView([0, 0], 2);
+
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap'
+    }).addTo(mapa);
+
+    // Mesma razao que em mapa.html: o WebView pode calcular o
+    // tamanho do container antes do layout do dialogo estar
+    // definitivo, resultando num mapa em branco sem isto.
+    setTimeout(function () { mapa.invalidateSize(); }, 100);
+
+    var camadasAtuais = [];
+    var viagemSelecionadaId = null;
+
+    function defineViagemSelecionada(idViagem) {
+      viagemSelecionadaId = idViagem;
+    }
+
+    /**
+     * Esquema de URL customizado para comunicar o clique numa
+     * viagem de volta ao Kotlin -- o WebView nao tem
+     * addJavascriptInterface configurado neste projeto; o canal
+     * existente e via shouldOverrideUrlLoading (ver linkGeo() em
+     * mapa.html para o mesmo padrao com geo:).
+     */
+    function linkSelecionaViagem(idViagem) {
+      return 'blugateway-viagem://selecionar?id=' + encodeURIComponent(idViagem);
+    }
+
+    var CORES_VIAGEM = [
+      '#2BA6E0', '#E0A62B', '#4CAF50', '#E0522B', '#9C6ADE', '#2BE0C7'
+    ];
+
+    /**
+     * Recebe um JSON com a forma:
+     * [{ "id": "mac|inicioTimestamp", "nomeComando": "SBBT-002C",
+     *    "pontos": [{"lat":38.7,"lon":-9.1}, ...] }, ...]
+     * Uma entrada por VIAGEM (ja segmentada do lado Kotlin), nao por
+     * comando -- ao contrario de desenhaTrajetos() em mapa.html, que
+     * desenha o historico completo de cada comando de uma vez.
+     */
+    function desenhaViagens(jsonTexto) {
+      mapa.invalidateSize();
+
+      camadasAtuais.forEach(function (camada) { mapa.removeLayer(camada); });
+      camadasAtuais = [];
+
+      var dados;
+      try {
+        dados = JSON.parse(jsonTexto);
+      } catch (e) {
+        return;
+      }
+
+      var todosPontos = [];
+
+      dados.forEach(function (viagem, indice) {
+        if (!viagem.pontos || viagem.pontos.length < 2) return;
+
+        var cor = CORES_VIAGEM[indice % CORES_VIAGEM.length];
+        var latLngs = viagem.pontos.map(function (p) { return [p.lat, p.lon]; });
+        todosPontos = todosPontos.concat(latLngs);
+
+        var selecionada = viagem.id === viagemSelecionadaId;
+        var linha = L.polyline(latLngs, {
+          color: cor,
+          weight: selecionada ? 6 : 4,
+          opacity: selecionada ? 1.0 : 0.6
+        }).addTo(mapa);
+
+        // Um clique na propria linha seleciona-a -- feedback visual
+        // imediato (destaca) e navega o esquema customizado para o
+        // Kotlin tratar a selecao logica.
+        linha.on('click', function () {
+          window.location.href = linkSelecionaViagem(viagem.id);
+        });
+
+        camadasAtuais.push(linha);
+
+        var inicio = L.circleMarker(latLngs[0], {
+          radius: 6, color: cor, fillColor: '#fff', fillOpacity: 1, weight: 2
+        }).addTo(mapa);
+        inicio.on('click', function () { window.location.href = linkSelecionaViagem(viagem.id); });
+        camadasAtuais.push(inicio);
+
+        var fim = L.circleMarker(latLngs[latLngs.length - 1], {
+          radius: 6, color: cor, fillColor: cor, fillOpacity: 1, weight: 2
+        }).addTo(mapa);
+        fim.on('click', function () { window.location.href = linkSelecionaViagem(viagem.id); });
+        camadasAtuais.push(fim);
+      });
+
+      if (todosPontos.length > 0) {
+        mapa.fitBounds(todosPontos, { padding: [30, 30], maxZoom: 16 });
+      }
+    }
+
+  </script>
+</body>
+</html>
