@@ -48,8 +48,11 @@ object GestorScan {
                     RegistoEventos.adicionaResultado(
                         contextoVigiado!!.getString(pt.blugateway.R.string.scan_reiniciado), false, ""
                     )
-                    reinicia(contextoVigiado!!)
+                    reinicia(contextoVigiado!!, "sem anuncios ha ${inatividade / 1000}s")
                 }
+            }
+            contextoVigiado?.let { ctx ->
+                if (!renovaSeNecessario(ctx)) verificaBeaconsSilenciosos(ctx)
             }
             handlerVigilante?.postDelayed(this, INTERVALO_VERIFICACAO_MS)
         }
@@ -63,7 +66,10 @@ object GestorScan {
      *  chega — sinal de que o scan continua vivo. */
     fun marcaAtividade(context: Context? = null) {
         ultimaAtividade = System.currentTimeMillis()
-        context?.let { agendaAlarmeReforco(it.applicationContext) }
+        context?.let {
+            agendaAlarmeReforco(it.applicationContext)
+            renovaSeNecessario(it.applicationContext)
+        }
     }
 
     /** AlarmManager como reforço ao Handler: o Handler da main thread
@@ -115,14 +121,86 @@ object GestorScan {
             RegistoEventos.adicionaResultado(
                 context.getString(pt.blugateway.R.string.scan_reiniciado), false, ""
             )
-            reinicia(context)
+            reinicia(context, "alarme de inatividade")
         }
     }
 
-    private fun reinicia(context: Context) {
+    @Synchronized
+    private fun reinicia(context: Context, motivo: String) {
+        RegistoDiagnostico.regista(context, "[scan] a reiniciar o scan BLE: $motivo")
         paraEscuta(context)
         ultimaAtividade = System.currentTimeMillis()
         iniciaEscuta(context)
+    }
+
+    // ---- Renovacao preventiva e vigilancia por beacon ----
+    //
+    // O Android converte scans BLE de longa duracao (cerca de 30 min)
+    // em scans "oportunistas": a app so recebe anuncios quando OUTRA
+    // app estiver a fazer scan -- continuam a chegar alguns anuncios
+    // soltos, por isso o vigilante classico (60s sem QUALQUER anuncio)
+    // nunca dispara, e os cliques perdem-se ate a app ser reiniciada.
+    // Para evitar isto o scan e' renovado de forma preventiva, bem
+    // antes desse limite, e tambem quando um beacon conhecido deixa de
+    // ser ouvido mesmo havendo anuncios de outros dispositivos.
+
+    private const val PREFS_SCAN = "blugateway_scan"
+    private const val CHAVE_ULTIMO_INICIO = "ultimo_inicio_scan"
+    private const val RENOVACAO_MS = 20 * 60_000L
+    private const val SILENCIO_BEACON_MS = 120_000L
+    private const val SILENCIO_BEACON_MAX_MS = 15 * 60_000L
+
+    private val ultimoAnuncioPorMac = java.util.concurrent.ConcurrentHashMap<String, Long>()
+    private val reiniciadoPorSilencioEm = java.util.concurrent.ConcurrentHashMap<String, Long>()
+
+    /** Chamado a cada anuncio de um beacon associado (ProcessadorClique). */
+    fun registaAnuncioDe(mac: String) {
+        ultimoAnuncioPorMac[mac] = System.currentTimeMillis()
+    }
+
+    private fun guardaInicioDoScan(context: Context) {
+        try {
+            context.getSharedPreferences(PREFS_SCAN, Context.MODE_PRIVATE)
+                .edit().putLong(CHAVE_ULTIMO_INICIO, System.currentTimeMillis()).apply()
+        } catch (e: Exception) {
+            Log.w(TAG, "falha ao guardar inicio do scan", e)
+        }
+    }
+
+    private fun idadeDoScanMs(context: Context): Long {
+        val t = try {
+            context.getSharedPreferences(PREFS_SCAN, Context.MODE_PRIVATE).getLong(CHAVE_ULTIMO_INICIO, 0L)
+        } catch (e: Exception) { 0L }
+        return if (t == 0L) Long.MAX_VALUE else System.currentTimeMillis() - t
+    }
+
+    /** Renova o scan se o ultimo arranque foi ha mais de RENOVACAO_MS.
+     *  Devolve true se reiniciou. */
+    fun renovaSeNecessario(context: Context): Boolean {
+        val ctx = context.applicationContext
+        val idade = idadeDoScanMs(ctx)
+        if (idade < RENOVACAO_MS) return false
+        if (!bluetoothLigado()) return false
+        if (pt.blugateway.data.Repositorio(ctx).comandos.value.isEmpty()) return false
+        val minutos = if (idade == Long.MAX_VALUE) -1L else idade / 60_000L
+        reinicia(ctx, "renovacao preventiva (scan com $minutos min)")
+        return true
+    }
+
+    /** Reinicia o scan (uma vez por perda) quando um beacon que ate ha
+     *  pouco era ouvido deixa de aparecer ao seu ritmo normal. Nao
+     *  repete para o mesmo silencio, para nao reiniciar em ciclo se o
+     *  beacon simplesmente ficou longe. */
+    private fun verificaBeaconsSilenciosos(context: Context) {
+        val agora = System.currentTimeMillis()
+        for ((mac, ultimo) in ultimoAnuncioPorMac) {
+            val silencio = agora - ultimo
+            if (silencio < SILENCIO_BEACON_MS || silencio > SILENCIO_BEACON_MAX_MS) continue
+            if (reiniciadoPorSilencioEm[mac] == ultimo) continue
+            reiniciadoPorSilencioEm[mac] = ultimo
+            reinicia(context.applicationContext, "beacon $mac sem anuncios ha ${silencio / 1000}s")
+            return
+        }
     }
 
     fun suportaBLE(): Boolean {
@@ -185,6 +263,7 @@ object GestorScan {
 
             scanner.startScan(listOf(filtro), settings, pendingIntent(context))
             scanAtivo = true
+            guardaInicioDoScan(context)
         } catch (e: SecurityException) {
             Log.w(TAG, "sem permissão de Bluetooth ao arrancar escuta", e)
         } catch (e: Exception) {
