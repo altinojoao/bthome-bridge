@@ -53,3 +53,20 @@ jobs:
         with:
           files: app/build/outputs/apk/debug/*.apk
           fail_on_unmatched_files: true
+
+      # Em pushes ao main (ou execucao manual) publica tambem a release
+      # v<versionName> -- cria a tag sobre este commit e anexa o APK,
+      # sem depender de empurrar tags manualmente. Nao apaga nada.
+      - name: Ler versao do build.gradle
+        if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
+        id: versao
+        run: echo "nome=$(grep -m1 -E '^\s*versionName "' app/build.gradle | sed 's/.*"\(.*\)".*/\1/')" >> "$GITHUB_OUTPUT"
+
+      - name: Publicar release da versao atual
+        if: ${{ !startsWith(github.ref, 'refs/tags/v') && github.ref == 'refs/heads/main' }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.versao.outputs.nome }}
+          target_commitish: ${{ github.sha }}
+          files: app/build/outputs/apk/debug/*.apk
+          fail_on_unmatched_files: true

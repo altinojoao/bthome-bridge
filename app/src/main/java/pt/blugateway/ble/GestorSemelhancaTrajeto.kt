@@ -424,13 +424,22 @@ object GestorSemelhancaTrajeto {
         for (i in 0 until trajetoAtual.size - 1) {
             if (indice >= checkpoints.size) break
             val p1 = trajetoAtual[i]; val p2 = trajetoAtual[i + 1]
-            val cp = checkpoints[indice]
-            if (segmentosIntersectam(
-                    p1.latitude, p1.longitude, p2.latitude, p2.longitude,
-                    cp.latA, cp.lonA, cp.latB, cp.lonB
-                )) {
-                indice++
+            // Testa TODAS as barreiras pendentes, nao so a seguinte:
+            // se uma barreira intermedia foi "falhada" (segmento entre
+            // dois pontos distantes a cortar uma curva), o progresso
+            // nao fica preso -- atravessar uma barreira mais a frente
+            // conta as anteriores como feitas.
+            var ultimoCruzado = -1
+            for (j in indice until checkpoints.size) {
+                val cp = checkpoints[j]
+                if (segmentosIntersectam(
+                        p1.latitude, p1.longitude, p2.latitude, p2.longitude,
+                        cp.latA, cp.lonA, cp.latB, cp.lonB
+                    )) {
+                    ultimoCruzado = j
+                }
             }
+            if (ultimoCruzado >= 0) indice = ultimoCruzado + 1
         }
         return indice
     }
@@ -684,6 +693,15 @@ object GestorSemelhancaTrajeto {
             // (100%), obrigando a esperar até já estar quase parado no
             // destino em vez de disparar durante a aproximação.
             val progressoPercent = (indiceDepois * 100) / checkpoints.size
+            if (trajetoComPosAtual.size >= 2) {
+                var maiorLacuna = 0.0
+                for (k in 0 until trajetoComPosAtual.size - 1) {
+                    val a = trajetoComPosAtual[k]; val b = trajetoComPosAtual[k + 1]
+                    val dd = distanciaMetros(a.latitude, a.longitude, b.latitude, b.longitude)
+                    if (dd > maiorLacuna) maiorLacuna = dd
+                }
+                RegistoDiagnostico.regista(context, "[D-cenarios] pontos=${trajetoComPosAtual.size} maiorLacuna=${maiorLacuna.toInt()}m gps_continuo=${pt.blugateway.net.GestorLocalizacao.continuoActivo()}")
+            }
             RegistoDiagnostico.regista(
                 context,
                 "[D-cenarios] cenario='${cenario.nome}' checkpoint ${indiceDepois}/${checkpoints.size} ($progressoPercent%, precisa>=${cenario.limiarPercentagem}%)" +

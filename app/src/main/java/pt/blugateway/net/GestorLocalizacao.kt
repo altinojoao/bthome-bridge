@@ -55,6 +55,44 @@ object GestorLocalizacao {
     @Volatile private var modoLento = false                  // GPS a 30s
     private var listenerContinuo: LocationListener? = null
 
+    /**
+     * Chamado em CADA posicao GPS recebida pelo modo continuo. Permite
+     * que o trajeto seja gravado e avaliado ao ritmo do GPS, e nao ao
+     * ritmo (lento e irregular) dos anuncios do beacon -- o beacon
+     * serve so para confirmar presenca.
+     */
+    @Volatile var aoNovaPosicao: ((Location) -> Unit)? = null
+
+    fun continuoActivo(): Boolean = modoContinuoActivo
+
+    /**
+     * Arranque do GPS continuo a partir de uma amostra isolada (a que
+     * o anuncio do beacon pede). O arranque por RSSI quase nunca
+     * dispara com anuncios a cada ~30s (precisa de 15 amostras em
+     * 90s). Aqui compara-se a amostra com a posicao em que o utilizador
+     * ficou parado: se se afastou mais que RAIO_PARADO_M, liga o GPS.
+     */
+    fun avaliaArranque(context: Context, lat: Double, lon: Double) {
+        if (modoContinuoActivo) return
+        val ancora = posicaoAncora
+        if (ancora == null) {
+            val nova = Location("ancora")
+            nova.latitude = lat
+            nova.longitude = lon
+            posicaoAncora = nova
+            tempoAncora = System.currentTimeMillis()
+            return
+        }
+        val res = FloatArray(1)
+        Location.distanceBetween(ancora.latitude, ancora.longitude, lat, lon, res)
+        if (res[0] > RAIO_PARADO_M) {
+            posicaoAncora = null
+            tempoAncora = System.currentTimeMillis()
+            modoLento = false
+            iniciaModoContinuo(context, INTERVALO_MOVIMENTO_MS)
+        }
+    }
+
     // Camada 2: histórico RSSI por MAC
     private val historicoRssi = java.util.concurrent.ConcurrentHashMap<
         String, ArrayDeque<Pair<Long, Int>>>()
@@ -100,6 +138,7 @@ object GestorLocalizacao {
      */
     private fun processaPosicaoGps(context: Context, loc: Location) {
         ultimaLocalizacao = loc
+        try { aoNovaPosicao?.invoke(loc) } catch (e: Exception) {}
         val agora = System.currentTimeMillis()
         val ancora = posicaoAncora
 

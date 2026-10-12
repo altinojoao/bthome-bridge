@@ -5,6 +5,7 @@ import pt.blugateway.data.Comando
 import pt.blugateway.data.OrigemPonto
 import pt.blugateway.data.PontoTrajeto
 import pt.blugateway.data.Repositorio
+import kotlinx.coroutines.launch
 import pt.blugateway.net.GestorLocalizacao
 
 /**
@@ -133,12 +134,75 @@ object GestorTrajeto {
                 comando.mac, PontoTrajeto(localizacao.first, localizacao.second, agora, OrigemPonto.BEACON)
             )
             repo.atualizaUltimoPontoTrajeto(comando.mac, agora)
+            // Se o GPS continuo esta desligado, ve se ja ha movimento
+            // para o ligar (ver GestorLocalizacao.avaliaArranque)
+            GestorLocalizacao.avaliaArranque(context, localizacao.first, localizacao.second)
             // Sinalizar que já houve pelo menos 1 ponto GPS nesta sessão
             // -- a partir daqui os cenários de trajeto podem ser avaliados
             GestorSemelhancaTrajeto.pontoGravadoNestaSessao = true
             RegistoDiagnostico.regista(context, "trajeto[${comando.mac}]: ponto gravado")
         } finally {
             pedidosEmCurso.remove(comando.mac)
+        }
+    }
+
+    // ---- Registo de pontos guiado pelo GPS (o beacon so confirma presenca) ----
+
+    private const val DISTANCIA_MIN_PONTO_GPS_M = 40.0
+    private const val DISTANCIA_MIN_LENTO_M = 10.0
+    private const val TEMPO_LENTO_PONTO_GPS_MS = 30_000L
+
+    private val ocupadoGps = java.util.concurrent.atomic.AtomicBoolean(false)
+    private val ultimoPontoGps =
+        java.util.concurrent.ConcurrentHashMap<String, Triple<Double, Double, Long>>()
+
+    /**
+     * Chamado pelo GestorLocalizacao a cada posicao GPS (modo
+     * continuo). Grava um ponto por cada comando com modoBeaconTrajeto
+     * cujo beacon esteja presente, e avalia logo os cenarios -- sem
+     * esperar pelo proximo anuncio do beacon. Se ja houver um
+     * processamento em curso, esta posicao e' ignorada (a seguinte
+     * chega daqui a ~1s).
+     */
+    fun aoReceberPosicaoGps(context: Context, lat: Double, lon: Double) {
+        if (pausado) return
+        if (!ocupadoGps.compareAndSet(false, true)) return
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+            try {
+                processaPosicaoGps(context, lat, lon)
+            } catch (e: Exception) {
+                RegistoDiagnostico.regista(context, "trajeto[gps]: erro ${e.message}")
+            } finally {
+                ocupadoGps.set(false)
+            }
+        }
+    }
+
+    private suspend fun processaPosicaoGps(context: Context, lat: Double, lon: Double) {
+        val repo = Repositorio(context)
+        val agora = System.currentTimeMillis()
+        val macsParaAvaliar = mutableListOf<String>()
+        for (cmd in repo.comandos.value) {
+            if (!cmd.modoBeaconTrajeto) continue
+            if (!pt.blugateway.ble.GestorAlcance.estaPresente(cmd.mac)) continue
+            val ult = ultimoPontoGps[cmd.mac]
+            if (ult != null) {
+                val d = GestorSemelhancaTrajeto.distanciaMetros(ult.first, ult.second, lat, lon)
+                val dt = agora - ult.third
+                val gravar = d >= DISTANCIA_MIN_PONTO_GPS_M ||
+                    (dt >= TEMPO_LENTO_PONTO_GPS_MS && d >= DISTANCIA_MIN_LENTO_M)
+                if (!gravar) continue
+            }
+            repo.adicionaPontoTrajeto(cmd.mac, PontoTrajeto(lat, lon, agora, OrigemPonto.BEACON))
+            repo.atualizaUltimoPontoTrajeto(cmd.mac, agora)
+            ultimoPontoGps[cmd.mac] = Triple(lat, lon, agora)
+            macsParaAvaliar.add(cmd.mac)
+        }
+        if (macsParaAvaliar.isEmpty()) return
+        GestorSemelhancaTrajeto.pontoGravadoNestaSessao = true
+        for (mac in macsParaAvaliar) {
+            RegistoDiagnostico.regista(context, "trajeto[$mac]: ponto gravado por GPS (modo continuo)")
+            GestorSemelhancaTrajeto.verificaCenarios(context, mac)
         }
     }
 }

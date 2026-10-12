@@ -67,6 +67,10 @@ class ServicoGateway : Service() {
         GestorScan.iniciaEscuta(applicationContext)
         GestorScan.iniciaVigilante(applicationContext)
         GestorAlcance.inicia(applicationContext)
+        // Trajeto guiado pelo GPS: o beacon so confirma presenca
+        pt.blugateway.net.GestorLocalizacao.aoNovaPosicao = { loc ->
+            GestorTrajeto.aoReceberPosicaoGps(applicationContext, loc.latitude, loc.longitude)
+        }
 
         // START_STICKY: se o sistema matar o processo por falta de
         // memória, tenta recriar o serviço assim que houver recursos
