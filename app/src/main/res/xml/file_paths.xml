@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- O APK e' descarregado para o cache privado da app
+         (GestorAtualizacao.kt) e partilhado com o instalador do
+         sistema atraves deste path: so esta pasta e' exposta,
+         nada mais do armazenamento da app. -->
+    <cache-path name="atualizacoes" path="atualizacoes/" />
+</paths>

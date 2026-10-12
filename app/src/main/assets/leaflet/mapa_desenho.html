@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <link rel="stylesheet" href="leaflet.css" />
+  <style>
+    html, body { height: 100%; margin: 0; padding: 0; overscroll-behavior: none; }
+    #mapa { height: 100%; background: #0D1117; touch-action: none; }
+    .leaflet-control-attribution { font-size: 9px; }
+  </style>
+</head>
+<body>
+  <div id="mapa"></div>
+  <script src="leaflet.js"></script>
+  <script>
+    /**
+     * Mapa de desenho livre -- o utilizador arrasta o dedo sobre o
+     * mapa e cada ponto tocado vai sendo acrescentado a uma
+     * polyline, desenhada em tempo real. Ao contrario dos outros
+     * mapas deste projeto (so leitura/selecao), este permite
+     * ARRASTAR PARA DESENHAR em vez de arrastar para navegar o
+     * mapa -- por isso o pan do proprio Leaflet e' desativado
+     * enquanto o "modo desenho" esta ativo (ver alternaModoDesenho),
+     * devolvido ao utilizador so quando ele quer reposicionar o
+     * mapa antes de comecar a desenhar.
+     */
+    var mapa = L.map('mapa', { zoomControl: true, dragging: false }).setView([0, 0], 2);
+
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap'
+    }).addTo(mapa);
+
+    setTimeout(function () { mapa.invalidateSize(); }, 100);
+
+    var pontosDesenhados = [];
+    var linhaDesenho = null;
+    var aDesenhar = false;
+
+    /**
+     * Alterna entre "modo desenho" (arrastar o dedo desenha uma
+     * linha) e "modo navegar" (arrastar move/faz pan do mapa,
+     * comportamento normal) -- chamado pelo Kotlin a partir de um
+     * botao na UI, ja que os dois gestos (desenhar vs navegar) usam
+     * o mesmo toque de arrastar e nao podem estar ativos ao mesmo
+     * tempo sem confundir o utilizador.
+     */
+    function alternaModoDesenho(ativo) {
+      aDesenhar = !!ativo;
+      if (aDesenhar) {
+        mapa.dragging.disable();
+      } else {
+        mapa.dragging.enable();
+      }
+    }
+
+    function limpaDesenho() {
+      pontosDesenhados = [];
+      if (linhaDesenho) {
+        mapa.removeLayer(linhaDesenho);
+        linhaDesenho = null;
+      }
+    }
+
+    function centraNaLocalizacao(lat, lon, zoom) {
+      mapa.setView([lat, lon], zoom || 15);
+    }
+
+    function adicionaPontoDesenho(latlng) {
+      pontosDesenhados.push(latlng);
+      if (!linhaDesenho) {
+        linhaDesenho = L.polyline(pontosDesenhados, { color: '#2BA6E0', weight: 5 }).addTo(mapa);
+      } else {
+        linhaDesenho.setLatLngs(pontosDesenhados);
+      }
+    }
+
+    /**
+     * Envia o desenho completo de volta ao Kotlin -- disparado
+     * quando o dedo se levanta do ecra (fim de um traco), nao a
+     * cada ponto individual, para nao inundar o canal de
+     * comunicacao com um pedido por pixel arrastado.
+     */
+    function notificaDesenhoAtualizado() {
+      var json = JSON.stringify(pontosDesenhados.map(function (p) {
+        return { lat: p.lat, lon: p.lng };
+      }));
+      window.location.href = 'blugateway-desenho://atualizado?pontos=' + encodeURIComponent(json);
+    }
+
+    /**
+     * Desenha um trajeto ja existente (ao editar um cenario que ja
+     * tinha template gravado) -- para o utilizador ver o que ja
+     * estava definido em vez de um mapa em branco.
+     */
+    function defineTrajetoExistente(jsonTexto) {
+      limpaDesenho();
+      var pontos;
+      try {
+        pontos = JSON.parse(jsonTexto);
+      } catch (e) {
+        return;
+      }
+      if (!pontos || pontos.length === 0) return;
+      pontosDesenhados = pontos.map(function (p) { return L.latLng(p.lat, p.lon); });
+      linhaDesenho = L.polyline(pontosDesenhados, { color: '#2BA6E0', weight: 5 }).addTo(mapa);
+      mapa.fitBounds(linhaDesenho.getBounds(), { padding: [30, 30], maxZoom: 16 });
+    }
+
+    /* IMPORTANTE: o Leaflet NAO emite eventos touchstart/touchmove/
+       touchend no objeto do mapa -- so mousedown/mousemove/mouseup, e
+       esses nao chegam de forma fiavel a partir de toques em Android.
+       Por isso os gestos de desenho sao capturados com listeners
+       nativos no proprio elemento DOM do container, convertendo as
+       coordenadas de ecra para geograficas com
+       containerPointToLatLng(). */
+    var container = mapa.getContainer();
+
+    function coordenadaDoEvento(evento) {
+      var rect = container.getBoundingClientRect();
+      var toque = evento.touches && evento.touches.length > 0 ? evento.touches[0] : evento;
+      var x = toque.clientX - rect.left;
+      var y = toque.clientY - rect.top;
+      return mapa.containerPointToLatLng(L.point(x, y));
+    }
+
+    container.addEventListener('touchstart', function (e) {
+      if (!aDesenhar) return;
+      e.preventDefault();
+      adicionaPontoDesenho(coordenadaDoEvento(e));
+    }, { passive: false });
+
+    container.addEventListener('touchmove', function (e) {
+      if (!aDesenhar) return;
+      e.preventDefault();
+      adicionaPontoDesenho(coordenadaDoEvento(e));
+    }, { passive: false });
+
+    container.addEventListener('touchend', function (e) {
+      if (!aDesenhar || pontosDesenhados.length === 0) return;
+      e.preventDefault();
+      notificaDesenhoAtualizado();
+    }, { passive: false });
+
+    // rato (util em emulador/desktop, e inofensivo em telemovel)
+    var ratoPremido = false;
+    container.addEventListener('mousedown', function (e) {
+      if (!aDesenhar) return;
+      ratoPremido = true;
+      adicionaPontoDesenho(coordenadaDoEvento(e));
+    });
+    container.addEventListener('mousemove', function (e) {
+      if (!aDesenhar || !ratoPremido) return;
+      adicionaPontoDesenho(coordenadaDoEvento(e));
+    });
+    container.addEventListener('mouseup', function () {
+      if (!aDesenhar || !ratoPremido) return;
+      ratoPremido = false;
+      if (pontosDesenhados.length > 0) notificaDesenhoAtualizado();
+    });
+  </script>
+</body>
+</html>

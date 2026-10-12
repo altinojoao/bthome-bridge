@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <link rel="stylesheet" href="leaflet.css" />
+  <style>
+    html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; }
+    #mapa { height: 100%; background: #0D1117; }
+    .leaflet-control-attribution { font-size: 9px; }
+
+    /* No modo condução, o mapa roda para manter a direcção do
+       movimento sempre "para cima" -- os elementos de UI (marcador
+       de veículo, indicador de velocidade) rodam de volta para se
+       manterem sempre direitos, ao contrário do mapa por baixo. */
+    #veiculo-fixo {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 36px;
+      height: 36px;
+      margin: -18px 0 0 -18px;
+      z-index: 900;
+      pointer-events: none;
+      display: none;
+      transition: transform 0.4s linear;
+    }
+    #veiculo-fixo svg { width: 100%; height: 100%; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6)); }
+
+    #painel-velocidade {
+      position: absolute;
+      bottom: 16px;
+      left: 16px;
+      z-index: 1000;
+      background: rgba(13,17,23,0.9);
+      border: 2px solid #2BA6E0;
+      border-radius: 50%;
+      width: 58px;
+      height: 58px;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+    #painel-velocidade .valor { color: white; font-size: 18px; font-weight: bold; line-height: 1; }
+    #painel-velocidade .unidade { color: #8B9AB0; font-size: 9px; }
+
+    #botao-modo-conducao {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      z-index: 1000;
+      background: rgba(13,17,23,0.9);
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      color: #8B9AB0;
+      cursor: pointer;
+    }
+    #botao-modo-conducao.ativo { color: #2BA6E0; border: 2px solid #2BA6E0; }
+
+    /* Radar pulsante: um anel vermelho que expande e desvanece em
+       loop, sobreposto ao ultimo ponto de um comando em movimento
+       recente. Puramente CSS, sem JS a repetir a animacao. */
+    @keyframes radar-pulsar {
+      0% { transform: scale(0.3); opacity: 0.8; }
+      100% { transform: scale(2.2); opacity: 0; }
+    }
+    .radar-anel {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 28px;
+      height: 28px;
+      margin: -14px 0 0 -14px;
+      border-radius: 50%;
+      border: 2px solid #FF3B30;
+      animation: radar-pulsar 1.6s ease-out infinite;
+      pointer-events: none;
+    }
+    .rotulo-checkpoint {
+      background: #F0A500;
+      color: #0D1117;
+      font-weight: bold;
+      font-size: 11px;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid white;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.6);
+    }
+    .rotulo-checkpoint.atravessado {
+      background: #3FB950;
+    }
+  </style>
+</head>
+<body>
+  <div id="mapa"></div>
+  <div id="veiculo-fixo">
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 2 L20 20 L12 16 L4 20 Z" fill="#2BA6E0" stroke="white" stroke-width="1.2"/>
+    </svg>
+  </div>
+  <div id="painel-velocidade">
+    <div class="valor" id="valor-velocidade">0</div>
+    <div class="unidade">km/h</div>
+  </div>
+  <div id="botao-modo-conducao" title="Mostrar veículo e velocidade">🧭</div>
+  <script src="leaflet.js"></script>
+  <script>
+    // Mapa comeca centrado num ponto neutro (0,0) ate a app chamar
+    // desenhaTrajetos() com os dados reais -- evita depender de
+    // localizacao disponivel so para ABRIR o mapa.
+    var mapa = L.map('mapa', { zoomControl: true }).setView([0, 0], 2);
+
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap'
+    }).addTo(mapa);
+
+    // O Leaflet le o tamanho do container (#mapa) no momento exato em
+    // que L.map() e chamado -- dentro de um WebView carregado num
+    // dialogo/AlertDialog, o layout pode ainda nao estar completamente
+    // assente nesse instante (herda um tamanho 0x0 ou desatualizado),
+    // o que faz o Leaflet calcular os tiles a pedir com base num
+    // viewport errado e nunca os recalcular sozinho depois -- resulta
+    // num mapa em branco/preto, so com o fundo definido no CSS,
+    // mesmo com rede a funcionar bem. invalidateSize() forca o
+    // Leaflet a reler o tamanho real e re-pedir os tiles certos.
+    setTimeout(function () { mapa.invalidateSize(); }, 100);
+
+    var camadasAtuais = [];
+    var camadasCheckpointsAtivos = [];  // barreiras dos cenarios em uso
+
+    // Modo de navegação: segue automaticamente a posição mais recente
+    // com zoom fixo e próximo (como Waze/Google Maps), em vez de
+    // reenquadrar a vista para caber TODO o histórico a cada
+    // actualização (comportamento antigo -- afastava o zoom
+    // continuamente ao longo de uma viagem longa, nunca ficando perto
+    // da posição actual). Desactivado automaticamente se o utilizador
+    // interagir manualmente com o mapa (arrastar/zoom), reactivável
+    // pelo botão de recentrar.
+    var modoNavegacao = true;
+    var ZOOM_NAVEGACAO = 17;
+    var botaoRecentrar = null;
+
+    function criaBotaoRecentrar() {
+      if (botaoRecentrar) return;
+      var ControleRecentrar = L.Control.extend({
+        options: { position: 'bottomright' },
+        onAdd: function () {
+          var div = L.DomUtil.create('div', 'leaflet-bar');
+          div.innerHTML = '<a href="#" title="Recentrar" style="display:flex;align-items:center;justify-content:center;font-size:18px;width:34px;height:34px;background:#161B22;color:#2BA6E0;text-decoration:none;">\u25CE</a>';
+          L.DomEvent.on(div, 'click', function (e) {
+            L.DomEvent.stop(e);
+            modoNavegacao = true;
+            atualizaVisibilidadeBotaoRecentrar();
+            if (window._ultimaPosicaoConhecida) {
+              mapa.setView(window._ultimaPosicaoConhecida, ZOOM_NAVEGACAO, { animate: true });
+            }
+          });
+          return div;
+        }
+      });
+      botaoRecentrar = new ControleRecentrar();
+      botaoRecentrar.addTo(mapa);
+      atualizaVisibilidadeBotaoRecentrar();
+    }
+
+    function atualizaVisibilidadeBotaoRecentrar() {
+      if (!botaoRecentrar || !botaoRecentrar.getContainer()) return;
+      botaoRecentrar.getContainer().style.display = modoNavegacao ? 'none' : 'block';
+    }
+
+    // Qualquer gesto directo do utilizador no mapa desliga o modo de
+    // navegação -- mousedown/touchstart/wheel só disparam com
+    // interação humana real, ao contrário de dragstart/zoomstart do
+    // Leaflet que também disparam com mapa.setView(...,{animate:true})
+    // chamado pelo nosso próprio código (recentragem automática).
+    var mapaEl = document.getElementById('mapa');
+    ['mousedown', 'touchstart', 'wheel'].forEach(function (evento) {
+      mapaEl.addEventListener(evento, function () {
+        if (modoNavegacao) {
+          modoNavegacao = false;
+          atualizaVisibilidadeBotaoRecentrar();
+        }
+      }, { passive: true });
+    });
+
+    // ---------------------------------------------------------------
+    // MODO CONDUÇÃO: mapa roda para manter a direcção do movimento
+    // sempre "para cima" (como Waze/Google Maps em navegação), com
+    // o veículo fixo no centro do ecrã e indicador de velocidade.
+    // O Leaflet não suporta rotação nativa -- roda-se o próprio pane
+    // que contém os tiles e overlays (.leaflet-map-pane) via CSS
+    // transform, e roda-se de volta (rotação inversa) os elementos
+    // de UI que devem continuar sempre direitos.
+    // ---------------------------------------------------------------
+    var modoConducaoAtivo = false;
+    var ultimoRumoConhecido = 0;
+    var ultimaVelocidadeKmh = 0;
+
+    function aplicaRotacaoMapa(rumoGraus) {
+      // Rodar visualmente o mapa (tiles) exigiria reestruturar os
+      // controlos nativos do Leaflet (que ficam dentro do mesmo
+      // elemento e rodariam também, de lado) sem um plugin dedicado
+      // -- não incluído neste projecto por não termos acesso a rede
+      // para o descarregar dentro do WebView. Mantém-se o mapa fixo
+      // com norte para cima; o modo condução usa antes o ícone do
+      // veículo a apontar na direcção real do movimento sobre o
+      // mapa fixo, e o zoom/seguimento automático já implementados.
+    }
+
+    function removeRotacaoMapa() {}
+
+    function atualizaVeiculoFixo(rumoGraus) {
+      var el = document.getElementById('veiculo-fixo');
+      if (!el) return;
+      el.style.transform = 'rotate(' + rumoGraus + 'deg)';
+    }
+
+    function atualizaPainelVelocidade(kmh) {
+      var el = document.getElementById('valor-velocidade');
+      if (el) el.textContent = Math.round(kmh);
+    }
+
+    function alternaModoConducao() {
+      modoConducaoAtivo = !modoConducaoAtivo;
+      var botao = document.getElementById('botao-modo-conducao');
+      var veiculo = document.getElementById('veiculo-fixo');
+      var painelVel = document.getElementById('painel-velocidade');
+      if (modoConducaoAtivo) {
+        botao.classList.add('ativo');
+        veiculo.style.display = 'block';
+        painelVel.style.display = 'flex';
+        modoNavegacao = true;
+        atualizaVisibilidadeBotaoRecentrar();
+        aplicaRotacaoMapa(ultimoRumoConhecido);
+        atualizaVeiculoFixo(ultimoRumoConhecido);
+      } else {
+        botao.classList.remove('ativo');
+        veiculo.style.display = 'none';
+        painelVel.style.display = 'none';
+        removeRotacaoMapa();
+      }
+    }
+
+    document.getElementById('botao-modo-conducao').addEventListener('click', alternaModoConducao);
+
+    // Gestos manuais também desligam o modo condução -- faz sentido
+    // parar de rodar o mapa se o utilizador está a explorá-lo à mão.
+    ['mousedown', 'touchstart', 'wheel'].forEach(function (evento) {
+      mapaEl.addEventListener(evento, function () {
+        if (modoConducaoAtivo) {
+          modoConducaoAtivo = false;
+          document.getElementById('botao-modo-conducao').classList.remove('ativo');
+          document.getElementById('veiculo-fixo').style.display = 'none';
+          document.getElementById('painel-velocidade').style.display = 'none';
+          removeRotacaoMapa();
+        }
+      }, { passive: true });
+    });
+
+    /**
+     * Desenha as barreiras numeradas dos checkpoints de todos os
+     * cenarios de trajeto ATIVOS que tenham checkpoints definidos --
+     * chamado a par de desenhaTrajetos() para sobrepor as barreiras
+     * na navegacao em tempo real. jsonCenarios: lista de
+     * {nome, cor, checkpoints: [{latA,lonA,latB,lonB}], progresso}
+     * -- progresso indica quantos checkpoints ja foram atravessados
+     * na viagem atual (0-based), usado so para colorir a barreira.
+     */
+    function desenhaCheckpointsCenarios(jsonTexto) {
+      camadasCheckpointsAtivos.forEach(function (c) { mapa.removeLayer(c); });
+      camadasCheckpointsAtivos = [];
+
+      var cenarios;
+      try {
+        cenarios = JSON.parse(jsonTexto);
+      } catch (e) {
+        return;
+      }
+
+      cenarios.forEach(function (cenario) {
+        if (!cenario.checkpoints || cenario.checkpoints.length === 0) return;
+        var progresso = cenario.progresso || 0;
+        cenario.checkpoints.forEach(function (cp, i) {
+          var atravessado = i < progresso;
+          var cor = atravessado ? '#3FB950' : (cenario.cor || '#F0A500');
+          var linha = L.polyline([[cp.latA, cp.lonA], [cp.latB, cp.lonB]], {
+            color: cor, weight: 4, opacity: 0.85
+          }).addTo(mapa);
+          camadasCheckpointsAtivos.push(linha);
+
+          var meioLat = (cp.latA + cp.latB) / 2;
+          var meioLon = (cp.lonA + cp.lonB) / 2;
+          var rotulo = L.marker([meioLat, meioLon], {
+            icon: L.divIcon({
+              html: '<div class="rotulo-checkpoint' + (atravessado ? ' atravessado' : '') + '">' + (i + 1) + '</div>',
+              className: '', iconSize: [20, 20], iconAnchor: [10, 10]
+            })
+          }).addTo(mapa);
+          rotulo.bindPopup('<b>' + cenario.nome + '</b><br>Checkpoint ' + (i + 1) + '/' + cenario.checkpoints.length);
+          camadasCheckpointsAtivos.push(rotulo);
+        });
+      });
+    }
+
+    /**
+     * Recebe um JSON com a forma:
+     * [{ "nome": "SBBT-002C", "cor": "#2BA6E0", "pontos": [{"lat":38.7,"lon":-9.1,"timestamp":123}, ...] }, ...]
+     * Chamado pela app Android via evaluateJavascript depois da pagina
+     * ja estar carregada -- nao no HTML inicial, para nao ter de
+     * escapar strings grandes/dinamicas dentro do proprio HTML.
+     */
+    /* Formata um timestamp (ms) como DD/MM/AAAA HH:MM, na hora local
+       do telemovel (Date usa sempre a timezone local por omissao). */
+    function formataTimestamp(ms) {
+      var d = new Date(ms);
+      var pad = function (n) { return n < 10 ? '0' + n : '' + n; };
+      return pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '/' + d.getFullYear() +
+        ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+    }
+
+    /* Link geo: -- esquema nativo do Android para abrir uma
+       localizacao numa app de mapas externa (o utilizador escolhe
+       qual, se tiver mais que uma instalada). O WebView por si so
+       NAO lida com este esquema (nao e http/https) -- a app trata
+       disso em shouldOverrideUrlLoading, ver MapaWebView.kt. */
+    function linkGeo(lat, lon, etiqueta) {
+      return 'geo:0,0?q=' + lat + ',' + lon + '(' + encodeURIComponent(etiqueta) + ')';
+    }
+
+    /* Icone em forma de gota, um por CLIQUE (nao por ponto de
+       beacon) -- visualmente distinto do circulo simples que marca
+       o ultimo ponto conhecido de cada comando. */
+    function iconeClique(cor) {
+      return L.divIcon({
+        className: '',
+        html: '<div style="width:14px;height:14px;border-radius:50% 50% 50% 0;' +
+          'background:' + cor + ';transform:rotate(-45deg);border:2px solid #fff;' +
+          'box-shadow:0 1px 3px rgba(0,0,0,0.4);"></div>',
+        iconSize: [14, 14],
+        iconAnchor: [7, 14]
+      });
+    }
+
+    /* Icone do radar pulsante (anel vermelho, ver @keyframes
+       radar-pulsar no <style>), sobreposto ao ultimo ponto de um
+       comando em movimento recente. Um divIcon maior que o proprio
+       anel (56x56), para o anel ter espaco para expandir sem cortar
+       nas bordas do icone. */
+    function iconeRadar() {
+      return L.divIcon({
+        className: '',
+        html: '<div style="position:relative;width:56px;height:56px;">' +
+          '<div class="radar-anel"></div></div>',
+        iconSize: [56, 56],
+        iconAnchor: [28, 28]
+      });
+    }
+
+    /* Seta de direcao, rotacionada segundo o rumo (graus, 0=norte).
+       CSS rotate() roda a partir do centro do elemento por omissao,
+       coerente com iconAnchor no centro. */
+    function iconeDirecao(cor, rumoGraus) {
+      return L.divIcon({
+        className: '',
+        html: '<div style="width:22px;height:22px;transform:rotate(' + rumoGraus + 'deg);">' +
+          '<svg viewBox="0 0 24 24" width="22" height="22">' +
+          '<path d="M12,2 L19,21 L12,17 L5,21 Z" fill="' + cor + '" stroke="#fff" stroke-width="1"/>' +
+          '</svg></div>',
+        iconSize: [22, 22],
+        iconAnchor: [11, 11]
+      });
+    }
+
+    var toRad = function (g) { return g * Math.PI / 180; };
+    var toDeg = function (r) { return r * 180 / Math.PI; };
+
+    /* Rumo (bearing) do primeiro para o segundo ponto, em graus,
+       0=norte, 90=este, 180=sul, 270=oeste -- formula padrao de
+       navegacao esferica. */
+    function calculaRumo(lat1, lon1, lat2, lon2) {
+      var dLon = toRad(lon2 - lon1);
+      var y = Math.sin(dLon) * Math.cos(toRad(lat2));
+      var x = Math.cos(toRad(lat1)) * Math.sin(toRad(lat2)) -
+        Math.sin(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.cos(dLon);
+      var rumo = toDeg(Math.atan2(y, x));
+      return (rumo + 360) % 360;
+    }
+
+    /* Distancia aproximada entre dois pontos, em metros (Haversine).
+       Precisao suficiente para decidir "moveu-se o suficiente para
+       nao ser so ruido de GPS", nao para navegacao. */
+    function distanciaMetros(lat1, lon1, lat2, lon2) {
+      var R = 6371000;
+      var dLat = toRad(lat2 - lat1);
+      var dLon = toRad(lon2 - lon1);
+      var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    }
+
+    var MOVIMENTO_MIN_METROS = 15;
+    var MOVIMENTO_JANELA_MS = 10 * 60 * 1000; // 10 minutos
+
+    /* "Em movimento" exige as DUAS condicoes: o ultimo ponto tem de
+       ser recente (senao um comando parado ha horas continuaria a
+       mostrar radar so por causa de dois pontos antigos distantes),
+       E a distancia entre os dois ultimos pontos tem de exceder o
+       minimo (para nao reagir a ruido normal de GPS com o comando
+       parado). */
+    function estaEmMovimento(pontos, agora) {
+      if (pontos.length < 2) return false;
+      var ultimo = pontos[pontos.length - 1];
+      var penultimo = pontos[pontos.length - 2];
+
+      if ((agora - ultimo.timestamp) > MOVIMENTO_JANELA_MS) return false;
+
+      var dist = distanciaMetros(penultimo.lat, penultimo.lon, ultimo.lat, ultimo.lon);
+      return dist >= MOVIMENTO_MIN_METROS;
+    }
+
+    var RAIO_PARAGEM_METROS = 50;
+    var TEMPO_MIN_PARAGEM_MS = 20 * 60 * 1000; // 20 minutos
+
+    /**
+     * Filtra os pontos (ja ordenados cronologicamente, mais antigo
+     * primeiro) para so os da "ultima viagem" -- a sequencia mais
+     * recente de pontos entre duas paragens longas (ou desde o
+     * inicio, se so houver uma paragem). Uma "paragem longa" e uma
+     * sequencia de pontos todos dentro de RAIO_PARAGEM_METROS uns dos
+     * outros durante mais de TEMPO_MIN_PARAGEM_MS seguidos. Uma
+     * pausa curta (ex: semaforo) nao conta como fim de viagem; so
+     * uma permanencia longa na mesma zona conta.
+     *
+     * Caso mais comum: o comando chega ao destino e fica la parado
+     * (a ultima paragem detetada vai ate ao fim da lista). Nesse
+     * caso a "ultima viagem" e o troço que LEVOU ate essa paragem,
+     * nao o que vem depois dela (que nao existe).
+     */
+    function filtraUltimaViagem(pontos) {
+      if (pontos.length < 2) return pontos;
+
+      var fronteirasParagem = [];
+      var i = 0;
+      while (i < pontos.length) {
+        var j = i;
+        while (j + 1 < pontos.length) {
+          var d = distanciaMetros(pontos[i].lat, pontos[i].lon, pontos[j + 1].lat, pontos[j + 1].lon);
+          if (d > RAIO_PARAGEM_METROS) break;
+          j++;
+        }
+        var duracaoParagem = pontos[j].timestamp - pontos[i].timestamp;
+        if (duracaoParagem >= TEMPO_MIN_PARAGEM_MS) {
+          fronteirasParagem.push({ inicio: i, fim: j });
+          i = j + 1;
+        } else {
+          i++;
+        }
+      }
+
+      if (fronteirasParagem.length === 0) {
+        // Nunca parou o suficiente -- e tudo uma viagem so.
+        return pontos;
+      }
+
+      var ultimaParagem = fronteirasParagem[fronteirasParagem.length - 1];
+
+      if (ultimaParagem.fim === pontos.length - 1) {
+        // A ultima paragem vai ate ao fim (comando parado agora).
+        // A ultima viagem e o troço desde o fim da paragem anterior
+        // (ou o inicio, se so houver esta) ate ao INICIO desta.
+        var inicioViagem = fronteirasParagem.length >= 2
+          ? fronteirasParagem[fronteirasParagem.length - 2].fim + 1
+          : 0;
+        return pontos.slice(inicioViagem, ultimaParagem.inicio + 1);
+      }
+
+      // A ultima paragem detetada nao vai ate ao fim -- ha
+      // movimento recente a seguir a ela; a ultima viagem e esse
+      // movimento.
+      return pontos.slice(ultimaParagem.fim + 1);
+    }
+
+    var mostrarSoUltimaViagem = false;
+
+    function defineMostrarSoUltimaViagem(valor) {
+      mostrarSoUltimaViagem = valor;
+    }
+
+    function desenhaTrajetos(jsonTexto) {
+      // segunda chamada, num momento ainda mais fiavel (a app so invoca
+      // esta funcao depois de onPageFinished) -- nao faz mal chamar
+      // duas vezes, invalidateSize() e barato quando o tamanho ja
+      // esta correto.
+      mapa.invalidateSize();
+
+      var agora = Date.now();
+      camadasAtuais.forEach(function (camada) { mapa.removeLayer(camada); });
+      camadasAtuais = [];
+
+      var dados;
+      try {
+        dados = JSON.parse(jsonTexto);
+      } catch (e) {
+        return;
+      }
+
+      var todosPontos = [];
+      var posicaoMaisRecenteGlobal = null;
+      var penultimaPosicaoGlobal = null;
+
+      dados.forEach(function (comando) {
+        if (!comando.pontos || comando.pontos.length === 0) return;
+
+        var pontosParaDesenhar = mostrarSoUltimaViagem
+          ? filtraUltimaViagem(comando.pontos)
+          : comando.pontos;
+        if (pontosParaDesenhar.length === 0) return;
+
+        var latLngs = pontosParaDesenhar.map(function (p) { return [p.lat, p.lon]; });
+        todosPontos = todosPontos.concat(latLngs);
+
+        // Último ponto deste comando (pontosParaDesenhar já vem
+        // ordenado cronologicamente) -- candidato a posição mais
+        // recente global, comparado por timestamp mais abaixo.
+        var ultimoDesteComando = pontosParaDesenhar[pontosParaDesenhar.length - 1];
+        if (ultimoDesteComando.timestamp !== undefined &&
+            (posicaoMaisRecenteGlobal === null || ultimoDesteComando.timestamp > posicaoMaisRecenteGlobal.timestamp)) {
+          posicaoMaisRecenteGlobal = ultimoDesteComando;
+          penultimaPosicaoGlobal = pontosParaDesenhar.length >= 2
+            ? pontosParaDesenhar[pontosParaDesenhar.length - 2]
+            : null;
+        }
+
+        var linha = L.polyline(latLngs, { color: comando.cor, weight: 3, opacity: 0.75 }).addTo(mapa);
+        camadasAtuais.push(linha);
+
+        // um marcador proprio por cada clique (nao por ponto de
+        // beacon), com etiqueta de data/hora e link geo: para as
+        // coordenadas
+        pontosParaDesenhar.forEach(function (p) {
+          if (p.origem !== 'CLIQUE') return;
+          var dataHora = formataTimestamp(p.timestamp);
+          var link = linkGeo(p.lat, p.lon, comando.nome);
+          var popupHtml = '<b>' + comando.nome + '</b><br>' + dataHora + '<br>' +
+            '<a href="' + link + '">' + p.lat.toFixed(5) + ', ' + p.lon.toFixed(5) + '</a>';
+          var marcador = L.marker([p.lat, p.lon], { icon: iconeClique(comando.cor) }).addTo(mapa);
+          marcador.bindPopup(popupHtml);
+          camadasAtuais.push(marcador);
+        });
+
+        var ultimo = pontosParaDesenhar[pontosParaDesenhar.length - 1];
+        var marcador = L.circleMarker([ultimo.lat, ultimo.lon], {
+          radius: 8,
+          color: comando.cor,
+          fillColor: comando.cor,
+          fillOpacity: 0.9,
+          weight: 2
+        }).addTo(mapa);
+        marcador.bindPopup(comando.nome);
+        camadasAtuais.push(marcador);
+
+        // radar pulsante + seta de direcao, so quando ha sinal
+        // recente de movimento (ver estaEmMovimento) -- um comando
+        // parado nao mostra nenhum dos dois
+        if (estaEmMovimento(pontosParaDesenhar, agora)) {
+          var penultimo = pontosParaDesenhar[pontosParaDesenhar.length - 2];
+
+          var radar = L.marker([ultimo.lat, ultimo.lon], {
+            icon: iconeRadar(),
+            interactive: false,
+            zIndexOffset: -100 // atras do proprio marcador do ponto
+          }).addTo(mapa);
+          camadasAtuais.push(radar);
+
+          var rumo = calculaRumo(penultimo.lat, penultimo.lon, ultimo.lat, ultimo.lon);
+          var seta = L.marker([ultimo.lat, ultimo.lon], {
+            icon: iconeDirecao(comando.cor, rumo),
+            interactive: false,
+            zIndexOffset: 100 // a frente do marcador e do radar
+          }).addTo(mapa);
+          camadasAtuais.push(seta);
+        }
+      });
+
+      // Modo de navegação: segue a posição mais recente (por
+      // timestamp, entre TODOS os comandos visíveis -- não apenas o
+      // último ponto do último comando iterado) com zoom fixo e
+      // próximo, como um GPS de navegação em tempo real -- em vez de
+      // fitBounds(todosPontos), que reenquadrava a vista para caber
+      // TODO o histórico da viagem, afastando o zoom continuamente
+      // à medida que o percurso crescia.
+      if (todosPontos.length > 0) {
+        criaBotaoRecentrar();
+        if (posicaoMaisRecenteGlobal) {
+          window._ultimaPosicaoConhecida = [posicaoMaisRecenteGlobal.lat, posicaoMaisRecenteGlobal.lon];
+
+          if (penultimaPosicaoGlobal) {
+            var rumo = calculaRumo(
+              penultimaPosicaoGlobal.lat, penultimaPosicaoGlobal.lon,
+              posicaoMaisRecenteGlobal.lat, posicaoMaisRecenteGlobal.lon
+            );
+            var dMetros = distanciaMetros(
+              penultimaPosicaoGlobal.lat, penultimaPosicaoGlobal.lon,
+              posicaoMaisRecenteGlobal.lat, posicaoMaisRecenteGlobal.lon
+            );
+            var dSegundos = (posicaoMaisRecenteGlobal.timestamp - penultimaPosicaoGlobal.timestamp) / 1000;
+            if (dSegundos > 0) {
+              ultimaVelocidadeKmh = (dMetros / dSegundos) * 3.6;
+            }
+            // Só actualizar o rumo se houve deslocação suficiente --
+            // com o veículo parado, pequenos saltos de GPS dariam
+            // rumos aleatórios e o mapa "tremeria" a rodar sem sentido.
+            if (dMetros >= 3) {
+              ultimoRumoConhecido = rumo;
+            } else {
+              ultimaVelocidadeKmh = 0;
+            }
+            atualizaPainelVelocidade(ultimaVelocidadeKmh);
+            atualizaVeiculoFixo(ultimoRumoConhecido);
+            if (modoConducaoAtivo) aplicaRotacaoMapa(ultimoRumoConhecido);
+          }
+
+          if (modoNavegacao) {
+            mapa.setView(window._ultimaPosicaoConhecida, Math.max(mapa.getZoom(), ZOOM_NAVEGACAO), { animate: true });
+          }
+        }
+      }
+    }
+
+    // ---------------------------------------------------------------
+    // SIMULACAO DE CENARIO -- sobreposicao no mesmo mapa (checkpoints)
+    // ---------------------------------------------------------------
+    var simTemplate = [];
+    var simCheckpoints = [];
+    var simIndiceEsperado = 0;
+    var simIndice = 0;
+    var simCamadasCheckpoints = [];
+    var simLinhaTemplate = null;
+    var simLinhaPercorrida = null;
+    var simMarcadorPos = null;
+    var simLimiarPercentagem = 100;
+    var simLimiarJaAtingido = false;
+
+    var ICONE_SIM_POS = L.divIcon({
+      html: '<div style="width:14px;height:14px;border-radius:50%;background:#2BA6E0;border:2px solid white;box-shadow:0 1px 5px rgba(0,0,0,.6)"></div>',
+      className: '', iconSize: [14,14], iconAnchor: [7,7]
+    });
+
+    function ladoSim(p1x,p1y,p2x,p2y,p3x,p3y){
+      return (p2x-p1x)*(p3y-p1y)-(p2y-p1y)*(p3x-p1x);
+    }
+    function segmentosIntersectamSim(pAx,pAy,pBx,pBy,cAx,cAy,cBx,cBy){
+      var d1=ladoSim(cAx,cAy,cBx,cBy,pAx,pAy), d2=ladoSim(cAx,cAy,cBx,cBy,pBx,pBy);
+      var d3=ladoSim(pAx,pAy,pBx,pBy,cAx,cAy), d4=ladoSim(pAx,pAy,pBx,pBy,cBx,cBy);
+      // Colinear em ambos os pontos -- caso ambíguo, não conta.
+      if (d1 === 0 && d2 === 0) return false;
+      // >=/<= para incluir o ponto cair exactamente sobre a barreira
+      // (caso comum: o simulador percorre os próprios pontos do
+      // template usados para gerar cada barreira).
+      return ((d1>=0&&d2<=0)||(d1<=0&&d2>=0)) && ((d3>=0&&d4<=0)||(d3<=0&&d4>=0));
+    }
+
+    function desenhaSimCheckpoints() {
+      simCamadasCheckpoints.forEach(function(c){ mapa.removeLayer(c); });
+      simCamadasCheckpoints = [];
+      simCheckpoints.forEach(function(cp, i){
+        var atravessado = i < simIndiceEsperado;
+        var cor = atravessado ? '#3FB950' : '#F0A500';
+        var linha = L.polyline([[cp.latA,cp.lonA],[cp.latB,cp.lonB]], {color:cor,weight:4,opacity:0.9}).addTo(mapa);
+        simCamadasCheckpoints.push(linha);
+        var meioLat=(cp.latA+cp.latB)/2, meioLon=(cp.lonA+cp.lonB)/2;
+        var rotulo = L.marker([meioLat,meioLon],{icon:L.divIcon({
+          html:'<div class="rotulo-checkpoint'+(atravessado?' atravessado':'')+'">'+(i+1)+'</div>',
+          className:'', iconSize:[20,20], iconAnchor:[10,10]
+        })}).addTo(mapa);
+        simCamadasCheckpoints.push(rotulo);
+      });
+    }
+
+    function iniciaSimulacao(jsonTemplate, jsonCheckpoints, limiar) {
+      simTemplate = JSON.parse(jsonTemplate);
+      simCheckpoints = jsonCheckpoints ? JSON.parse(jsonCheckpoints) : [];
+      simLimiarPercentagem = (typeof limiar === 'number') ? limiar : 100;
+      simLimiarJaAtingido = false;
+      simIndiceEsperado = 0; simIndice = 0;
+      simCamadasCheckpoints.forEach(function(c){ mapa.removeLayer(c); });
+      simCamadasCheckpoints = [];
+      if(simLinhaTemplate){ mapa.removeLayer(simLinhaTemplate); }
+      if(simLinhaPercorrida){ mapa.removeLayer(simLinhaPercorrida); }
+      if(simMarcadorPos){ mapa.removeLayer(simMarcadorPos); }
+      if(simTemplate.length < 2) return;
+      var latLngs = simTemplate.map(function(p){ return [p.lat, p.lon]; });
+      simLinhaTemplate = L.polyline(latLngs,{color:'#1A6BC4',weight:4,opacity:0.4,dashArray:'6,5'}).addTo(mapa);
+      simLinhaPercorrida = L.polyline([],{color:'#3FB950',weight:6,opacity:0.9}).addTo(mapa);
+      simMarcadorPos = L.marker(latLngs[0],{icon:ICONE_SIM_POS}).addTo(mapa);
+      desenhaSimCheckpoints();
+      mapa.fitBounds(latLngs,{padding:[30,30]});
+    }
+
+    function passoSimulacao() {
+      if(simIndice >= simTemplate.length) {
+        var pctFim = simCheckpoints.length>0 ? Math.floor(simIndiceEsperado*100/simCheckpoints.length) : 0;
+        window.location.href='blugateway-sim://concluido?pct='+pctFim+'&atingiu='+(simLimiarJaAtingido?1:0);
+        return;
+      }
+      var pt = simTemplate[simIndice];
+      simMarcadorPos.setLatLng([pt.lat,pt.lon]);
+      var perc = simTemplate.slice(0,simIndice+1).map(function(p){ return [p.lat,p.lon]; });
+      simLinhaPercorrida.setLatLngs(perc);
+
+      if(simIndice > 0 && simIndiceEsperado < simCheckpoints.length){
+        var anterior = simTemplate[simIndice-1];
+        var cp = simCheckpoints[simIndiceEsperado];
+        if(segmentosIntersectamSim(anterior.lat,anterior.lon,pt.lat,pt.lon,cp.latA,cp.lonA,cp.latB,cp.lonB)){
+          simIndiceEsperado++;
+          desenhaSimCheckpoints();
+        }
+      }
+      // Percentagem = fracção de checkpoints atravessados, igual ao
+      // cálculo real (GestorSemelhancaTrajeto.verificaCenariosInterno).
+      var pct = simCheckpoints.length>0 ? Math.floor(simIndiceEsperado*100/simCheckpoints.length) : 0;
+
+      // Dispara ao atingir o limiar configurado no cenário real, não
+      // apenas ao completar 100% dos checkpoints. Reporta uma só vez.
+      var disparouAgora = false;
+      if(!simLimiarJaAtingido && pct >= simLimiarPercentagem){
+        simLimiarJaAtingido = true;
+        disparouAgora = true;
+      }
+
+      simIndice++;
+      // Um único redireccionamento por chamada -- dois window.location.href
+      // na mesma função sobrepunham-se no WebView, perdendo o evento
+      // de limiar atingido (a simulação terminava reportando 0%).
+      window.location.href='blugateway-sim://progresso?v='+pct+'&limiar='+(disparouAgora?1:0);
+    }
+
+    function reiniciaSimulacao() {
+      simIndice=0; simIndiceEsperado=0; simLimiarJaAtingido=false;
+      if(simLinhaPercorrida) simLinhaPercorrida.setLatLngs([]);
+      if(simMarcadorPos && simTemplate.length>0) simMarcadorPos.setLatLng([simTemplate[0].lat,simTemplate[0].lon]);
+      desenhaSimCheckpoints();
+    }
+
+    function limpaSim() {
+      simIndice=0; simIndiceEsperado=0; simLimiarJaAtingido=false;
+      if(simLinhaTemplate){ mapa.removeLayer(simLinhaTemplate); simLinhaTemplate=null; }
+      if(simLinhaPercorrida){ mapa.removeLayer(simLinhaPercorrida); simLinhaPercorrida=null; }
+      if(simMarcadorPos){ mapa.removeLayer(simMarcadorPos); simMarcadorPos=null; }
+      simCamadasCheckpoints.forEach(function(c){ mapa.removeLayer(c); });
+      simCamadasCheckpoints = [];
+    }
+
+  </script>
+</body>
+</html>

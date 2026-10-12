@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>Comment configurer</title>
+<style>
+  :root {
+    --fundo: #0D1117;
+    --cartao: #161B22;
+    --elevado: #1C2530;
+    --linha: #2A3441;
+    --tinta: #E6EDF3;
+    --suave: #8B9AB0;
+    --azul: #2BA6E0;
+    --ok: #3FB950;
+    --aviso: #F0A500;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--fundo);
+    color: var(--tinta);
+    font-family: -apple-system, Roboto, "Segoe UI", sans-serif;
+    padding: 18px 16px 40px;
+    line-height: 1.5;
+  }
+  h1 { font-size: 20px; margin: 4px 0 4px; }
+  .subtitulo { color: var(--suave); font-size: 13px; margin-bottom: 20px; }
+  .indice { background: var(--cartao); border-radius: 12px; padding: 14px 16px; margin-bottom: 22px; }
+  .indice-titulo { font-size: 12px; color: var(--suave); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 8px; }
+  .indice a { display: block; color: var(--azul); text-decoration: none; font-size: 14px; padding: 4px 0; }
+  section { background: var(--cartao); border-radius: 14px; padding: 18px 16px; margin-bottom: 16px; scroll-margin-top: 16px; }
+  .passo-numero { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: var(--azul); color: #fff; font-weight: bold; font-size: 13px; margin-right: 8px; }
+  h2 { font-size: 16px; margin: 0 0 10px; display: flex; align-items: center; }
+  p { font-size: 14px; margin: 8px 0; }
+  ul, ol { font-size: 14px; padding-left: 20px; margin: 8px 0; }
+  li { margin: 4px 0; }
+  .caixa { background: var(--elevado); border-left: 3px solid var(--azul); border-radius: 6px; padding: 10px 12px; font-size: 13px; margin: 10px 0; }
+  .caixa.aviso { border-left-color: var(--aviso); }
+  .caixa.ok { border-left-color: var(--ok); }
+  code { background: var(--elevado); padding: 1px 6px; border-radius: 4px; font-size: 13px; color: var(--azul); }
+  .tabela { width: 100%; border-collapse: collapse; font-size: 13px; margin: 10px 0; }
+  .tabela th, .tabela td { border-bottom: 1px solid var(--linha); padding: 6px 8px; text-align: left; }
+  .tabela th { color: var(--suave); font-weight: normal; }
+  .voltar-topo { display: inline-block; margin-top: 6px; color: var(--suave); font-size: 12px; text-decoration: none; }
+  .rodape { text-align: center; color: var(--suave); font-size: 11px; margin-top: 24px; }
+</style>
+</head>
+<body>
+
+<h1>🚦 Comment configurer</h1>
+<div class="subtitulo">Guide complet — des commandes aux scénarios de trajet</div>
+
+<div class="indice" id="topo">
+  <div class="indice-titulo">Sommaire</div>
+  <a href="#s1">1. Ajouter une balise</a>
+  <a href="#s2">2. Configurer les clics</a>
+  <a href="#s3">3. Activer le mode trajet</a>
+  <a href="#s4">4. Enregistrer un parcours</a>
+  <a href="#s5">5. Créer un scénario</a>
+  <a href="#s6">6. Checkpoints et pourcentage</a>
+  <a href="#s7">7. Restreindre par horaire</a>
+  <a href="#s8">8. La carte en temps réel</a>
+  <a href="#s9">9. Alerter en cas de perte de portée</a>
+  <a href="#s10">10. Astuces et dépannage</a>
+</div>
+
+<section id="s1">
+  <h2><span class="passo-numero">1</span> Ajouter une balise</h2>
+  <p>Sur l'écran principal, appuyez sur <b>Détecter</b> pour rechercher votre Shelly BLU Button à proximité.</p>
+  <ol><li>Dès qu'elle apparaît dans la liste, appuyez dessus pour l'associer.</li><li>Donnez-lui un nom facile à reconnaître (ex : "Clés de la maison", "Sac de l'école").</li><li>Choisissez une couleur pour la repérer rapidement dans la grille de commandes.</li></ol>
+  <div class="caixa">Chaque balise physique n'a besoin d'être associée qu'une seule fois — elle reste ensuite disponible dans la liste des commandes.</div>
+  <a class="voltar-topo" href="#topo">↑ retour au sommaire</a>
+</section>
+
+<section id="s2">
+  <h2><span class="passo-numero">2</span> Configurer les clics</h2>
+  <p>Chaque balise reconnaît <b>1, 2 ou 3 clics</b> — et chacun peut déclencher une action différente.</p>
+  <table class="tabela">
+    <tr><th>Action</th><th>Exemple d'utilisation</th></tr>
+    <tr><td>Lancer une scène Shelly</td><td>Allumer/éteindre les lumières, ouvrir un store</td></tr>
+    <tr><td>Envoyer une notification</td><td>Prévenir quelqu'un de votre arrivée</td></tr>
+    <tr><td>Faire sonner une alarme</td><td>Retrouver un téléphone perdu</td></tr>
+  </table>
+  <p>Ouvrez la fiche de la commande et associez l'action souhaitée à chaque nombre de clics.</p>
+  <a class="voltar-topo" href="#topo">↑ retour au sommaire</a>
+</section>
+
+<section id="s3">
+  <h2><span class="passo-numero">3</span> Activer le mode trajet</h2>
+  <p>Sur la fiche de la commande, activez <b>"Mode balise (enregistre trajet)"</b>. À partir de là, dès que la balise est avec vous, l'application enregistre votre position GPS périodiquement.</p>
+  <ul><li><b>Intervalle (s)</b> — la fréquence d'enregistrement d'un nouveau point GPS. Une valeur basse (ex : 3-5s) donne plus de précision ; une valeur plus élevée économise la batterie.</li><li><b>Inclure la localisation</b> — nécessaire pour que le mode trajet fonctionne ; doit toujours être activé dans ce cas.</li></ul>
+  <div class="caixa aviso">Sans ce mode activé, la balise continue de fonctionner normalement pour les clics/actions, mais n'accumule pas d'historique GPS — elle ne peut donc pas être utilisée pour créer des scénarios de trajet.</div>
+  <a class="voltar-topo" href="#topo">↑ retour au sommaire</a>
+</section>
+
+<section id="s4">
+  <h2><span class="passo-numero">4</span> Enregistrer un parcours</h2>
+  <p>Avec le mode trajet activé, faites le trajet normalement avec la balise sur vous — par exemple, de la maison au travail.</p>
+  <p>L'application enregistre des points GPS en chemin. Cet historique sert de base pour créer un scénario à l'étape suivante — inutile de faire quoi que ce soit de spécial pendant le trajet, gardez simplement la balise près de vous (poche, sac, porte-clés de voiture).</p>
+  <div class="caixa">Plus vous faites le même trajet, plus vous avez de données disponibles pour choisir le voyage qui représente le mieux votre parcours habituel.</div>
+  <a class="voltar-topo" href="#topo">↑ retour au sommaire</a>
+</section>
+
+<section id="s5">
+  <h2><span class="passo-numero">5</span> Créer un scénario</h2>
+  <p>Sur l'écran <b>Scénarios</b>, créez-en un nouveau et choisissez l'un des trajets déjà enregistrés comme modèle.</p>
+  <ol><li>Donnez un nom au scénario (ex : "Arrivée à la maison", "Arrivée au travail").</li><li>Choisissez les actions à déclencher lorsque le scénario est détecté.</li><li>L'application dessine automatiquement les barrières de détection sur le parcours choisi.</li></ol>
+  <a class="voltar-topo" href="#topo">↑ retour au sommaire</a>
+</section>
+
+<section id="s6">
+  <h2><span class="passo-numero">6</span> Checkpoints et pourcentage</h2>
+  <p>Chaque scénario a des <b>checkpoints</b> — des barrières invisibles réparties le long du parcours, que l'application détecte lorsque vous les traversez, dans le bon ordre.</p>
+  <p>Le champ <b>"Pourcentage"</b> définit à quel point du parcours l'action doit se déclencher :</p>
+  <ul><li><code>50%</code> — se déclenche à mi-parcours</li><li><code>80%</code> — se déclenche près de la fin, utile pour préparer quelque chose (ex : allumer le chauffage) avant d'arriver</li><li><code>100%</code> — ne se déclenche qu'une fois tout le parcours terminé</li></ul>
+  <div class="caixa ok">Vous n'avez pas besoin de choisir le nombre de checkpoints — l'application les génère automatiquement avec une précision suffisante pour le pourcentage choisi.</div>
+  <a class="voltar-topo" href="#topo">↑ retour au sommaire</a>
+</section>
+
+<section id="s7">
+  <h2><span class="passo-numero">7</span> Restreindre par horaire</h2>
+  <p>Si vous voulez qu'un scénario ne fonctionne qu'à certains moments, ajoutez une ou plusieurs <b>plages horaires</b>.</p>
+  <ul><li>Définissez une heure de début et de fin (ex : 07h00 à 10h00).</li><li>Choisissez les jours de la semaine concernés (ou laissez vide pour tous les jours).</li><li>Vous pouvez ajouter plusieurs plages au même scénario — par exemple, les matins de semaine <b>et</b> les après-midis de week-end.</li></ul>
+  <p>En dehors des plages configurées, le scénario ne se déclenchera pas, même si le parcours est correctement détecté.</p>
+  <a class="voltar-topo" href="#topo">↑ retour au sommaire</a>
+</section>
+
+<section id="s8">
+  <h2><span class="passo-numero">8</span> La carte en temps réel</h2>
+  <p>La carte de trajet suit automatiquement votre position actuelle, comme un GPS de navigation — inutile de déplacer la carte manuellement.</p>
+  <ul><li>Si vous faites glisser ou zoomez, le suivi automatique se désactive ; appuyez sur le bouton de recentrage pour le réactiver.</li><li>L'icône de la boussole affiche un indicateur de vitesse et de direction.</li><li>Les barrières des scénarios actifs apparaissent dessinées sur la carte, dans la couleur de la balise correspondante.</li></ul>
+  <a class="voltar-topo" href="#topo">↑ retour au sommaire</a>
+</section>
+
+<section id="s9">
+  <h2><span class="passo-numero">9</span> Alerter en cas de perte de portée</h2>
+  <p>Activez cette option sur la fiche de la commande pour être averti si la balise n'est plus à proximité — utile pour ne pas oublier des clés, un sac ou d'autres objets importants.</p>
+  <div class="caixa">Cette option nécessite que le "Mode balise" soit activé pour fonctionner correctement.</div>
+  <a class="voltar-topo" href="#topo">↑ retour au sommaire</a>
+</section>
+
+<section id="s10">
+  <h2><span class="passo-numero">10</span> Astuces et dépannage</h2>
+  <p><b>Le scénario ne s'est pas déclenché à mon arrivée :</b> vérifiez que le trajet effectué est suffisamment proche de celui enregistré, et que le pourcentage configuré n'est pas trop élevé.</p>
+  <p><b>Je reçois des alertes de perte de portée sans raison apparente :</b> cela peut arriver si le téléphone reste longtemps sans traiter de signal (ex : écran verrouillé longtemps) — cela se résout généralement au prochain signal de la balise.</p>
+  <p><b>La batterie de mon téléphone se décharge plus vite :</b> essayez d'augmenter l'"Intervalle (s)" du mode trajet pour enregistrer les points GPS moins souvent.</p>
+  <a class="voltar-topo" href="#topo">↑ retour au sommaire</a>
+</section>
+
+<div class="rodape">Gateway BLU · Guide de configuration</div>
+
+</body>
+</html>

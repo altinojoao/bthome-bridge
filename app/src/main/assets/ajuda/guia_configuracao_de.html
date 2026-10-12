@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>Einrichtung</title>
+<style>
+  :root {
+    --fundo: #0D1117;
+    --cartao: #161B22;
+    --elevado: #1C2530;
+    --linha: #2A3441;
+    --tinta: #E6EDF3;
+    --suave: #8B9AB0;
+    --azul: #2BA6E0;
+    --ok: #3FB950;
+    --aviso: #F0A500;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--fundo);
+    color: var(--tinta);
+    font-family: -apple-system, Roboto, "Segoe UI", sans-serif;
+    padding: 18px 16px 40px;
+    line-height: 1.5;
+  }
+  h1 { font-size: 20px; margin: 4px 0 4px; }
+  .subtitulo { color: var(--suave); font-size: 13px; margin-bottom: 20px; }
+  .indice { background: var(--cartao); border-radius: 12px; padding: 14px 16px; margin-bottom: 22px; }
+  .indice-titulo { font-size: 12px; color: var(--suave); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 8px; }
+  .indice a { display: block; color: var(--azul); text-decoration: none; font-size: 14px; padding: 4px 0; }
+  section { background: var(--cartao); border-radius: 14px; padding: 18px 16px; margin-bottom: 16px; scroll-margin-top: 16px; }
+  .passo-numero { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: var(--azul); color: #fff; font-weight: bold; font-size: 13px; margin-right: 8px; }
+  h2 { font-size: 16px; margin: 0 0 10px; display: flex; align-items: center; }
+  p { font-size: 14px; margin: 8px 0; }
+  ul, ol { font-size: 14px; padding-left: 20px; margin: 8px 0; }
+  li { margin: 4px 0; }
+  .caixa { background: var(--elevado); border-left: 3px solid var(--azul); border-radius: 6px; padding: 10px 12px; font-size: 13px; margin: 10px 0; }
+  .caixa.aviso { border-left-color: var(--aviso); }
+  .caixa.ok { border-left-color: var(--ok); }
+  code { background: var(--elevado); padding: 1px 6px; border-radius: 4px; font-size: 13px; color: var(--azul); }
+  .tabela { width: 100%; border-collapse: collapse; font-size: 13px; margin: 10px 0; }
+  .tabela th, .tabela td { border-bottom: 1px solid var(--linha); padding: 6px 8px; text-align: left; }
+  .tabela th { color: var(--suave); font-weight: normal; }
+  .voltar-topo { display: inline-block; margin-top: 6px; color: var(--suave); font-size: 12px; text-decoration: none; }
+  .rodape { text-align: center; color: var(--suave); font-size: 11px; margin-top: 24px; }
+</style>
+</head>
+<body>
+
+<h1>🚦 Einrichtung</h1>
+<div class="subtitulo">Vollständige Anleitung — von Befehlen bis zu Fahrtszenarien</div>
+
+<div class="indice" id="topo">
+  <div class="indice-titulo">Inhalt</div>
+  <a href="#s1">1. Beacon hinzufügen</a>
+  <a href="#s2">2. Klicks einrichten</a>
+  <a href="#s3">3. Fahrtmodus aktivieren</a>
+  <a href="#s4">4. Route aufzeichnen</a>
+  <a href="#s5">5. Szenario erstellen</a>
+  <a href="#s6">6. Checkpoints und Prozentsatz</a>
+  <a href="#s7">7. Nach Zeit einschränken</a>
+  <a href="#s8">8. Die Echtzeit-Karte</a>
+  <a href="#s9">9. Warnen bei Reichweitenverlust</a>
+  <a href="#s10">10. Tipps und Fehlerbehebung</a>
+</div>
+
+<section id="s1">
+  <h2><span class="passo-numero">1</span> Beacon hinzufügen</h2>
+  <p>Tippe auf dem Hauptbildschirm auf <b>Erkennen</b>, um deinen Shelly BLU Button in der Nähe zu suchen.</p>
+  <ol><li>Sobald er in der Liste erscheint, tippe darauf, um ihn zu koppeln.</li><li>Gib ihm einen leicht erkennbaren Namen (z. B. "Hausschlüssel", "Schulrucksack").</li><li>Wähle ein Farbprofil, um ihn im Befehlsraster schnell zu erkennen.</li></ol>
+  <div class="caixa">Jeder physische Beacon muss nur einmal gekoppelt werden — danach bleibt er in der Befehlsliste verfügbar.</div>
+  <a class="voltar-topo" href="#topo">↑ zurück zum Inhalt</a>
+</section>
+
+<section id="s2">
+  <h2><span class="passo-numero">2</span> Klicks einrichten</h2>
+  <p>Jeder Beacon erkennt <b>1, 2 oder 3 Klicks</b> — und jeder kann eine andere Aktion auslösen.</p>
+  <table class="tabela">
+    <tr><th>Aktion</th><th>Beispielverwendung</th></tr>
+    <tr><td>Shelly-Szene ausführen</td><td>Licht ein-/ausschalten, Rollladen öffnen</td></tr>
+    <tr><td>Benachrichtigung senden</td><td>Jemanden wissen lassen, dass du angekommen bist</td></tr>
+    <tr><td>Telefonalarm auslösen</td><td>Ein verlorenes Telefon finden</td></tr>
+  </table>
+  <p>Öffne die Befehlskarte und weise jeder Klickzahl die gewünschte Aktion zu.</p>
+  <a class="voltar-topo" href="#topo">↑ zurück zum Inhalt</a>
+</section>
+
+<section id="s3">
+  <h2><span class="passo-numero">3</span> Fahrtmodus aktivieren</h2>
+  <p>Aktiviere auf der Befehlskarte <b>"Beacon-Modus (zeichnet Fahrt auf)"</b>. Von nun an zeichnet die App deine GPS-Position regelmäßig auf, wenn der Beacon bei dir ist.</p>
+  <ul><li><b>Intervall (s)</b> — wie oft ein neuer GPS-Punkt gespeichert wird. Ein niedriger Wert (z. B. 3-5s) gibt mehr Genauigkeit; ein höherer Wert spart Akku.</li><li><b>Standort einbeziehen</b> — erforderlich, damit der Fahrtmodus funktioniert; sollte in diesem Fall immer aktiviert sein.</li></ul>
+  <div class="caixa aviso">Ohne diesen Modus funktioniert der Beacon weiterhin normal für Klicks/Aktionen, sammelt aber keinen GPS-Verlauf — er kann daher nicht für Fahrtszenarien verwendet werden.</div>
+  <a class="voltar-topo" href="#topo">↑ zurück zum Inhalt</a>
+</section>
+
+<section id="s4">
+  <h2><span class="passo-numero">4</span> Route aufzeichnen</h2>
+  <p>Mache die Fahrt bei aktiviertem Fahrtmodus wie gewohnt mit dem Beacon dabei — zum Beispiel von zu Hause zur Arbeit.</p>
+  <p>Die App sammelt unterwegs GPS-Punkte. Dieser Verlauf ist das Rohmaterial, das du im nächsten Schritt zum Erstellen eines Szenarios verwendest — du musst während der Fahrt nichts Besonderes tun, halte den Beacon nur in deiner Nähe (Tasche, Rucksack, Autoschlüsselbund).</p>
+  <div class="caixa">Je öfter du dieselbe Route fährst, desto mehr Daten hast du zur Auswahl, um die Fahrt zu wählen, die deine übliche Strecke am besten darstellt.</div>
+  <a class="voltar-topo" href="#topo">↑ zurück zum Inhalt</a>
+</section>
+
+<section id="s5">
+  <h2><span class="passo-numero">5</span> Szenario erstellen</h2>
+  <p>Erstelle im Bildschirm <b>Szenarien</b> ein neues und wähle eine der bereits aufgezeichneten Fahrten als Vorlage.</p>
+  <ol><li>Gib dem Szenario einen Namen (z. B. "Ankunft zu Hause", "Ankunft bei der Arbeit").</li><li>Wähle die Aktionen, die beim Erkennen des Szenarios ausgelöst werden sollen.</li><li>Die App zeichnet automatisch die Erkennungsbarrieren über die gewählte Route.</li></ol>
+  <a class="voltar-topo" href="#topo">↑ zurück zum Inhalt</a>
+</section>
+
+<section id="s6">
+  <h2><span class="passo-numero">6</span> Checkpoints und Prozentsatz</h2>
+  <p>Jedes Szenario hat <b>Checkpoints</b> — unsichtbare Barrieren entlang der Route, die die App erkennt, wenn du sie in der richtigen Reihenfolge überquerst.</p>
+  <p>Das Feld <b>"Prozentsatz"</b> legt fest, wie weit auf der Route die Aktion ausgelöst werden soll:</p>
+  <ul><li><code>50%</code> — löst auf halbem Weg aus</li><li><code>80%</code> — löst kurz vor dem Ende aus, nützlich um vor der Ankunft etwas vorzubereiten (z. B. Heizung einschalten)</li><li><code>100%</code> — löst erst aus, wenn die gesamte Route abgeschlossen ist</li></ul>
+  <div class="caixa ok">Du musst die Anzahl der Checkpoints nicht selbst wählen — die App erzeugt sie automatisch mit ausreichender Genauigkeit für jeden gewählten Prozentsatz.</div>
+  <a class="voltar-topo" href="#topo">↑ zurück zum Inhalt</a>
+</section>
+
+<section id="s7">
+  <h2><span class="passo-numero">7</span> Nach Zeit einschränken</h2>
+  <p>Wenn ein Szenario nur zu bestimmten Zeiten funktionieren soll, füge ein oder mehrere <b>Zeitfenster</b> hinzu.</p>
+  <ul><li>Lege Start- und Endzeit fest (z. B. 07:00 bis 10:00 Uhr).</li><li>Wähle die Wochentage, an denen es gilt (oder lasse es leer für jeden Tag).</li><li>Du kannst mehrere Zeitfenster zum selben Szenario hinzufügen — zum Beispiel werktags morgens <b>und</b> am Wochenende nachmittags.</li></ul>
+  <p>Außerhalb der konfigurierten Zeitfenster löst das Szenario nicht aus, selbst wenn die Route korrekt erkannt wird.</p>
+  <a class="voltar-topo" href="#topo">↑ zurück zum Inhalt</a>
+</section>
+
+<section id="s8">
+  <h2><span class="passo-numero">8</span> Die Echtzeit-Karte</h2>
+  <p>Die Fahrtkarte folgt automatisch deiner aktuellen Position, wie ein Navigationsgerät — du musst die Karte nicht manuell bewegen.</p>
+  <ul><li>Wenn du ziehst oder zoomst, schaltet sich die automatische Verfolgung aus; tippe auf die Zentrieren-Schaltfläche, um sie wieder zu aktivieren.</li><li>Das Kompass-Symbol zeigt einen Geschwindigkeits- und Richtungsindikator.</li><li>Barrieren aktiver Szenarien werden auf der Karte angezeigt, in der Farbe des zugehörigen Beacons.</li></ul>
+  <a class="voltar-topo" href="#topo">↑ zurück zum Inhalt</a>
+</section>
+
+<section id="s9">
+  <h2><span class="passo-numero">9</span> Warnen bei Reichweitenverlust</h2>
+  <p>Aktiviere diese Option auf der Befehlskarte, um gewarnt zu werden, wenn der Beacon nicht mehr in der Nähe ist — nützlich, um Schlüssel, Tasche oder andere wichtige Gegenstände nicht zu vergessen.</p>
+  <div class="caixa">Diese Option benötigt den aktivierten "Beacon-Modus", um korrekt zu funktionieren.</div>
+  <a class="voltar-topo" href="#topo">↑ zurück zum Inhalt</a>
+</section>
+
+<section id="s10">
+  <h2><span class="passo-numero">10</span> Tipps und Fehlerbehebung</h2>
+  <p><b>Das Szenario hat bei meiner Ankunft nicht ausgelöst:</b> prüfe, ob die gefahrene Route der aufgezeichneten ausreichend ähnlich ist und der konfigurierte Prozentsatz nicht zu hoch ist.</p>
+  <p><b>Ich erhalte ohne ersichtlichen Grund Reichweiten-Warnungen:</b> das kann passieren, wenn das Telefon lange kein Signal verarbeitet (z. B. Bildschirm lange gesperrt) — normalerweise löst es sich beim nächsten Beacon-Signal von selbst.</p>
+  <p><b>Der Akku meines Telefons entlädt sich schneller:</b> versuche, das "Intervall (s)" im Fahrtmodus zu erhöhen, um GPS-Punkte seltener aufzuzeichnen.</p>
+  <a class="voltar-topo" href="#topo">↑ zurück zum Inhalt</a>
+</section>
+
+<div class="rodape">Gateway BLU · Einrichtungsanleitung</div>
+
+</body>
+</html>

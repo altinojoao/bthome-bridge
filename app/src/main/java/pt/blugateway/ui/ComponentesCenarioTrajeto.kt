@@ -1,0 +1,612 @@
+package pt.blugateway.ui
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import pt.blugateway.R
+import pt.blugateway.data.Acao
+import pt.blugateway.data.CenarioTrajeto
+import pt.blugateway.data.Comando
+import pt.blugateway.data.JanelaHoraria
+import pt.blugateway.data.PontoTemplate
+import pt.blugateway.data.PontoTrajeto
+import pt.blugateway.ui.theme.LocalCoresGateway
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.UUID
+
+@Composable
+fun LinhaCenarioTrajeto(
+    cenario: CenarioTrajeto,
+    nomeOrigemTemplate: String?,
+    onAlterna: (Boolean) -> Unit,
+    onSimular: () -> Unit,
+    onEditar: () -> Unit,
+    onRemove: () -> Unit
+) {
+    val cores = LocalCoresGateway.current
+    val formato = remember { SimpleDateFormat("dd/MM HH:mm", Locale.US) }
+
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .padding(top = 8.dp)
+            .clip(RoundedCornerShape(9.dp))
+            .background(cores.elevado)
+            .padding(10.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(cenario.nome, color = cores.tinta, fontSize = 12.sp, modifier = Modifier.weight(1f))
+            // Botao simular -- abre DialogoSimulacaoCenario
+            TextButton(onClick = onSimular, modifier = Modifier.padding(end = 2.dp)) {
+                Text("\u25B6 " + stringResource(R.string.sim_botao), color = cores.azul, fontSize = 10.sp)
+            }
+            Box(Modifier.size(width = 38.dp, height = 24.dp), contentAlignment = Alignment.Center) {
+                Switch(checked = cenario.ativo, onCheckedChange = onAlterna, modifier = Modifier.scale(0.7f))
+            }
+            IconButton(onClick = onRemove, modifier = Modifier.size(24.dp)) {
+                Text("\u00d7", color = cores.avisoTinta, fontSize = 14.sp)
+            }
+        }
+        Text(
+            stringResource(R.string.cenario_trajeto_detalhe, cenario.limiarPercentagem, cenario.raioMetros, cenario.template.size),
+            color = cores.suave,
+            fontSize = 10.sp,
+            modifier = Modifier.padding(top = 2.dp)
+        )
+        if (nomeOrigemTemplate != null) {
+            Text(
+                stringResource(R.string.template_importado_de, nomeOrigemTemplate),
+                color = cores.suave,
+                fontSize = 10.sp
+            )
+        }
+        if (cenario.janelasHorarias.isNotEmpty()) {
+            cenario.janelasHorarias.forEach { janela ->
+                val h1 = janela.horaInicioMinutos / 60; val m1 = janela.horaInicioMinutos % 60
+                val h2 = janela.horaFimMinutos / 60; val m2 = janela.horaFimMinutos % 60
+                Text(
+                    "\uD83D\uDD52 %02d:%02d - %02d:%02d".format(h1, m1, h2, m2),
+                    color = cores.suave,
+                    fontSize = 10.sp
+                )
+            }
+        }
+        cenario.ultimoDisparoEm?.let { ts ->
+            Text(
+                stringResource(R.string.ultimo_disparo, formato.format(Date(ts))),
+                color = cores.suave,
+                fontSize = 10.sp
+            )
+        }
+        TextButton(onClick = onEditar, modifier = Modifier.padding(top = 2.dp)) {
+            Text(stringResource(R.string.editar_cenario), color = cores.azul, fontSize = 10.5.sp)
+        }
+    }
+}
+
+/**
+ * Formulario partilhado por criacao e edicao. Ao contrario da
+ * versao anterior, o comando VIGIADO nao vem fixo de fora -- e'
+ * escolhido aqui dentro, tal como o comando de ORIGEM DO TEMPLATE
+ * (que pode ser o mesmo comando vigiado, ou qualquer outro com
+ * historico). O fluxo agora e': primeiro ve-se visualmente TODAS as
+ * viagens gravadas (de todos os comandos) sobrepostas num mapa,
+ * escolhe-se a viagem certa tocando na linha, e so DEPOIS se
+ * escolhe qual comando vai ser vigiado por este cenario.
+ */
+@Composable
+fun CriadorOuEditorCenario(
+    comandos: List<Comando>,
+    cenarioExistente: CenarioTrajeto?,
+    comandoVigiadoInicial: Comando?,
+    onGrava: (CenarioTrajeto) -> Unit,
+    onCancela: () -> Unit
+) {
+    val cores = LocalCoresGateway.current
+
+    // Pausa a gravacao de trajeto em fundo (beacon e clique)
+    // enquanto este formulario estiver aberto -- retomada
+    // automaticamente ao fechar (onDispose corre sempre, mesmo se o
+    // ecra for fechado de forma inesperada). Evita que pontos novos
+    // gravados durante a escolha do template se misturem com o
+    // historico que o utilizador esta a rever nesse momento.
+    DisposableEffect(Unit) {
+        pt.blugateway.ble.GestorTrajeto.pausaGravacao()
+        onDispose {
+            pt.blugateway.ble.GestorTrajeto.retomaGravacao()
+        }
+    }
+
+    var templateOriginalMantido by remember { mutableStateOf(cenarioExistente != null) }
+    // template -- lista de pontos
+    // lat/lon pura, sem PontoTrajeto (nao vem de nenhum comando).
+    // Inicializado com o template ja gravado quando se esta a EDITAR
+    // um cenario, para o mapa mostrar o que estava definido em vez
+    // de abrir vazio.
+    // templateExistenteParaMapa: só para mostrar no mapa ao abrir para editar.
+    // NÃO é o template que será guardado -- esse é templateNovo.
+    // Separar os dois evita guardar o template antigo quando o utilizador
+    // escolhe uma nova rota (bug: templateDesenhado era inicializado com
+    // o template existente, e se onRotaEscolhida não actualizasse
+    // correctamente, guardava o antigo).
+    val templateExistenteParaMapa = remember { cenarioExistente?.template?.toList() ?: emptyList() }
+    // templateNovo: null até o utilizador escolher uma rota nova.
+    // Só fica preenchido quando onRotaEscolhida é chamado.
+    var templateNovo by remember { mutableStateOf<List<PontoTemplate>?>(null) }
+    // pontos onde o utilizador tocou ao definir a rota -- distintos
+    // dos extremos da geometria OSRM (que podem estar na estrada mais
+    // proxima, nao no ponto exato do toque). Inicializados a partir
+    // do cenario existente ao editar.
+    var origemRotaExata by remember {
+        mutableStateOf(
+            if (cenarioExistente?.origemExataLat != null && cenarioExistente.origemExataLon != null)
+                PontoTemplate(cenarioExistente.origemExataLat!!, cenarioExistente.origemExataLon!!)
+            else null
+        )
+    }
+    var destinoRotaExato by remember {
+        mutableStateOf(
+            if (cenarioExistente?.destinoExatoLat != null && cenarioExistente.destinoExatoLon != null)
+                PontoTemplate(cenarioExistente.destinoExatoLat!!, cenarioExistente.destinoExatoLon!!)
+            else null
+        )
+    }
+    var waypointsRota by remember {
+        mutableStateOf(
+            if (cenarioExistente != null &&
+                cenarioExistente.waypointsLat.size == cenarioExistente.waypointsLon.size)
+                cenarioExistente.waypointsLat.zip(cenarioExistente.waypointsLon)
+                    .map { (lat, lon) -> PontoTemplate(lat, lon) }
+            else emptyList()
+        )
+    }
+
+    // Comando VIGIADO -- por omissao o da edicao existente, ou o
+    // indicado ao abrir o formulario (ex: a partir do card de um
+    // comando especifico), ou nenhum (obriga a escolher).
+    var comandoVigiadoEscolhido by remember {
+        mutableStateOf(
+            comandoVigiadoInicial
+                ?: comandos.firstOrNull { it.mac == cenarioExistente?.macComando }
+        )
+    }
+
+    var nome by remember { mutableStateOf(cenarioExistente?.nome ?: "") }
+    var limiarTexto by remember { mutableStateOf((cenarioExistente?.limiarPercentagem ?: 80).toString()) }
+
+    // Checkpoints do cenário -- usados só para mostrar ao utilizador a
+    // que barreira concreta corresponde a percentagem escrita (feedback
+    // visual, não altera a lógica de disparo real). Reutiliza os
+    // checkpoints já gerados se existirem; senão gera-os a partir do
+    // template actual (novo ou existente), com a mesma função usada em
+    // produção -- garante que o número mostrado aqui é sempre o mesmo
+    // que o algoritmo real vai usar.
+    val templateParaCheckpoints = templateNovo ?: cenarioExistente?.template
+    val checkpointsPreview = remember(templateParaCheckpoints, cenarioExistente?.checkpoints) {
+        if (templateNovo == null && !cenarioExistente?.checkpoints.isNullOrEmpty()) {
+            cenarioExistente!!.checkpoints
+        } else if (templateParaCheckpoints != null && templateParaCheckpoints.size >= 2) {
+            pt.blugateway.ble.GestorSemelhancaTrajeto.geraCheckpoints(templateParaCheckpoints)
+        } else {
+            emptyList()
+        }
+    }
+    var raioTexto by remember { mutableStateOf((cenarioExistente?.raioMetros ?: 40).toString()) }
+    var raioGeofenceTexto by remember { mutableStateOf((cenarioExistente?.raioGeofenceMetros ?: 150).toString()) }
+    var minutosParaNovaViagemTexto by remember { mutableStateOf((cenarioExistente?.minutosParaNovaViagem ?: 15).toString()) }
+    var acoes by remember { mutableStateOf(cenarioExistente?.acoes?.toList() ?: listOf(Acao())) }
+    var janelasHorarias by remember {
+        mutableStateOf(cenarioExistente?.janelasHorarias ?: emptyList())
+    }
+    // MACs adicionais selecionados (checkboxes) -- qualquer beacon
+    // aqui tambem contribui com pontos GPS para o historio do cenario
+    var macsAdicionais by remember {
+        mutableStateOf(cenarioExistente?.macsAdicionais?.toSet() ?: emptySet<String>())
+    }
+
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+        MapaRotaTrajeto(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(300.dp)
+                .clip(RoundedCornerShape(9.dp)),
+            templateExistente = templateExistenteParaMapa,
+            origemExistente = origemRotaExata,
+            destinoExistente = destinoRotaExato,
+            waypointsExistentes = waypointsRota,
+            onRotaEscolhida = { rota ->
+                templateNovo = rota.pontos
+                origemRotaExata = rota.origemExata
+                destinoRotaExato = rota.destinoExato
+                waypointsRota = rota.waypointsIntermédios
+                templateOriginalMantido = false
+                android.util.Log.d("BluGateway", "[D-editar] onRotaEscolhida: ${rota.pontos.size}pts waypoints=${rota.waypointsIntermédios.size}")
+            }
+        )
+
+        Text(
+            stringResource(R.string.escolher_comando_vigiado),
+            color = cores.tinta,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.padding(top = 14.dp)
+        )
+        comandos.forEach { comando ->
+            Row(
+                Modifier.fillMaxWidth().padding(top = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                RadioButton(
+                    selected = comandoVigiadoEscolhido?.mac == comando.mac,
+                    onClick = {
+                        // ao mudar o principal, remove-o dos adicionais
+                        // (um beacon nao pode ser principal e adicional)
+                        macsAdicionais = macsAdicionais - comando.mac
+                        comandoVigiadoEscolhido = comando
+                    }
+                )
+                Text(comando.nome, color = cores.suave, fontSize = 11.5.sp)
+            }
+        }
+
+        // Beacons adicionais -- todos os beacons exceto o principal
+        // podem ser adicionados como fontes extra de pontos GPS
+        val beaconsDisponiveis = comandos.filter { it.mac != comandoVigiadoEscolhido?.mac }
+        if (beaconsDisponiveis.isNotEmpty()) {
+            Text(
+                stringResource(R.string.beacons_adicionais),
+                color = cores.tinta,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.padding(top = 12.dp)
+            )
+            Text(
+                stringResource(R.string.beacons_adicionais_dica),
+                color = cores.suave,
+                fontSize = 10.sp,
+                modifier = Modifier.padding(top = 2.dp, bottom = 4.dp)
+            )
+            beaconsDisponiveis.forEach { beacon ->
+                val selecionado = beacon.mac in macsAdicionais
+                Row(
+                    Modifier.fillMaxWidth().padding(top = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Checkbox(
+                        checked = selecionado,
+                        onCheckedChange = { ativo ->
+                            macsAdicionais = if (ativo) macsAdicionais + beacon.mac
+                            else macsAdicionais - beacon.mac
+                        }
+                    )
+                    Text(beacon.nome, color = cores.suave, fontSize = 11.5.sp)
+                }
+            }
+        }
+
+        Box(Modifier.padding(top = 10.dp)) {
+            CampoTexto(
+                rotulo = stringResource(R.string.nome_cenario),
+                valor = nome,
+                placeholder = stringResource(R.string.nome_cenario_exemplo),
+                onValor = { nome = it }
+            )
+        }
+
+        Row(Modifier.fillMaxWidth().padding(top = 6.dp)) {
+            Box(Modifier.weight(1f)) {
+                CampoTexto(
+                    rotulo = stringResource(R.string.limiar_semelhanca),
+                    valor = limiarTexto,
+                    placeholder = "80",
+                    onValor = { limiarTexto = it }
+                )
+            }
+            Spacer(Modifier.width(6.dp))
+            Box(Modifier.weight(1f)) {
+                CampoTexto(
+                    rotulo = stringResource(R.string.raio_correspondencia),
+                    valor = raioTexto,
+                    placeholder = "40",
+                    onValor = { raioTexto = it }
+                )
+            }
+        }
+        if (checkpointsPreview.isNotEmpty()) {
+            val limiarNum = limiarTexto.toIntOrNull()?.coerceIn(1, 100) ?: 80
+            // Mesmo cálculo usado em produção (GestorSemelhancaTrajeto):
+            // o cenário dispara ao primeiro checkpoint cuja fracção
+            // acumulada seja >= ao limiar -- por isso encontra-se aqui
+            // o primeiro índice (1-based) que satisfaz essa condição.
+            val totalCheckpoints = checkpointsPreview.size
+            val checkpointDisparo = (1..totalCheckpoints).firstOrNull { indice ->
+                (indice * 100 / totalCheckpoints) >= limiarNum
+            } ?: totalCheckpoints
+            Text(
+                stringResource(R.string.limiar_corresponde_checkpoint, checkpointDisparo, totalCheckpoints),
+                color = cores.azul,
+                fontSize = 10.5.sp,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+        }
+
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Box(Modifier.weight(1f)) {
+                CampoTexto(
+                    rotulo = stringResource(R.string.raio_geofence),
+                    valor = raioGeofenceTexto,
+                    placeholder = "150",
+                    onValor = { raioGeofenceTexto = it }
+                )
+            }
+            Box(Modifier.weight(1f)) {
+                CampoTexto(
+                    rotulo = stringResource(R.string.minutos_nova_viagem),
+                    valor = minutosParaNovaViagemTexto,
+                    placeholder = "15",
+                    onValor = { minutosParaNovaViagemTexto = it }
+                )
+            }
+        }
+
+        Text(
+            stringResource(R.string.restringir_horario),
+            color = cores.tinta,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.padding(top = 12.dp)
+        )
+        Text(
+            stringResource(R.string.restringir_horario_ajuda),
+            color = cores.suave,
+            fontSize = 10.sp,
+            modifier = Modifier.padding(top = 2.dp, bottom = 4.dp)
+        )
+        janelasHorarias.forEachIndexed { indice, janela ->
+            LinhaJanelaHoraria(
+                janela = janela,
+                onAtualiza = { transforma ->
+                    janelasHorarias = janelasHorarias.toMutableList().apply { this[indice] = transforma(janela) }
+                },
+                onRemove = { janelasHorarias = janelasHorarias.toMutableList().apply { removeAt(indice) } }
+            )
+        }
+        TextButton(
+            onClick = { janelasHorarias = janelasHorarias + JanelaHoraria() },
+            modifier = Modifier.padding(top = 4.dp)
+        ) {
+            Text("+ " + stringResource(R.string.adicionar_janela_horaria), color = cores.azul, fontSize = 11.sp)
+        }
+
+        Text(
+            stringResource(R.string.acoes_do_cenario),
+            color = cores.tinta,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.padding(top = 12.dp)
+        )
+        acoes.forEachIndexed { indice, acao ->
+            LinhaAcao(
+                a = acao,
+                onRemove = { acoes = acoes.toMutableList().apply { removeAt(indice) } },
+                onAtualiza = { transforma ->
+                    acoes = acoes.toMutableList().apply { this[indice] = transforma(acao) }
+                }
+            )
+        }
+        TextButton(onClick = { acoes = acoes + Acao() }, modifier = Modifier.padding(top = 4.dp)) {
+            Text("+ " + stringResource(R.string.adicionar_acao), color = cores.azul, fontSize = 11.sp)
+        }
+
+        Row(Modifier.fillMaxWidth().padding(top = 16.dp)) {
+            TextButton(onClick = onCancela) {
+                Text(stringResource(R.string.cancelar), color = cores.suave, fontSize = 12.sp)
+            }
+            Spacer(Modifier.weight(1f))
+            val comandoVigiadoFinal = comandoVigiadoEscolhido
+            // ha template pronto se: o original foi mantido, ou (no
+            // modo viagem gravada) uma viagem foi escolhida, ou (nos
+            // modos desenhar/rota) ha pelo menos 2 pontos capturados
+            // -- um trajeto de 1 ponto nao tem forma nenhuma para
+            // comparar semelhanca.
+            val temTemplatePronto = templateNovo != null ||
+                (cenarioExistente != null && cenarioExistente.template.size >= 2)
+            val podeGravar = comandoVigiadoFinal != null && nome.isNotBlank() && temTemplatePronto
+            TextButton(
+                enabled = podeGravar,
+                onClick = {
+                    // templateNovo tem sempre prioridade quando existe
+                    // (utilizador escolheu rota nova). Só usa o template
+                    // existente se o utilizador não escolheu nada novo.
+                    val template = templateNovo ?: cenarioExistente?.template ?: return@TextButton
+                    android.util.Log.d("BluGateway", "[D-editar] GUARDAR: templateOriginalMantido=$templateOriginalMantido templateNovo=${templateNovo?.size}pts -> template_final=${template.size}pts")
+                    val limiar = limiarTexto.toIntOrNull()?.coerceIn(1, 100) ?: 80
+                    val raio = raioTexto.toIntOrNull()?.coerceAtLeast(1) ?: 40
+                    val raioGeofence = raioGeofenceTexto.toIntOrNull()?.coerceAtLeast(50) ?: 150
+                    val minutosViagem = minutosParaNovaViagemTexto.toIntOrNull()?.coerceIn(5, 120) ?: 15
+                    val origemParaGuardar: String? = null
+                    onGrava(
+                        CenarioTrajeto(
+                            id = cenarioExistente?.id ?: UUID.randomUUID().toString(),
+                            nome = nome,
+                            macComando = comandoVigiadoFinal!!.mac,
+                            macsAdicionais = macsAdicionais.filter { it != comandoVigiadoFinal.mac },
+                            template = template,
+                            macOrigemTemplate = origemParaGuardar,
+                            limiarPercentagem = limiar,
+                            raioMetros = raio,
+                            raioGeofenceMetros = raioGeofence,
+                            minutosParaNovaViagem = minutosViagem,
+                            ativo = cenarioExistente?.ativo ?: true,
+                            acoes = acoes.toMutableList(),
+                            modoTemplate = "rota",
+                            origemExataLat = origemRotaExata?.lat ?: cenarioExistente?.origemExataLat,
+                            origemExataLon = origemRotaExata?.lon ?: cenarioExistente?.origemExataLon,
+                            destinoExatoLat = destinoRotaExato?.lat ?: cenarioExistente?.destinoExatoLat,
+                            destinoExatoLon = destinoRotaExato?.lon ?: cenarioExistente?.destinoExatoLon,
+                            waypointsLat = waypointsRota.map { it.lat },
+                            waypointsLon = waypointsRota.map { it.lon },
+                            ultimoDisparoEm = cenarioExistente?.ultimoDisparoEm,
+                            janelasHorarias = janelasHorarias
+                        )
+                    )
+                }
+            ) {
+                Text(
+                    if (cenarioExistente != null) stringResource(R.string.guardar_cenario) else stringResource(R.string.criar_cenario),
+                    color = cores.azul,
+                    fontSize = 12.sp
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Uma linha editável para uma janela horária: início/fim + dias da
+ * semana + botão de remover. Várias linhas destas compõem a lista
+ * de janelas independentes de um cenário.
+ */
+@Composable
+private fun LinhaJanelaHoraria(
+    janela: JanelaHoraria,
+    onAtualiza: ((JanelaHoraria) -> JanelaHoraria) -> Unit,
+    onRemove: () -> Unit
+) {
+    val cores = LocalCoresGateway.current
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .padding(top = 6.dp)
+            .clip(RoundedCornerShape(9.dp))
+            .background(cores.elevado)
+            .padding(10.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.weight(1f)) {
+                SeletorHora(
+                    rotulo = stringResource(R.string.hora_inicio),
+                    minutos = janela.horaInicioMinutos,
+                    onMinutos = { m -> onAtualiza { it.copy(horaInicioMinutos = m) } }
+                )
+            }
+            Box(Modifier.weight(1f).padding(start = 6.dp)) {
+                SeletorHora(
+                    rotulo = stringResource(R.string.hora_fim),
+                    minutos = janela.horaFimMinutos,
+                    onMinutos = { m -> onAtualiza { it.copy(horaFimMinutos = m) } }
+                )
+            }
+            IconButton(onClick = onRemove, modifier = Modifier.size(24.dp)) {
+                Text("\u00d7", color = cores.avisoTinta, fontSize = 14.sp)
+            }
+        }
+        Text(
+            stringResource(R.string.dias_semana),
+            color = cores.suave,
+            fontSize = 10.sp,
+            modifier = Modifier.padding(top = 6.dp, bottom = 4.dp)
+        )
+        SeletorDiasSemana(
+            selecionados = janela.diasSemanaAtivos.toSet(),
+            onMuda = { dia, activo ->
+                onAtualiza {
+                    it.copy(diasSemanaAtivos = if (activo) it.diasSemanaAtivos + dia else it.diasSemanaAtivos - dia)
+                }
+            }
+        )
+    }
+}
+
+/**
+ * Seletor de hora simples: dois campos numéricos (hora, minuto)
+ * editáveis, guardados internamente como minutos desde a meia-noite.
+ */
+@Composable
+private fun SeletorHora(rotulo: String, minutos: Int, onMinutos: (Int) -> Unit) {
+    val cores = LocalCoresGateway.current
+    var horaTexto by remember(minutos) { mutableStateOf((minutos / 60).toString().padStart(2, '0')) }
+    var minTexto by remember(minutos) { mutableStateOf((minutos % 60).toString().padStart(2, '0')) }
+    Column {
+        Text(rotulo, color = cores.suave, fontSize = 10.sp)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.width(64.dp)) {
+                CampoTexto(
+                    rotulo = "",
+                    valor = horaTexto,
+                    placeholder = "07",
+                    onValor = { v ->
+                        horaTexto = v
+                        val h = v.toIntOrNull()?.coerceIn(0, 23) ?: 0
+                        val m = minTexto.toIntOrNull()?.coerceIn(0, 59) ?: 0
+                        onMinutos(h * 60 + m)
+                    }
+                )
+            }
+            Text(":", color = cores.suave, fontSize = 14.sp, modifier = Modifier.padding(horizontal = 4.dp))
+            Box(Modifier.width(64.dp)) {
+                CampoTexto(
+                    rotulo = "",
+                    valor = minTexto,
+                    placeholder = "00",
+                    onValor = { v ->
+                        minTexto = v
+                        val h = horaTexto.toIntOrNull()?.coerceIn(0, 23) ?: 0
+                        val m = v.toIntOrNull()?.coerceIn(0, 59) ?: 0
+                        onMinutos(h * 60 + m)
+                    }
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Seletor de dias da semana: 7 checkboxes numa linha, usando a
+ * convenção Calendar.DAY_OF_WEEK do Android (1=Domingo .. 7=Sábado).
+ * Nenhum selecionado = todos os dias (sem restrição de dia).
+ */
+@Composable
+private fun SeletorDiasSemana(selecionados: Set<Int>, onMuda: (Int, Boolean) -> Unit) {
+    val cores = LocalCoresGateway.current
+    val dias = listOf(1 to "D", 2 to "S", 3 to "T", 4 to "Q", 5 to "Q", 6 to "S", 7 to "S")
+    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        dias.forEach { (numero, letra) ->
+            val ativo = numero in selecionados
+            Box(
+                Modifier
+                    .size(32.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(if (ativo) cores.azul else cores.cartao)
+                    .then(clickableSemSplash { onMuda(numero, !ativo) }),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(letra, color = if (ativo) cores.fundo else cores.suave, fontSize = 12.sp)
+            }
+        }
+    }
+}

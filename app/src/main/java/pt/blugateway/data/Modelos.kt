@@ -1,0 +1,708 @@
+package pt.blugateway.data
+
+import org.json.JSONArray
+import org.json.JSONObject
+
+/**
+ * Tipo de ação disparada por um clique.
+ * CENARIO -> cenário Shelly Cloud (GET manual_run)
+ * URL     -> endereço livre, GET ou POST, com marcadores
+ * NTFY    -> tópico ntfy.sh, GET ou POST, com mensagem opcional e marcadores
+ */
+enum class TipoAcao(val codigo: Int) {
+    CENARIO(0), URL(1), NTFY(2), ENCONTRAR_TELEMOVEL(3);
+
+    companion object {
+        fun deCodigo(c: Int): TipoAcao = entries.firstOrNull { it.codigo == c } ?: CENARIO
+    }
+}
+
+enum class Metodo { GET, POST }
+
+data class Acao(
+    var tipo: TipoAcao = TipoAcao.CENARIO,
+    var valor: String = "",
+    var metodo: Metodo = Metodo.GET,
+    var mensagem: String = ""
+) {
+    fun paraJson(): JSONObject = JSONObject().apply {
+        put("tipo", tipo.codigo)
+        put("valor", valor)
+        put("metodo", metodo.name)
+        put("mensagem", mensagem)
+    }
+
+    companion object {
+        fun deJson(o: JSONObject): Acao = Acao(
+            tipo = TipoAcao.deCodigo(o.optInt("tipo", 0)),
+            valor = o.optString("valor", ""),
+            metodo = if (o.optString("metodo", "GET") == "POST") Metodo.POST else Metodo.GET,
+            mensagem = o.optString("mensagem", "")
+        )
+    }
+}
+
+/**
+ * Os 7 tipos de clique oficiais BTHome v2 (objeto 0x3A):
+ * 1 press, 2 double_press, 3 triple_press, 4 long_press,
+ * 5 long_double_press, 6 long_triple_press, 128 (0x80) hold_press.
+ * O índice na lista `eventos` de um Perfil corresponde à posição aqui.
+ */
+enum class TipoClique(val codigoBTHome: Int) {
+    SIMPLES(1), DUPLO(2), TRIPLO(3), LONGO(4),
+    LONGO_DUPLO(5), LONGO_TRIPLO(6), MANTER_PREMIDO(128);
+
+    companion object {
+        fun indiceDeCodigo(codigo: Int): Int = entries.indexOfFirst { it.codigoBTHome == codigo }
+    }
+}
+
+data class Combinacao(
+    var id: String,
+    var nome: String,
+    // sequencia de indices de TipoClique (0..6), na ordem em que devem ocorrer
+    var sequencia: MutableList<Int> = mutableListOf(),
+    var acoes: MutableList<Acao> = mutableListOf()
+) {
+    fun paraJson(): JSONObject = JSONObject().apply {
+        put("id", id)
+        put("nome", nome)
+        put("sequencia", JSONArray().apply { sequencia.forEach { put(it) } })
+        put("acoes", JSONArray().apply { acoes.forEach { put(it.paraJson()) } })
+    }
+
+    companion object {
+        fun deJson(o: JSONObject): Combinacao {
+            val seqJson = o.optJSONArray("sequencia")
+            val seq = mutableListOf<Int>()
+            if (seqJson != null) {
+                for (k in 0 until seqJson.length()) seq.add(seqJson.optInt(k))
+            }
+            val acoesJson = o.optJSONArray("acoes")
+            val acoes = mutableListOf<Acao>()
+            if (acoesJson != null) {
+                for (k in 0 until acoesJson.length()) {
+                    val itemJson = acoesJson.getJSONObject(k)
+                    if (itemJson != null) acoes.add(Acao.deJson(itemJson))
+                }
+            }
+            return Combinacao(
+                id = o.optString("id"),
+                nome = o.optString("nome"),
+                sequencia = seq,
+                acoes = acoes
+            )
+        }
+
+        fun nova(nome: String): Combinacao = Combinacao(id = "c" + System.currentTimeMillis(), nome = nome)
+    }
+}
+
+data class Perfil(
+    var id: String,
+    var nome: String,
+    // uma lista de acoes por cada um dos 7 tipos de clique, na ordem de TipoClique
+    var eventos: MutableList<MutableList<Acao>> = MutableList(7) { mutableListOf() },
+    /* Modo combinacao: quando ativo, os 7 eventos acima deixam de
+       disparar individualmente. Os cliques ficam a acumular numa
+       sequencia (por comando) ate a janela expirar ou corresponder
+       a uma das combinacoes definidas pelo utilizador. */
+    var modoCombinacao: Boolean = false,
+    var janelaCombinacaoMs: Long = 3000L,
+    var combinacoes: MutableList<Combinacao> = mutableListOf()
+) {
+    fun paraJson(): JSONObject = JSONObject().apply {
+        put("id", id)
+        put("nome", nome)
+        put("eventos", JSONArray().apply {
+            eventos.forEach { lista ->
+                put(JSONArray().apply { lista.forEach { put(it.paraJson()) } })
+            }
+        })
+        put("modoCombinacao", modoCombinacao)
+        put("janelaCombinacaoMs", janelaCombinacaoMs)
+        put("combinacoes", JSONArray().apply { combinacoes.forEach { put(it.paraJson()) } })
+    }
+
+    companion object {
+        fun deJson(o: JSONObject): Perfil {
+            val eventosJson = o.optJSONArray("eventos")
+            val eventos = MutableList(7) { i ->
+                val lista = mutableListOf<Acao>()
+                val arr = eventosJson?.optJSONArray(i)
+                if (arr != null) {
+                    for (k in 0 until arr.length()) {
+                        val itemJson = arr.getJSONObject(k)
+                        if (itemJson != null) lista.add(Acao.deJson(itemJson))
+                    }
+                }
+                lista
+            }
+
+            val combinacoesJson = o.optJSONArray("combinacoes")
+            val combinacoes = mutableListOf<Combinacao>()
+            if (combinacoesJson != null) {
+                for (k in 0 until combinacoesJson.length()) {
+                    val itemJson = combinacoesJson.getJSONObject(k)
+                    if (itemJson != null) combinacoes.add(Combinacao.deJson(itemJson))
+                }
+            }
+
+            return Perfil(
+                id = o.optString("id"),
+                nome = o.optString("nome"),
+                eventos = eventos,
+                modoCombinacao = o.optBoolean("modoCombinacao", false),
+                janelaCombinacaoMs = if (o.has("janelaCombinacaoMs")) o.optLong("janelaCombinacaoMs") else 3000L,
+                combinacoes = combinacoes
+            )
+        }
+
+        fun novo(nome: String): Perfil = Perfil(
+            id = "p" + System.currentTimeMillis(),
+            nome = nome
+        )
+    }
+}
+
+data class PeriodoAgenda(var inicio: String, var fim: String) {
+    fun paraJson(): JSONObject = JSONObject().apply {
+        put("inicio", inicio)
+        put("fim", fim)
+    }
+
+    companion object {
+        fun deJson(o: JSONObject): PeriodoAgenda = PeriodoAgenda(
+            inicio = o.optString("inicio"),
+            fim = o.optString("fim")
+        )
+    }
+}
+
+data class Comando(
+    var mac: String,
+    var nome: String,
+    var perfilId: String,
+    var bateria: Int? = null,
+    var rssi: Int? = null,
+    // preenchidos quando uma combinacao dispara neste comando, para
+    // o cartao mostrar destaque temporario (ver Repositorio.TEMPO_DESTAQUE_COMBINACAO_MS)
+    var ultimaCombinacao: String? = null,
+    var ultimaCombinacaoEm: Long? = null,
+    // preenchidos a CADA clique (qualquer tipo, com ou sem acao
+    // configurada no perfil) -- usado pelo icone de pulsos na
+    // grelha visual (ver CartaoGrelhaComandos/GestorSons.PADRAO_POR_INDICE,
+    // reaproveitado para desenhar o mesmo numero/duracao de pulsos
+    // que o som toca). ultimoCliqueDisparouAcao distingue a cor:
+    // verde se disparou uma acao real, azul se foi um clique "vazio"
+    // (evento sem nenhuma acao configurada nesse perfil).
+    var ultimoCliqueTipo: Int? = null,
+    var ultimoCliqueEm: Long? = null,
+    var ultimoCliqueDisparouAcao: Boolean = false,
+    // alarme de "fora de alcance": alerta se este comando ficar
+    // tempoLimiteMs sem enviar nenhum sinal (clique ou beacon), OU
+    // se o ultimo RSSI recebido for pior que rssiLimite. ultimoSinalEm
+    // e atualizado por QUALQUER pacote BTHome recebido deste MAC, nao
+    // so cliques.
+    var alertaAlcance: Boolean = false,
+    var ultimoSinalEm: Long? = null,
+    // true enquanto o alarme esta ativo (fora de alcance ha mais que
+    // o limite) -- controla se o som de alarme deve repetir
+    var foraDeAlcance: Boolean = false,
+    // limite de tempo sem sinal, em milissegundos, e RSSI minimo
+    // aceitavel -- configuraveis por comando (antes eram uma
+    // constante fixa global em GestorAlcance). Valores por omissao
+    // alinhados com a deteccao por mediana+histerese do GestorAlcance
+    // (120s sem sinal, e -85 dBm como limiar de "ausente" -- o
+    // limiar de "presente", -75 dBm, e fixo e nao configuravel por
+    // comando, ver GestorAlcance.LIMIAR_RSSI_PRESENTE_DBM). So afeta
+    // comandos NOVOS -- comandos ja existentes mantem o valor que ja
+    // tinham guardado, mesmo que nunca tenham sido editados
+    // manualmente.
+    var tempoLimiteMs: Long = 120_000L,
+    var rssiLimite: Int = -85,
+    // agenda semanal: se agendaSempreAtiva=true, o alarme corre 24h;
+    // caso contrario so dentro dos periodos definidos em agendaDias,
+    // indexados 0=domingo .. 6=sabado.
+    var agendaSempreAtiva: Boolean = true,
+    var agendaDias: MutableMap<Int, MutableList<PeriodoAgenda>> = mutableMapOf(
+        0 to mutableListOf(), 1 to mutableListOf(), 2 to mutableListOf(), 3 to mutableListOf(),
+        4 to mutableListOf(), 5 to mutableListOf(), 6 to mutableListOf()
+    ),
+    // chave AES-128 de 32 caracteres hex, obtida pelo utilizador fora
+    // da app (a Shelly gera-a ao ativar "Segurança / conexão Bluetooth
+    // segura" e so a expoe via ferramentas de debug BLE, nao na app
+    // Shelly normal). Sem esta chave, tramas encriptadas deste
+    // comando sao descartadas silenciosamente, tal como acontecia
+    // antes desta funcionalidade existir.
+    var chaveEncriptacao: String? = null,
+    // opt-in EXPLICITO, por comando, para incluir a localizacao atual
+    // do telemovel (nao do comando) nos marcadores {lat}/{lon} das
+    // acoes desse comando. Falso por omissao -- a app so pede a
+    // permissao de localizacao em runtime na primeira vez que o
+    // utilizador ligar isto num comando, nunca no arranque.
+    var incluirLocalizacao: Boolean = false,
+    // opt-in SEPARADO de incluirLocalizacao: grava um ponto no
+    // historico de trajeto deste comando sempre que chega um anuncio
+    // BTHome (nao so em cliques), respeitando intervaloBeaconMs como
+    // espacamento minimo entre pontos gravados. Tal como
+    // incluirLocalizacao, so pede a permissao de localizacao quando
+    // ativado, nunca no arranque -- e os dois opt-ins sao
+    // independentes (pode ter um sem o outro).
+    var modoBeaconTrajeto: Boolean = false,
+    // Intervalo minimo entre pontos GPS gravados -- por omissao 5
+    // segundos (era 60s, demasiado para rotas curtas percorridas de
+    // carro: a 30km/h numa rota de 500m o percurso dura ~60s e com
+    // intervalo de 60s so se gravava 1 ponto, tornando qualquer
+    // comparacao de trajeto impossivel). O beacon anuncia via BLE a
+    // cada ~1s, por isso 5s nao tem custo de radio adicional -- so
+    // pede o GPS mais vezes. Configuravel por comando no cartao de
+    // detalhes.
+    var intervaloBeaconMs: Long = 5_000L,
+    var ultimoPontoTrajetoEm: Long? = null,
+    // link de imagem online (http/https) que representa este
+    // comando na grelha visual (ver EcraGrelhaComandos) -- opt-in
+    // por comando, sem imagem por omissao. A app nao descarrega nem
+    // guarda a propria imagem, so o URL; o carregamento e cache sao
+    // geridos pela biblioteca Coil no momento de mostrar.
+    var imagemUrl: String? = null,
+    // quando true, tocar no card na grelha visual NAO reabre o
+    // editor de imagem -- protege uma imagem ja definida de ser
+    // trocada por engano com um toque acidental. So' tem efeito
+    // pratico quando imagemUrl != null; sem imagem definida, tocar
+    // sempre abre o editor independentemente deste valor.
+    var imagemBloqueada: Boolean = false
+) {
+    fun paraJson(): JSONObject = JSONObject().apply {
+        put("mac", mac)
+        put("nome", nome)
+        put("perfilId", perfilId)
+        bateria?.let { put("bateria", it) }
+        rssi?.let { put("rssi", it) }
+        ultimaCombinacao?.let { put("ultimaCombinacao", it) }
+        ultimaCombinacaoEm?.let { put("ultimaCombinacaoEm", it) }
+        ultimoCliqueTipo?.let { put("ultimoCliqueTipo", it) }
+        ultimoCliqueEm?.let { put("ultimoCliqueEm", it) }
+        put("ultimoCliqueDisparouAcao", ultimoCliqueDisparouAcao)
+        put("alertaAlcance", alertaAlcance)
+        ultimoSinalEm?.let { put("ultimoSinalEm", it) }
+        put("foraDeAlcance", foraDeAlcance)
+        put("tempoLimiteMs", tempoLimiteMs)
+        put("rssiLimite", rssiLimite)
+        put("agendaSempreAtiva", agendaSempreAtiva)
+        put("agendaDias", JSONObject().apply {
+            agendaDias.forEach { (dia, periodos) ->
+                put(dia.toString(), JSONArray().apply {
+                    periodos.forEach { put(it.paraJson()) }
+                })
+            }
+        })
+        chaveEncriptacao?.let { put("chaveEncriptacao", it) }
+        put("incluirLocalizacao", incluirLocalizacao)
+        put("modoBeaconTrajeto", modoBeaconTrajeto)
+        put("intervaloBeaconMs", intervaloBeaconMs)
+        ultimoPontoTrajetoEm?.let { put("ultimoPontoTrajetoEm", it) }
+        imagemUrl?.let { put("imagemUrl", it) }
+        put("imagemBloqueada", imagemBloqueada)
+    }
+
+    companion object {
+        fun deJson(o: JSONObject): Comando = Comando(
+            mac = o.optString("mac"),
+            nome = o.optString("nome"),
+            perfilId = o.optString("perfilId"),
+            bateria = if (o.has("bateria")) o.optInt("bateria") else null,
+            rssi = if (o.has("rssi")) o.optInt("rssi") else null,
+            ultimaCombinacao = if (o.has("ultimaCombinacao")) o.optString("ultimaCombinacao") else null,
+            ultimaCombinacaoEm = if (o.has("ultimaCombinacaoEm")) o.optLong("ultimaCombinacaoEm") else null,
+            ultimoCliqueTipo = if (o.has("ultimoCliqueTipo")) o.optInt("ultimoCliqueTipo") else null,
+            ultimoCliqueEm = if (o.has("ultimoCliqueEm")) o.optLong("ultimoCliqueEm") else null,
+            ultimoCliqueDisparouAcao = o.optBoolean("ultimoCliqueDisparouAcao", false),
+            alertaAlcance = o.optBoolean("alertaAlcance", false),
+            ultimoSinalEm = if (o.has("ultimoSinalEm")) o.optLong("ultimoSinalEm") else null,
+            foraDeAlcance = o.optBoolean("foraDeAlcance", false),
+            tempoLimiteMs = o.optLong("tempoLimiteMs", 120_000L),
+            rssiLimite = o.optInt("rssiLimite", -85),
+            agendaSempreAtiva = o.optBoolean("agendaSempreAtiva", true),
+            agendaDias = run {
+                val mapa = mutableMapOf<Int, MutableList<PeriodoAgenda>>(
+                    0 to mutableListOf(), 1 to mutableListOf(), 2 to mutableListOf(), 3 to mutableListOf(),
+                    4 to mutableListOf(), 5 to mutableListOf(), 6 to mutableListOf()
+                )
+                val agendaJson = o.optJSONObject("agendaDias")
+                if (agendaJson != null) {
+                    for (dia in 0..6) {
+                        val arr = agendaJson.optJSONArray(dia.toString()) ?: continue
+                        val lista = mutableListOf<PeriodoAgenda>()
+                        for (i in 0 until arr.length()) {
+                            lista.add(PeriodoAgenda.deJson(arr.getJSONObject(i)))
+                        }
+                        mapa[dia] = lista
+                    }
+                }
+                mapa
+            },
+            chaveEncriptacao = if (o.has("chaveEncriptacao")) o.optString("chaveEncriptacao") else null,
+            incluirLocalizacao = o.optBoolean("incluirLocalizacao", false),
+            modoBeaconTrajeto = o.optBoolean("modoBeaconTrajeto", false),
+            intervaloBeaconMs = o.optLong("intervaloBeaconMs", 5_000L),
+            ultimoPontoTrajetoEm = if (o.has("ultimoPontoTrajetoEm")) o.optLong("ultimoPontoTrajetoEm") else null,
+            imagemUrl = if (o.has("imagemUrl")) o.optString("imagemUrl") else null,
+            imagemBloqueada = o.optBoolean("imagemBloqueada", false)
+        )
+    }
+}
+
+data class ContaShelly(
+    var servidorNum: String = "",
+    var regiao: String = "eu",
+    var authKey: String = ""
+) {
+    fun servidorUrl(): String? {
+        if (servidorNum.isBlank()) return null
+        return "https://shelly-$servidorNum-$regiao.shelly.cloud"
+    }
+}
+
+/** Um ponto do historico de trajeto de um comando, gravado ao
+ *  disparar um clique com incluirLocalizacao=true, ou ao receber
+ *  um anuncio com modoBeaconTrajeto=true (ver GestorTrajeto). */
+data class PontoTrajeto(
+    val latitude: Double,
+    val longitude: Double,
+    val timestamp: Long,
+    val origem: OrigemPonto
+) {
+    fun paraJson(): JSONObject = JSONObject().apply {
+        put("lat", latitude)
+        put("lon", longitude)
+        put("timestamp", timestamp)
+        put("origem", origem.name)
+    }
+
+    companion object {
+        fun deJson(o: JSONObject): PontoTrajeto? {
+            if (!o.has("lat") || !o.has("lon") || !o.has("timestamp")) return null
+            val origemStr = o.optString("origem", OrigemPonto.CLIQUE.name)
+            val origem = try {
+                OrigemPonto.valueOf(origemStr)
+            } catch (e: IllegalArgumentException) {
+                OrigemPonto.CLIQUE
+            }
+            return PontoTrajeto(o.optDouble("lat"), o.optDouble("lon"), o.optLong("timestamp"), origem)
+        }
+    }
+}
+
+enum class OrigemPonto { CLIQUE, BEACON }
+
+/** Politica de retencao do historico de trajeto -- decide o que se
+ *  GUARDA em disco (ver Repositorio.adicionaPontoTrajeto), aplicada
+ *  igualmente a todos os comandos (nao configuravel por comando,
+ *  para manter simples). "Ultima viagem" no mapa e um MODO DE
+ *  VISUALIZACAO calculado a partir do historico ja guardado, nao
+ *  depende desta politica -- so precisa que o historico guardado
+ *  cubra pelo menos a ultima viagem inteira, o que qualquer uma
+ *  destas tres opcoes garante em uso normal. */
+enum class ModoRetencaoTrajeto {
+    DIAS,       // mantem so os ultimos N dias (comportamento original)
+    QUANTIDADE  // mantem so os ultimos N pontos, independente da idade
+}
+
+/** Um ponto do template de um cenario de trajeto -- so lat/lon, ao
+ *  contrario de PontoTrajeto nao guarda timestamp nem origem (o
+ *  template e uma forma geometrica de referencia, nao um historico
+ *  temporal). A ORDEM na lista e' que importa -- representa a
+ *  sequencia do inicio ao fim do percurso de referencia. */
+/**
+ * Uma barreira numerada ao longo do percurso: um segmento de recta
+ * perpendicular à direcção local do trajeto, que o utilizador deve
+ * atravessar, por ordem (ordem 1, depois 2, etc.), para o cenário
+ * disparar. Substitui a comparação contínua de trajecto (map
+ * matching) por uma verificação simples e robusta: "o GPS cruzou
+ * esta linha, na direcção certa?" -- sem projecções, sem janelas
+ * adaptativas, sem cálculo de percentagem de progresso.
+ *
+ * Gerada automaticamente a partir do template denso (ver
+ * geraCheckpoints), mas ajustável na UI arrastando os extremos A/B
+ * da barreira, ou o ponto médio para deslocar a barreira inteira.
+ */
+data class BarreiraCheckpoint(
+    var ordem: Int,
+    var latA: Double, var lonA: Double,
+    var latB: Double, var lonB: Double,
+    var nome: String = ""
+) {
+    fun paraJson(): JSONObject = JSONObject().apply {
+        put("ordem", ordem)
+        put("latA", latA); put("lonA", lonA)
+        put("latB", latB); put("lonB", lonB)
+        if (nome.isNotBlank()) put("nome", nome)
+    }
+
+    companion object {
+        fun deJson(o: JSONObject): BarreiraCheckpoint? {
+            if (!o.has("latA") || !o.has("lonA") || !o.has("latB") || !o.has("lonB")) return null
+            return BarreiraCheckpoint(
+                ordem = o.optInt("ordem", 0),
+                latA = o.optDouble("latA"), lonA = o.optDouble("lonA"),
+                latB = o.optDouble("latB"), lonB = o.optDouble("lonB"),
+                nome = o.optString("nome", "")
+            )
+        }
+    }
+}
+
+data class PontoTemplate(val lat: Double, val lon: Double) {
+    fun paraJson(): JSONObject = JSONObject().apply {
+        put("lat", lat)
+        put("lon", lon)
+    }
+
+    companion object {
+        fun deJson(o: JSONObject): PontoTemplate? {
+            if (!o.has("lat") || !o.has("lon")) return null
+            return PontoTemplate(o.optDouble("lat"), o.optDouble("lon"))
+        }
+    }
+}
+
+/**
+ * Um cenario de trajeto: vigia o historico de trajeto de UM comando
+ * especifico, compara-o continuamente com um template de referencia
+ * (gravado a partir de um percurso ja feito, ou desenhado a mao no
+ * mapa), e dispara uma lista de acoes proprias assim que a
+ * semelhanca ultrapassar limiarPercentagem -- uma unica vez por
+ * viagem (ver Repositorio.jaDisparadoNestaViagem), mesmo que a
+ * semelhanca continue a subir depois disso. So volta a poder
+ * disparar numa viagem seguinte, que tem de progredir na MESMA
+ * direcao do template (ver GestorSemelhancaTrajeto -- o algoritmo
+ * de comparacao e sensivel a ordem, um trajeto no sentido inverso
+ * nao consegue avancar o cursor de correspondencia).
+ */
+
+/**
+ * Uma janela horária independente: início/fim em minutos desde a
+ * meia-noite, e dias da semana em que se aplica. Um cenário pode ter
+ * várias janelas -- o disparo é permitido se o instante actual cair
+ * dentro de QUALQUER UMA delas (união, não interseção). Permite, por
+ * exemplo, "Arriving Work" disparar de manhã (7h-10h) em dias úteis
+ * E à tarde (13h-14h) depois de uma pausa para almoço em casa,
+ * configurados como duas janelas separadas.
+ */
+data class JanelaHoraria(
+    var horaInicioMinutos: Int = 7 * 60,
+    var horaFimMinutos: Int = 20 * 60,
+    // 1=Domingo .. 7=Sábado (Calendar.DAY_OF_WEEK); vazio = todos os dias
+    var diasSemanaAtivos: List<Int> = emptyList()
+) {
+    fun contemAgora(agora: java.util.Calendar): Boolean {
+        val diaSemana = agora.get(java.util.Calendar.DAY_OF_WEEK)
+        if (diasSemanaAtivos.isNotEmpty() && diaSemana !in diasSemanaAtivos) return false
+        val minutosAgora = agora.get(java.util.Calendar.HOUR_OF_DAY) * 60 + agora.get(java.util.Calendar.MINUTE)
+        return if (horaFimMinutos >= horaInicioMinutos) {
+            minutosAgora in horaInicioMinutos..horaFimMinutos
+        } else {
+            // janela atravessa a meia-noite (ex: 22:00-06:00)
+            minutosAgora >= horaInicioMinutos || minutosAgora <= horaFimMinutos
+        }
+    }
+
+    fun paraJson(): JSONObject = JSONObject().apply {
+        put("horaInicioMinutos", horaInicioMinutos)
+        put("horaFimMinutos", horaFimMinutos)
+        if (diasSemanaAtivos.isNotEmpty()) {
+            put("diasSemanaAtivos", JSONArray().apply { diasSemanaAtivos.forEach { put(it) } })
+        }
+    }
+
+    companion object {
+        fun deJson(o: JSONObject): JanelaHoraria = JanelaHoraria(
+            horaInicioMinutos = o.optInt("horaInicioMinutos", 0),
+            horaFimMinutos = o.optInt("horaFimMinutos", 1439),
+            diasSemanaAtivos = o.optJSONArray("diasSemanaAtivos")?.let { arr ->
+                (0 until arr.length()).map { arr.optInt(it) }
+            } ?: emptyList()
+        )
+    }
+}
+
+data class CenarioTrajeto(
+    var id: String,
+    var nome: String,
+    var macComando: String,
+    // MACs adicionais que tambem contribuem com pontos GPS para este
+    // cenario -- qualquer beacon da lista (macComando + macsAdicionais)
+    // pode gravar pontos e disparar as acoes quando o limiar e'
+    // atingido. Permite usar varios beacons como pontos de controlo
+    // ao longo do percurso, tornando a detecao mais robusta.
+    // Lista vazia em cenarios criados antes deste campo existir.
+    var macsAdicionais: List<String> = emptyList(),
+    var template: List<PontoTemplate>,
+    // Barreiras numeradas derivadas do template (ver BarreiraCheckpoint) --
+    // a avaliação do cenário passa a ser "atravessou os checkpoints
+    // por ordem", não a comparação contínua de trajecto. Vazio em
+    // cenários gravados antes deste campo existir -- gerado
+    // automaticamente na primeira leitura (ver GestorSemelhancaTrajeto.
+    // garanteCheckpoints) a partir do template já existente, para não
+    // obrigar a regravar cenários antigos.
+    var checkpoints: List<BarreiraCheckpoint> = emptyList(),
+    // MAC do comando de onde o template foi IMPORTADO -- so
+    // informativo (mostrado na UI, "template importado de X"), nunca
+    // usado na avaliacao: o cenario compara sempre o historico de
+    // macComando com este template, seja de onde vier. Null se o
+    // template veio de uma viagem do proprio macComando (import "de
+    // si mesmo", tecnicamente nao e importacao nenhuma).
+    var macOrigemTemplate: String? = null,
+    // % (0-100) de semelhanca necessaria para disparar
+    var limiarPercentagem: Int = 80,
+    // raio de correspondencia entre um ponto do trajeto atual e um
+    // ponto do template, em metros
+    var raioMetros: Int = 40,
+    // Geofence de paragem: raio e tempo minimo para considerar que
+    // o utilizador parou e que a proxima saida e' uma nova viagem.
+    // Configuravel por cenario. Padrao: 150m, 15 minutos.
+    var raioGeofenceMetros: Int = 150,
+    var minutosParaNovaViagem: Int = 15,
+    var ativo: Boolean = true,
+    var acoes: MutableList<Acao> = mutableListOf(),
+    // Como o template deste cenario foi definido -- "gravada"
+    // (escolhida uma viagem ja registada), "desenho" (desenhado a
+    // dedo no mapa) ou "rota" (calculado entre origem/destino).
+    // Guardado para que reabrir o cenario para editar mostre o mesmo
+    // modo com que foi criado, em vez de voltar sempre ao primeiro.
+    // Cenarios criados antes deste campo existir ficam com
+    // "gravada", que era o unico modo possivel na altura.
+    var modoTemplate: String = "gravada",
+    // Pontos onde o utilizador tocou no mapa ao definir uma rota
+    // OSRM -- guardados separadamente da geometria da rota, porque
+    // o OSRM ajusta os pontos para a rede viaria mais proxima e os
+    // extremos da linha guardada nao coincidem com o que o utilizador
+    // tocou. Usados para restaurar os marcadores no sitio certo ao
+    // reabrir para editar. Nulos em cenarios de outros modos.
+    var origemExataLat: Double? = null,
+    var origemExataLon: Double? = null,
+    var destinoExatoLat: Double? = null,
+    var destinoExatoLon: Double? = null,
+    // waypoints intermédios (pinos laranja) que o utilizador definiu
+    // para forçar a rota a passar por pontos específicos
+    var waypointsLat: List<Double> = emptyList(),
+    var waypointsLon: List<Double> = emptyList(),
+    // timestamp da ultima vez que este cenario disparou -- usado so
+    // para mostrar na UI quando foi a ultima vez, nao para logica de
+    // bloqueio (essa fica no Repositorio, associada ao MAC + inicio
+    // da viagem atual, ver jaDisparadoNestaViagem)
+    var ultimoDisparoEm: Long? = null,
+    // Restrição horária: lista de janelas independentes -- o disparo
+    // é permitido se o instante actual estiver dentro de QUALQUER UMA
+    // delas (união). Lista vazia = sem restrição, dispara a qualquer
+    // hora -- retrocompatível com cenários existentes.
+    var janelasHorarias: List<JanelaHoraria> = emptyList()
+) {
+    /**
+     * Verifica se o cenário pode disparar neste instante. Sem nenhuma
+     * janela configurada, devolve sempre true (sem restrição).
+     */
+    fun dentroDaJanelaHoraria(agora: java.util.Calendar = java.util.Calendar.getInstance()): Boolean {
+        if (janelasHorarias.isEmpty()) return true
+        return janelasHorarias.any { it.contemAgora(agora) }
+    }
+
+    fun paraJson(): JSONObject = JSONObject().apply {
+        put("id", id)
+        put("nome", nome)
+        put("macComando", macComando)
+        if (macsAdicionais.isNotEmpty()) {
+            put("macsAdicionais", JSONArray().apply { macsAdicionais.forEach { put(it) } })
+        }
+        put("template", JSONArray().apply { template.forEach { put(it.paraJson()) } })
+        if (checkpoints.isNotEmpty()) {
+            put("checkpoints", JSONArray().apply { checkpoints.forEach { put(it.paraJson()) } })
+        }
+        if (janelasHorarias.isNotEmpty()) {
+            put("janelasHorarias", JSONArray().apply { janelasHorarias.forEach { put(it.paraJson()) } })
+        }
+        macOrigemTemplate?.let { put("macOrigemTemplate", it) }
+        put("limiarPercentagem", limiarPercentagem)
+        put("raioMetros", raioMetros)
+        put("raioGeofenceMetros", raioGeofenceMetros)
+        put("minutosParaNovaViagem", minutosParaNovaViagem)
+        put("ativo", ativo)
+        put("acoes", JSONArray().apply { acoes.forEach { put(it.paraJson()) } })
+        put("modoTemplate", modoTemplate)
+        origemExataLat?.let { put("origemExataLat", it) }
+        origemExataLon?.let { put("origemExataLon", it) }
+        destinoExatoLat?.let { put("destinoExatoLat", it) }
+        destinoExatoLon?.let { put("destinoExatoLon", it) }
+        if (waypointsLat.isNotEmpty()) {
+            put("waypointsLat", JSONArray().apply { waypointsLat.forEach { put(it) } })
+            put("waypointsLon", JSONArray().apply { waypointsLon.forEach { put(it) } })
+        }
+        ultimoDisparoEm?.let { put("ultimoDisparoEm", it) }
+    }
+
+    companion object {
+        fun deJson(o: JSONObject): CenarioTrajeto? {
+            val id = o.optString("id").ifBlank { return null }
+            val mac = o.optString("macComando").ifBlank { return null }
+            val arrTemplate = o.optJSONArray("template") ?: return null
+            val template = (0 until arrTemplate.length()).mapNotNull { i ->
+                PontoTemplate.deJson(arrTemplate.getJSONObject(i))
+            }
+            if (template.size < 2) return null
+
+            val arrAcoes = o.optJSONArray("acoes")
+            val acoes = if (arrAcoes != null) {
+                (0 until arrAcoes.length()).map { i -> Acao.deJson(arrAcoes.getJSONObject(i)) }.toMutableList()
+            } else mutableListOf()
+
+            return CenarioTrajeto(
+                id = id,
+                nome = o.optString("nome", "Trajeto"),
+                macComando = mac,
+                macsAdicionais = run {
+                    val arr = o.optJSONArray("macsAdicionais")
+                    if (arr != null) (0 until arr.length()).map { arr.getString(it) }
+                    else emptyList()
+                },
+                template = template,
+                checkpoints = o.optJSONArray("checkpoints")?.let { arr ->
+                    (0 until arr.length()).mapNotNull { BarreiraCheckpoint.deJson(arr.getJSONObject(it)) }
+                } ?: emptyList(),
+                macOrigemTemplate = if (o.has("macOrigemTemplate")) o.optString("macOrigemTemplate") else null,
+                limiarPercentagem = o.optInt("limiarPercentagem", 80),
+                raioMetros = o.optInt("raioMetros", 40),
+                raioGeofenceMetros = o.optInt("raioGeofenceMetros", 150),
+                minutosParaNovaViagem = o.optInt("minutosParaNovaViagem", 15),
+                ativo = o.optBoolean("ativo", true),
+                acoes = acoes,
+                modoTemplate = o.optString("modoTemplate", "gravada"),
+                origemExataLat = if (o.has("origemExataLat")) o.getDouble("origemExataLat") else null,
+                origemExataLon = if (o.has("origemExataLon")) o.getDouble("origemExataLon") else null,
+                destinoExatoLat = if (o.has("destinoExatoLat")) o.getDouble("destinoExatoLat") else null,
+                destinoExatoLon = if (o.has("destinoExatoLon")) o.getDouble("destinoExatoLon") else null,
+                waypointsLat = o.optJSONArray("waypointsLat")?.let { arr -> (0 until arr.length()).map { arr.getDouble(it) } } ?: emptyList(),
+                waypointsLon = o.optJSONArray("waypointsLon")?.let { arr -> (0 until arr.length()).map { arr.getDouble(it) } } ?: emptyList(),
+                ultimoDisparoEm = if (o.has("ultimoDisparoEm")) o.optLong("ultimoDisparoEm") else null,
+                janelasHorarias = when {
+                    o.has("janelasHorarias") -> o.optJSONArray("janelasHorarias")?.let { arr ->
+                        (0 until arr.length()).map { JanelaHoraria.deJson(arr.getJSONObject(it)) }
+                    } ?: emptyList()
+                    // Retrocompatibilidade: formato antigo (v1.3.0) tinha
+                    // uma única janela em campos soltos -- migrar para a
+                    // nova lista na primeira leitura.
+                    o.optBoolean("restricaoHorarioAtiva", false) -> listOf(
+                        JanelaHoraria(
+                            horaInicioMinutos = o.optInt("horaInicioMinutos", 0),
+                            horaFimMinutos = o.optInt("horaFimMinutos", 1439),
+                            diasSemanaAtivos = o.optJSONArray("diasSemanaAtivos")?.let { arr ->
+                                (0 until arr.length()).map { arr.optInt(it) }
+                            } ?: emptyList()
+                        )
+                    )
+                    else -> emptyList()
+                }
+            )
+        }
+    }
+}

@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Bluetooth: API 31+ usa BLUETOOTH_SCAN/CONNECT com neverForLocation
+         porque o scan BLE em si não precisa de localização física do
+         dispositivo, só identificar o comando por MAC. API abaixo de 31 ainda
+         exige localização para BLE por herança histórica do Android
+         coberto pela ACCESS_FINE_LOCATION declarada mais abaixo, que
+         hoje serve os dois propósitos (BLE legado + GPS opcional por
+         comando, ver essa declaração para detalhe). -->
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN"
+        android:usesPermissionFlags="neverForLocation"
+        tools:targetApi="s" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission android:name="android.permission.BLUETOOTH"
+        android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"
+        android:maxSdkVersion="30" />
+    <!-- Localizacao: ACCESS_FINE_LOCATION e tambem o requisito legado do
+         BLE em API 30 ou anterior (o BLUETOOTH_SCAN acima cobre a partir da 31).
+         Alem disso, sem maxSdkVersion, e usada em qualquer versao para
+         os marcadores {lat}/{lon} das acoes, so pedida em runtime se
+         o utilizador ativar "incluir localizacao" nalgum comando
+         (opt-in explicito, ver Comando.incluirLocalizacao). -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!-- ACCESS_BACKGROUND_LOCATION: exigida pelo Android 10+ para o
+         servico em primeiro plano conseguir obter localizacao quando a
+         app nao esta visivel (ecra apagado ou noutra app) — sem esta
+         permissao, GestorLocalizacao.obtemLocalizacaoAtual() falha
+         silenciosamente nesse cenario (nunca lanca excecao, so devolve
+         null). So tem efeito se o utilizador ja tiver concedido
+         ACCESS_FINE_LOCATION/ACCESS_COARSE_LOCATION primeiro — pedidos
+         "incrementais" sao obrigatorios a partir do Android 11, nao e
+         possivel pedir as duas ao mesmo tempo (ver GestorPermissoes). -->
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+    <!-- Exigida pelo Android 14+ para o servico em primeiro plano poder
+         declarar o tipo "location" abaixo. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- Necessária para AlarmManager.setExactAndAllowWhileIdle() em Android 12+ -->
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+    <!-- Permite pedir diretamente a isencao da otimizacao de bateria
+         padrao do Android (ver CartaoBateria.kt). A Google restringe
+         este pedido direto a apps com necessidade genuina de execucao
+         continua em segundo plano — esta app nao esta na Play Store,
+         por isso essa restricao de revisao nao se aplica aqui. -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <!-- Exigida desde o Android 8 (API 26) para apps fora da Play
+         Store poderem lançar o instalador de pacotes diretamente:
+         sem esta, ACTION_INSTALL_PACKAGE e' bloqueado pelo sistema
+         mesmo com o utilizador a tentar instalar manualmente
+         (ver GestorAtualizacao.kt). -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+
+    <uses-feature android:name="android.hardware.bluetooth_le" android:required="true" />
+
+    <application
+        android:name=".GatewayApp"
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:theme="@style/Theme.BluGateway"
+        android:supportsRtl="true">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:theme="@style/Theme.BluGateway.Splash">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- Recebe os resultados do scan via PendingIntent, mesmo com o
+             processo da app morto (ecrã apagado, app fechada). -->
+        <receiver android:name=".ble.ScanReceiver" android:exported="false" />
+
+        <!-- Recebe o alarme periódico do AlarmManager para reiniciar o scan BLE.
+             O AlarmManager acorda o processo mesmo com ecrã bloqueado. -->
+        <receiver android:name=".ble.ReiniciaReceiver" android:exported="false">
+            <intent-filter>
+                <action android:name="pt.blugateway.REINICIA_SCAN" />
+            </intent-filter>
+        </receiver>
+
+        <receiver android:name=".ble.RecetorPararAlarme" android:exported="false">
+            <intent-filter><action android:name="pt.blugateway.PARAR_ALARME_TELEMOVEL" /></intent-filter>
+        </receiver>
+
+        <!-- Recomeça a escuta depois de reiniciar o telemóvel. -->
+        <receiver
+            android:name=".ble.BootReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Mantém a app viva em segundo plano com notificação persistente.
+             foregroundServiceType inclui "location" (a par de
+             "connectedDevice") para o servico conseguir obter
+             localizacao com o ecra apagado/app fora do primeiro plano —
+             sem este tipo declarado, o pedido de localizacao e
+             bloqueado pelo sistema mesmo com o servico ativo (API 34+
+             exige a declaracao explicita do tipo). -->
+        <service
+            android:name=".ble.ServicoGateway"
+            android:exported="false"
+            android:foregroundServiceType="connectedDevice|location" />
+
+        <!-- Expõe o APK descarregado (em cache privado) ao instalador
+             do sistema via content:// (Android 7+ nao permite passar
+             um file:// Uri diretamente a outra app; ver
+             GestorAtualizacao.kt). -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
+    </application>
+</manifest>
