@@ -30,6 +30,8 @@ object GestorEncontrarTelemovel {
     private var ringtoneAtivo: android.media.Ringtone? = null
     private var mediaPlayer: MediaPlayer? = null  // não usado, manter para compatibilidade
     private var audioFocusRequest: Any? = null
+    @Volatile private var appCtx: Context? = null
+    private var toneGenerator: android.media.ToneGenerator? = null
     private val mainHandler = Handler(Looper.getMainLooper())
     private val pararAutomatico = Runnable { para(null) }
 
@@ -47,6 +49,7 @@ object GestorEncontrarTelemovel {
             return
         }
         emAlarme = true
+        appCtx = ctx
         Log.d(TAG, "[encontrar] toca() início")
 
         val am = ctx.getSystemService(Context.AUDIO_SERVICE) as AudioManager
@@ -111,6 +114,7 @@ object GestorEncontrarTelemovel {
             // Fallback: ToneGenerator
             try {
                 val tg = android.media.ToneGenerator(AudioManager.STREAM_ALARM, 100)
+                toneGenerator = tg
                 tg.startTone(android.media.ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD, 60_000)
                 Log.d(TAG, "[encontrar] ToneGenerator fallback iniciado")
             } catch (e2: Exception) {
@@ -143,19 +147,33 @@ object GestorEncontrarTelemovel {
         Log.d(TAG, "[encontrar] toca() completo")
     }
 
+    /**
+     * Para o alarme (som, vibracao, notificacao). Pode ser chamado com
+     * context == null (paragem automatica ao fim de DURACAO_MAX_MS) --
+     * nesse caso usa o contexto guardado em toca(). E' idempotente e
+     * limpa SEMPRE tudo, mesmo que emAlarme ja seja false: antes, a
+     * paragem automatica passava null, a vibracao (que repete sem fim)
+     * e a notificacao nunca eram canceladas e, como emAlarme ja era
+     * false, o botao "Parar" deixava de fazer qualquer coisa.
+     */
     fun para(context: Context?) {
-        if (!emAlarme) return
         emAlarme = false
         mainHandler.removeCallbacks(pararAutomatico)
         Log.d(TAG, "[encontrar] para()")
+
+        val ctx = (context ?: appCtx)?.applicationContext
 
         try { ringtoneAtivo?.stop() } catch (e: Exception) {}
         ringtoneAtivo = null
         try { mediaPlayer?.stop(); mediaPlayer?.release() } catch (e: Exception) {}
         mediaPlayer = null
+        try { toneGenerator?.stopTone(); toneGenerator?.release() } catch (e: Exception) {}
+        toneGenerator = null
+
+        if (ctx == null) return
 
         // Largar audio focus
-        context?.applicationContext?.let { ctx ->
+        try {
             val am = ctx.getSystemService(Context.AUDIO_SERVICE) as AudioManager
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 (audioFocusRequest as? AudioFocusRequest)?.let { am.abandonAudioFocusRequest(it) }
@@ -163,18 +181,16 @@ object GestorEncontrarTelemovel {
                 @Suppress("DEPRECATION")
                 am.abandonAudioFocus(null)
             }
-            audioFocusRequest = null
-        }
+        } catch (e: Exception) {}
+        audioFocusRequest = null
 
         try {
             @Suppress("DEPRECATION")
-            val vib = context?.getSystemService(Context.VIBRATOR_SERVICE) as? android.os.Vibrator
+            val vib = ctx.getSystemService(Context.VIBRATOR_SERVICE) as? android.os.Vibrator
             vib?.cancel()
         } catch (e: Exception) {}
 
-        context?.applicationContext?.let {
-            NotificationManagerCompat.from(it).cancel(NOTIF_ID)
-        }
+        try { NotificationManagerCompat.from(ctx).cancel(NOTIF_ID) } catch (e: Exception) {}
     }
 
     private fun mostrarNotificacao(ctx: Context) {
@@ -204,6 +220,8 @@ object GestorEncontrarTelemovel {
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setOngoing(true)
+            .setContentIntent(piParar)   // tocar na propria notificacao tambem para o alarme
+            .setAutoCancel(true)
             .addAction(
                 android.R.drawable.ic_media_pause,
                 ctx.getString(R.string.encontrar_telemovel_parar),
