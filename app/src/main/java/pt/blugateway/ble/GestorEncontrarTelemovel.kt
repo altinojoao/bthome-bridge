@@ -31,6 +31,9 @@ object GestorEncontrarTelemovel {
     private var mediaPlayer: MediaPlayer? = null  // não usado, manter para compatibilidade
     private var audioFocusRequest: Any? = null
     @Volatile private var appCtx: Context? = null
+    private var vibradorAtivo: android.os.Vibrator? = null
+    @Volatile private var ultimaParagemEm = 0L
+    private const val COOLDOWN_APOS_PARAR_MS = 5_000L
     private var toneGenerator: android.media.ToneGenerator? = null
     private val mainHandler = Handler(Looper.getMainLooper())
     private val pararAutomatico = Runnable { para(null) }
@@ -46,10 +49,16 @@ object GestorEncontrarTelemovel {
     private fun tocaInterno(ctx: Context) {
         if (emAlarme) {
             Log.d(TAG, "[encontrar] já em alarme, ignorar")
+            RegistoDiagnostico.regista(ctx, "[encontrar] pedido ignorado: alarme ja em curso")
+            return
+        }
+        if (System.currentTimeMillis() - ultimaParagemEm < COOLDOWN_APOS_PARAR_MS) {
+            RegistoDiagnostico.regista(ctx, "[encontrar] pedido ignorado: acabou de ser parado (evita re-disparo)")
             return
         }
         emAlarme = true
         appCtx = ctx
+        RegistoDiagnostico.regista(ctx, "[encontrar] alarme iniciado")
         Log.d(TAG, "[encontrar] toca() início")
 
         val am = ctx.getSystemService(Context.AUDIO_SERVICE) as AudioManager
@@ -122,19 +131,23 @@ object GestorEncontrarTelemovel {
             }
         }
 
-        // Vibração
+        // Vibração -- NAO repete indefinidamente: o padrao e' repetido
+        // so ate cobrir a duracao maxima do alarme e termina sozinho
+        // mesmo que a paragem (Handler) nao chegue a correr.
         try {
             @Suppress("DEPRECATION")
             val vib = ctx.getSystemService(Context.VIBRATOR_SERVICE) as android.os.Vibrator
-            val padrao = longArrayOf(0, 300, 200, 300, 200, 800, 300, 300, 200, 300, 200, 1200)
+            val base = longArrayOf(0, 300, 200, 300, 200, 800, 300, 300, 200, 300, 200, 1200)
+            val repeticoes = ((DURACAO_MAX_MS / 4300L) + 1).toInt()
+            val padrao = LongArray(base.size * repeticoes) { base[it % base.size] }
+            vibradorAtivo = vib
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                vib.vibrate(android.os.VibrationEffect.createWaveform(padrao, 0))
-                Log.d(TAG, "[encontrar] vibração VibrationEffect iniciada")
+                vib.vibrate(android.os.VibrationEffect.createWaveform(padrao, -1))
             } else {
                 @Suppress("DEPRECATION")
-                vib.vibrate(padrao, 0)
-                Log.d(TAG, "[encontrar] vibração legacy iniciada")
+                vib.vibrate(padrao, -1)
             }
+            Log.d(TAG, "[encontrar] vibração iniciada (finita)")
         } catch (e: Exception) {
             Log.e(TAG, "[encontrar] vibração falhou: ${e.message}")
         }
@@ -142,8 +155,10 @@ object GestorEncontrarTelemovel {
         // Notificação
         mostrarNotificacao(ctx)
 
-        // Parar automaticamente
+        // Parar automaticamente (Handler) + AlarmManager como reforco,
+        // para o caso de o Handler nao correr com o processo suspenso
         mainHandler.postDelayed(pararAutomatico, DURACAO_MAX_MS)
+        agendaParagemPorAlarme(ctx)
         Log.d(TAG, "[encontrar] toca() completo")
     }
 
@@ -157,6 +172,8 @@ object GestorEncontrarTelemovel {
      * false, o botao "Parar" deixava de fazer qualquer coisa.
      */
     fun para(context: Context?) {
+        val estavaEmAlarme = emAlarme
+        if (estavaEmAlarme) ultimaParagemEm = System.currentTimeMillis()
         emAlarme = false
         mainHandler.removeCallbacks(pararAutomatico)
         Log.d(TAG, "[encontrar] para()")
@@ -171,6 +188,8 @@ object GestorEncontrarTelemovel {
         toneGenerator = null
 
         if (ctx == null) return
+        if (estavaEmAlarme) RegistoDiagnostico.regista(ctx, "[encontrar] alarme parado")
+        cancelaParagemPorAlarme(ctx)
 
         // Largar audio focus
         try {
@@ -184,6 +203,11 @@ object GestorEncontrarTelemovel {
         } catch (e: Exception) {}
         audioFocusRequest = null
 
+        // cancela com a MESMA instancia que iniciou a vibracao (o
+        // token do pedido e' por instancia) e, por seguranca, com uma
+        // instancia nova do servico
+        try { vibradorAtivo?.cancel() } catch (e: Exception) {}
+        vibradorAtivo = null
         try {
             @Suppress("DEPRECATION")
             val vib = ctx.getSystemService(Context.VIBRATOR_SERVICE) as? android.os.Vibrator
@@ -191,6 +215,33 @@ object GestorEncontrarTelemovel {
         } catch (e: Exception) {}
 
         try { NotificationManagerCompat.from(ctx).cancel(NOTIF_ID) } catch (e: Exception) {}
+    }
+
+    private fun piParaPorAlarme(ctx: Context): PendingIntent {
+        val i = Intent(ACTION_PARAR).setPackage(ctx.packageName)
+        return PendingIntent.getBroadcast(
+            ctx, 1, i, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+    }
+
+    private fun agendaParagemPorAlarme(ctx: Context) {
+        try {
+            val am = ctx.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
+            am.setAndAllowWhileIdle(
+                android.app.AlarmManager.RTC_WAKEUP,
+                System.currentTimeMillis() + DURACAO_MAX_MS + 1_500L,
+                piParaPorAlarme(ctx)
+            )
+        } catch (e: Exception) {
+            Log.w(TAG, "[encontrar] nao foi possivel agendar a paragem por alarme: ${e.message}")
+        }
+    }
+
+    private fun cancelaParagemPorAlarme(ctx: Context) {
+        try {
+            val am = ctx.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
+            am.cancel(piParaPorAlarme(ctx))
+        } catch (e: Exception) {}
     }
 
     private fun mostrarNotificacao(ctx: Context) {

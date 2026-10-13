@@ -11,6 +11,7 @@ import android.content.Intent
 class RecetorPararAlarme : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action == "pt.blugateway.PARAR_ALARME_TELEMOVEL") {
+            RegistoDiagnostico.regista(context, "[encontrar] pedido de paragem recebido")
             GestorEncontrarTelemovel.para(context)
         }
     }

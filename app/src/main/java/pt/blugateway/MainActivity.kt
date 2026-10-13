@@ -173,6 +173,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        // abrir a app tambem para o alarme de encontrar o telemovel
+        pt.blugateway.ble.GestorEncontrarTelemovel.para(this)
         // se as permissões foram concedidas nas Definições do sistema
         // (fora do fluxo do launcher), o servico arranca ao voltar à app
         if (todasConcedidas()) {
